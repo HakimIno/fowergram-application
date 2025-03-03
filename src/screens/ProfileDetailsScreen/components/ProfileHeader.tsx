@@ -69,11 +69,11 @@ const styles = StyleSheet.create({
     },
     statCount: {
         fontSize: 17,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
     },
     statLabel: {
         fontSize: 13,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         lineHeight: 15.6,
     },
     socialContainer: {
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     },
     username: {
         fontSize: 15,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
     },
 
     // ProfileBio styles
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     },
     bioText: {
         fontSize: 13,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         lineHeight: 15.6,
     },
 
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     followButtonText: {
         color: 'white',
         fontSize: 16,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
     },
     actionButton: {
         width: 48,

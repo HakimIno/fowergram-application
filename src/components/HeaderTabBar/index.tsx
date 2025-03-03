@@ -40,7 +40,7 @@ const HeaderTabBar = ({ navigationState, position, jumpTo, tabs }: any) => {
 
                         <View style={styles.iconTextContainer}>
                             <Ionicons name={tabs[index].icon} size={20} color={index === 0 ? "#1a1a1a" : "#1a1a1a"} />
-                            <Text style={{ color: '#242424', fontFamily: 'LINESeedSansTH_A_Rg', }}>{tabs[index].name}</Text>
+                            <Text style={{ color: '#242424', fontFamily: 'SukhumvitSet_Me', }}>{tabs[index].name}</Text>
                         </View>
 
                         <Animated.View
@@ -57,7 +57,7 @@ const HeaderTabBar = ({ navigationState, position, jumpTo, tabs }: any) => {
                                 styles.iconTextContainer,
                                 { transform: [{ translateX: translateX(true) }] }]}>
                                 <Ionicons name={tabs[index].iconActive} size={20} color={index === 0 ? "#1a1a1a" : "#1a1a1a"} />
-                                <Text style={{ color: '#1a1a1a', fontFamily: 'LINESeedSansTH_A_Bd', marginLeft: 3 }}>{tabs[index].name}</Text>
+                                <Text style={{ color: '#1a1a1a', fontFamily: 'SukhumvitSet_Bd', marginLeft: 3 }}>{tabs[index].name}</Text>
                             </Animated.View>
                         </Animated.View>
                     </Pressable>

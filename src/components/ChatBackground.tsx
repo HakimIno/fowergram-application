@@ -13,7 +13,7 @@ const ChatBackground: React.FC<ChatBackgroundProps> = ({ isDarkMode, backgroundC
     return (
         <View style={[styles.container, { backgroundColor }]}>
             <Svg id="Layer_1" x="0px" y="0px"
-                viewBox="0 0 1125 2436" fill={isDarkMode ? '#6d28d9' + '30' : '#1d4ed8' +  '30'}>
+                viewBox="0 0 1125 2436" fill={isDarkMode ? '#2563eb' + '30' : '#1d4ed8' +  '30'}>
                 <G>
                     <Path class="st0" d="M769,864.1c-2.6,3.5,2.8,8.9,14.3,19.8c4,3.8,8.1,7.6,11.2,11l-12.9,13.6c-0.8,0.8-0.7,2,0.1,2.8l3,2.9
 		c2.2,2.3,5.2,3.5,8.4,3.5c0.8,0,1.7-0.1,2.5-0.3h0.1c5.2-1.4,14.8-4.1,20-2.4h0.1c-8.5,8.8-12.5,13.8-12.6,14.1

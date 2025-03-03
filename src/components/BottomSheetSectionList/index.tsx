@@ -277,7 +277,7 @@ Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos
                                             readMoreText={"เพิ่มเติม"}
                                             readLessText={"ย่อน้อยลง"}
                                             style={styles.textBody}
-                                            readMoreStyle={{ color: "#CACACA", fontFamily: 'LINESeedSansTH_A_Bd', }}
+                                            readMoreStyle={{ color: "#CACACA", fontFamily: 'SukhumvitSet_Bd', }}
                                             readLessStyle={{ color: "#CACACA" }}>{longText}</ReadMoreText>
                                     </View>
                                 )}
@@ -289,7 +289,7 @@ Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos
                                                 style={[{ width: 45, height: 45, borderRadius: 45 }]}
                                             />
                                             <View style={{ width: "80%", marginLeft: 5, }}>
-                                                <Text style={[styles.textBody, { fontFamily: 'LINESeedSansTH_A_Bd', }]}>{item.username}</Text>
+                                                <Text style={[styles.textBody, { fontFamily: 'SukhumvitSet_Bd', }]}>{item.username}</Text>
                                                 <Text style={[styles.textBody]}>{item.message}</Text>
                                             </View>
                                             <Pressable
@@ -408,12 +408,12 @@ const styles = StyleSheet.create({
         paddingVertical: 5
     },
     textHeader: {
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         color: "#242424",
         marginHorizontal: 20,
     },
     textBody: {
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         color: "#242424",
     },
     // input: {
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
         textAlignVertical: 'center',
         width: "85%",
         padding: 10,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     iconContainer: {
         flexDirection: 'row',

@@ -22,11 +22,11 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    "LINESeedSansTH_A_Bd": FORNTS.LINESeedSansTH_A_Bd,
-    "LINESeedSansTH_A_He": FORNTS.LINESeedSansTH_A_He,
-    "LINESeedSansTH_A_Rg": FORNTS.LINESeedSansTH_A_Rg,
-    "LINESeedSansTH_A_Th": FORNTS.LINESeedSansTH_A_Th,
-    "LINESeedSansTH_A_XBd": FORNTS.LINESeedSansTH_A_XBd,
+    "SukhumvitSet_Bd": FORNTS.SukhumvitSet_Bd,
+    "SukhumvitSet_SM_Bd": FORNTS.SukhumvitSet_SM_Bd,
+    "SukhumvitSet_Me": FORNTS.SukhumvitSet_Me,
+    "SukhumvitSet_Li": FORNTS.SukhumvitSet_Li,
+    "SukhumvitSet_SM": FORNTS.SukhumvitSet_SM_Bd,
     "Knewave_400Regular": Knewave_400Regular,
     "PottaOne_400Regular": PottaOne_400Regular,
     "Funnel_400Regular": FORNTS.Funnel_400Regular,

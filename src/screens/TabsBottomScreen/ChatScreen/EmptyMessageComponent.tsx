@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     text: {
         fontSize: 18,
         marginBottom: 8,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         textAlign: 'center',
     },
    

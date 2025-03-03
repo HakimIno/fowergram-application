@@ -61,7 +61,7 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
             > */}
             <View style={{ height: height * 0.3, marginTop: insets.top + height * 0.15, alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Knewave_400Regular', fontSize: 50 }}>Logo</Text>
-                <Text style={{ fontFamily: 'LINESeedSansTH_A_Rg', color: '#6b7280' }}>สร้างบัญชีหรือเข้าสู่ระบบ</Text>
+                <Text style={{ fontFamily: 'SukhumvitSet_Me', color: '#6b7280' }}>สร้างบัญชีหรือเข้าสู่ระบบ</Text>
                 <View style={{ alignItems: 'center', marginTop: height * 0.20 }}>
                     {listLogin?.map((item, index) => (
                         <TouchableOpacity
@@ -80,7 +80,7 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
                                 paddingHorizontal: 30
                             }}>
                             <Fontisto name={item.icon as "google" as "facebook" as "line"} size={24} color="black" />
-                            <Text style={{ fontFamily: 'LINESeedSansTH_A_Bd', textAlign: 'center' }}>ดำเนินการต่อด้วย {item?.title}</Text>
+                            <Text style={{ fontFamily: 'SukhumvitSet_Bd', textAlign: 'center' }}>ดำเนินการต่อด้วย {item?.title}</Text>
                             <View />
                         </TouchableOpacity>
                     ))}
@@ -144,14 +144,14 @@ const styles = StyleSheet.create({
     },
     textInfoSubTitle: {
         fontSize: 17,
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     input: {
         marginBottom: 20,
         padding: 15,
         textAlignVertical: 'center',
         backgroundColor: "rgba(229, 231, 235, 0.5)",
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         borderRadius: 20,
     },
     btnContainer: {

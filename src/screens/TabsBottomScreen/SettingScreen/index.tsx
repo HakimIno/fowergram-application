@@ -340,7 +340,7 @@ const SettingScreen = () => {
                                                     fontSize: 13,
                                                     marginVertical: 2,
                                                     color: 'white',
-                                                    fontFamily: 'LINESeedSansTH_A_Rg'
+                                                    fontFamily: 'SukhumvitSet_Me'
                                                 },
                                             ]}
                                     >
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     },
     text: {
         color: 'white',
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     username: {
         fontSize: 18,

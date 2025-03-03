@@ -37,8 +37,8 @@ const ProfileSkiaDesign: React.FC<ProfileSkiaProps> = ({
     bio
 }) => {
     const profileImage = useImage(imageUrl);
-    const font = useFont(FORNTS.LINESeedSansTH_A_Bd, 14);
-    const headerFont = useFont(FORNTS.LINESeedSansTH_A_Bd, 18);
+    const font = useFont(FORNTS.SukhumvitSet_Bd, 14);
+    const headerFont = useFont(FORNTS.SukhumvitSet_Bd, 18);
 
     if (!font || !headerFont || !profileImage) {
         return null;

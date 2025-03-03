@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     },
     textButton: {
         color: 'black',
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     slideContainer: {
         ...StyleSheet.absoluteFillObject,

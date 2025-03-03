@@ -16,7 +16,8 @@ import Animated, {
     withRepeat,
     runOnJS,
     interpolate,
-    Easing
+    Easing,
+    Extrapolate
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ParticleExplosion from './ParticleExplosion'
@@ -52,66 +53,11 @@ interface ChatConversationScreenProps {
     navigation: any
 }
 
-const MOCK_MESSAGES: Message[] = [
-    {
-        id: '1',
-        text: 'Hey there! How are you?',
-        timestamp: '10:30 AM',
-        date: 'Today',
-        isSent: false,
-        status: 'read'
-    },
-    {
-        id: '2',
-        text: 'I\'m doing great! Just working on some new features.',
-        timestamp: '10:31 AM',
-        date: 'Today',
-        isSent: true,
-        status: 'read'
-    },
-    {
-        id: '3',
-        text: 'That sounds interesting! What kind of features?',
-        timestamp: '10:32 AM',
-        date: 'Today',
-        isSent: false,
-        status: 'read'
-    },
-    {
-        id: '4',
-        text: 'I\'m building a chat interface similar to Telegram. It\'s coming along nicely! 🚀',
-        timestamp: '10:33 AM',
-        date: 'Today',
-        isSent: true,
-        status: 'delivered'
-    },
-]
-
 const GREETING_STICKER = {
     id: 'wave',
     url: 'https://media.tenor.com/RT_oYjFjo0MAAAAi/utya-utya-duck.gif',
     value: '👋'
 };
-
-const QuickSticker: React.FC<{
-    sticker: typeof GREETING_STICKER,
-    onPress: () => void,
-    theme: any
-}> = React.memo(({ sticker, onPress, theme }) => {
-    return (
-        <Pressable
-            style={[styles.stickerButton]}
-            onPress={onPress}
-        >
-            <Image
-                source={{ uri: sticker.url }}
-                style={styles.stickerImage}
-                contentFit="contain"
-                transition={200}
-            />
-        </Pressable>
-    )
-})
 
 interface ParticleEffect {
     id: string;
@@ -280,66 +226,13 @@ const MessageBubble: React.FC<{
     );
 });
 
-const TimestampDivider = React.memo(({ timestamp, theme }: { timestamp: string, theme: any }) => {
-    return (
-        <View style={styles.timestampDividerContainer}>
-            <View style={[styles.timestampDividerLine, { backgroundColor: theme.textColor + '20' }]} />
-            <View style={[styles.timestampDividerBadge, { backgroundColor: theme.cardBackground }]}>
-                <Text style={[styles.timestampDividerText, { color: theme.textColor + '80' }]}>
-                    {timestamp}
-                </Text>
-            </View>
-            <View style={[styles.timestampDividerLine, { backgroundColor: theme.textColor + '20' }]} />
-        </View>
-    )
-})
-
-const TypingIndicator = React.memo(({ theme }: { theme: any }) => {
-    const dots = [useSharedValue(0), useSharedValue(0), useSharedValue(0)];
-
-    React.useEffect(() => {
-        dots.forEach((dot, index) => {
-            dot.value = withRepeat(
-                withSequence(
-                    withDelay(
-                        index * 200,
-                        withTiming(1, { duration: 400 })
-                    ),
-                    withTiming(0, { duration: 400 })
-                ),
-                -1
-            );
-        });
-    }, []);
-
-    return (
-        <View style={styles.typingContainer}>
-            {dots.map((dot, index) => (
-                <Animated.View
-                    key={index}
-                    style={[
-                        styles.typingDot,
-                        { backgroundColor: theme.textColor },
-                        useAnimatedStyle(() => ({
-                            transform: [{ scale: dot.value }],
-                            opacity: dot.value
-                        }))
-                    ]}
-                />
-            ))}
-        </View>
-    );
-});
-
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
-// Calculate keyboard height based on device
 const KEYBOARD_HEIGHT = Platform.select({
     ios: SCREEN_HEIGHT * 0.4, // 40% of screen height for iOS
     android: 300, // Fixed height for Android
     default: 300
 })
-
 
 const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenProps) => {
     const { user } = route.params
@@ -348,7 +241,6 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
     const [message, setMessage] = useState('')
     const listRef = useRef<FlashList<Message>>(null)
     const [messages, setMessages] = useState<Message[]>([])
-    const [particleEffects, setParticleEffects] = useState<ParticleEffect[]>([])
     const [menuState, setMenuState] = useState<MenuState>({
         isVisible: false,
         x: 0,
@@ -399,30 +291,11 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
         const selectedMessage = messages.find(msg => msg.id === menuState.messageId);
 
         if (selectedMessage) {
-            // Add particle effect immediately
-            const effectId = Date.now().toString();
-            const effectX = selectedMessage.isSent ?
-                menuState.x - menuState.messageWidth / 2 :
-                menuState.x + menuState.messageWidth / 2;
-
-            setParticleEffects(prev => [...prev, {
-                id: effectId,
-                x: Math.round(effectX),
-                y: Math.round(menuState.y),
-                color: theme.primary,
-                width: Math.round(menuState.messageWidth),
-                height: Math.round(menuState.messageHeight),
-            }]);
-
-            // Close menu and remove message immediately
             handleCloseMenu();
             setMessages(prev => prev.filter(msg => msg.id !== menuState.messageId));
         }
     }, [menuState, theme.primary, messages, handleCloseMenu]);
 
-    const handleParticleComplete = useCallback((effectId: string) => {
-        setParticleEffects(prev => prev.filter(effect => effect.id !== effectId))
-    }, [])
 
     const renderItem = useCallback(({ item }: { item: Message }) => (
         <MessageBubble
@@ -558,19 +431,6 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
         </View>
     ), [theme, handleCloseQuickStickers]);
 
-    const handleOpenStickerPicker = useCallback(() => {
-        // Dismiss keyboard first
-        Keyboard.dismiss();
-
-        setShowStickerPicker(true);
-        stickerPickerHeight.value = withTiming(1, {
-            duration: 250,
-        });
-        iconRotation.value = withSpring(1, {
-            damping: 15,
-            stiffness: 200
-        });
-    }, []);
 
     const handleSelectSticker = useCallback((sticker: { id: string, url: string }) => {
         const newMessage: Message = {
@@ -587,12 +447,6 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
         setTimeout(() => scrollToBottom(), 100);
     }, [scrollToBottom]);
 
-    const stickerPickerStyle = useAnimatedStyle(() => ({
-        height: stickerPickerHeight.value,
-        transform: [
-            { translateY: interpolate(stickerPickerHeight.value, [0, 300], [300, 0]) }
-        ]
-    }));
 
     const iconStyle = useAnimatedStyle(() => {
         return {
@@ -601,35 +455,51 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
                     rotateZ: `${interpolate(
                         iconRotation.value,
                         [0, 1],
-                        [0, 180]
+                        [0, 180],
+                        Extrapolate.CLAMP
                     )}deg`
                 }
-            ]
+            ],
+            opacity: interpolate(
+                iconRotation.value,
+                [0, 0.5, 1],
+                [1, 0.8, 1],
+                Extrapolate.CLAMP
+            )
         };
     });
 
     const handleToggleStickerKeyboard = useCallback(() => {
+        const config = {
+            duration: 300,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        };
+
         if (showStickerPicker) {
-            // ปิด sticker picker และเปิด keyboard ทันที
-            // setShowStickerPicker(false);
-            // stickerPickerHeight.value = 0;
-            // iconRotation.value = withTiming(0, {
-            //     duration: 200,
-            //     easing: Easing.bezier(0.4, 0.0, 0.2, 1)
-            // });
-            // เปิด keyboard ทันที
+            // ปิด sticker picker โดยไม่ต้องรอ animation จบ
+            setShowStickerPicker(false);
+            
+            // ทำ animation พร้อมกัน
+            stickerPickerHeight.value = withTiming(0, config);
+            iconRotation.value = withTiming(0, config);
+            
+            // เปิด keyboard ทันทีเพื่อให้ transition ลื่นไหล
             inputRef.current?.focus();
         } else {
-            // ปิด keyboard
+            // ปิด keyboard และเปิด sticker picker พร้อมกัน
             Keyboard.dismiss();
-            // เปิด sticker picker ด้วย animation
             setShowStickerPicker(true);
-            stickerPickerHeight.value = withTiming(1, {
-                duration: 250,
+            
+            // ทำ animation พร้อมกันทันที
+            stickerPickerHeight.value = withSpring(1, {
+                damping: 20,
+                stiffness: 150,
+                mass: 1
             });
-            iconRotation.value = withTiming(1, {
-                duration: 200,
-                easing: Easing.bezier(0.4, 0.0, 0.2, 1)
+            
+            iconRotation.value = withSpring(1, {
+                damping: 20,
+                stiffness: 150 
             });
         }
     }, [showStickerPicker]);
@@ -679,14 +549,14 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
                     </Pressable>
 
                     <View style={styles.actionButtons}>
-                        <Pressable 
-                            style={[styles.iconButton, { backgroundColor: theme.cardBackground + '20' }]} 
+                        <Pressable
+                            style={[styles.iconButton, { backgroundColor: theme.cardBackground + '20' }]}
                             onPress={() => navigation.navigate('call_screen', { user, type: 'voice' })}
                         >
                             <Ionicons name="call" size={22} color={theme.textColor} />
                         </Pressable>
-                        <Pressable 
-                            style={[styles.iconButton, { backgroundColor: theme.cardBackground + '20' }]} 
+                        <Pressable
+                            style={[styles.iconButton, { backgroundColor: theme.cardBackground + '20' }]}
                             onPress={() => navigation.navigate('call_screen', { user, type: 'video' })}
                         >
                             <Ionicons name="videocam" size={22} color={theme.textColor} />
@@ -714,11 +584,12 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
                         ListEmptyComponent={() => (
                             <EmptyMessageComponent theme={theme} avatar={user.avatar} username={user.name} />
                         )}
+                        
                     />
                 </View>
 
                 {/* Particle Effects */}
-                {particleEffects.map(effect => (
+                {/* {particleEffects.map(effect => (
                     <ParticleExplosion
                         key={effect.id}
                         x={effect.x}
@@ -728,7 +599,7 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
                         height={effect.height}
                         onComplete={() => handleParticleComplete(effect.id)}
                     />
-                ))}
+                ))} */}
 
                 {/* Message Options Menu */}
                 <MessageOptionsMenu
@@ -779,7 +650,7 @@ const ChatConversationScreen = ({ route, navigation }: ChatConversationScreenPro
                         ]}
                     >
                         <Pressable
-                            style={[styles.moreStickerButton, { backgroundColor: theme.cardBackground ,  }]}
+                            style={[styles.moreStickerButton, { backgroundColor: theme.cardBackground, }]}
                             onPress={handleToggleStickerKeyboard}
                         >
                             <Animated.View style={iconStyle}>
@@ -914,7 +785,7 @@ const styles = StyleSheet.create({
     messageText: {
         fontSize: 14,
         lineHeight: 20,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     messageFooter: {
         flexDirection: 'row',
@@ -925,7 +796,7 @@ const styles = StyleSheet.create({
     timestamp: {
         fontSize: 10,
         marginRight: 4,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     statusIcon: {
         marginLeft: 2,
@@ -954,7 +825,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         maxHeight: 100,
         paddingVertical: 8,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     attachButton: {
         padding: 4,
@@ -990,7 +861,7 @@ const styles = StyleSheet.create({
     },
     timestampDividerText: {
         fontSize: 10,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     typingContainer: {
         flexDirection: 'row',
@@ -1017,7 +888,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 16,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         textAlign: 'center',
     },
     messageOptionsMenu: {
@@ -1047,7 +918,7 @@ const styles = StyleSheet.create({
     },
     stickerButtonText: {
         fontSize: 12,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     stickerImage: {
         width: "100%",
@@ -1087,11 +958,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 8,
         borderRadius: 100,
-       
+
     },
     moreStickerText: {
         fontSize: 14,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     stickerPicker: {
         position: 'absolute',
@@ -1115,7 +986,7 @@ const styles = StyleSheet.create({
     stickerPickerTitle: {
         fontSize: 16,
         fontWeight: '600',
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     categoryTabs: {
         flexGrow: 0,
@@ -1134,7 +1005,7 @@ const styles = StyleSheet.create({
     },
     categoryText: {
         fontSize: 14,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     stickersGrid: {
         flex: 1,

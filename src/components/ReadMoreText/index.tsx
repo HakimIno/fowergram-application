@@ -94,7 +94,7 @@ const highlightHashTags = (text: string) => {
     return parts.map((part, index) => {
         if (part.startsWith('#')) {
             return (
-                <Text key={index} style={{ color: '#1a1a1a', fontFamily: 'LINESeedSansTH_A_Bd', }}>
+                <Text key={index} style={{ color: '#1a1a1a', fontFamily: 'SukhumvitSet_Bd', }}>
                     {part}
                 </Text>
             );

@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     bottomSheetTitle: {
         marginBottom: 15,
         fontSize: 20,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
     },
     bottomSheetContent: {
         width: "100%",
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     },
     btnText: {
         fontSize: 17,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         color: "white",
     },
     videoIconContainer: {

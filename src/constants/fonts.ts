@@ -1,10 +1,13 @@
 export const FORNTS = {
-    //TH
-    LINESeedSansTH_A_Bd: require("../assets/fonts/TH/LINESeedSansTH_A_Bd.ttf"),
-    LINESeedSansTH_A_He: require("../assets/fonts/TH/LINESeedSansTH_A_He.ttf"),
-    LINESeedSansTH_A_Rg: require("../assets/fonts/TH/LINESeedSansTH_A_Rg.ttf"),
-    LINESeedSansTH_A_Th: require("../assets/fonts/TH/LINESeedSansTH_A_Th.ttf"),
-    LINESeedSansTH_A_XBd: require("../assets/fonts/TH/LINESeedSansTH_A_XBd.ttf"),
+    //SukhumvitSet-Bold.ttf
+    SukhumvitSet_Bd: require("../assets/fonts/TH/SukhumvitSet-Bold.ttf"),
+    SukhumvitSet_SM_Bd: require("../assets/fonts/TH/SukhumvitSet-SemiBold.ttf"),
+    SukhumvitSet_Me: require("../assets/fonts/TH/SukhumvitSet-Medium.ttf"),
+    SukhumvitSet_Li: require("../assets/fonts/TH/SukhumvitSet-Light.ttf"),
+    SukhumvitSet_Text: require("../assets/fonts/TH/SukhumvitSet-Text.ttf"),
+    SukhumvitSet_Th: require("../assets/fonts/TH/SukhumvitSet-Thin.ttf"),
+
+
     Funnel_400Regular: require("../assets/fonts/EN/FunnelDisplay-Regular.ttf"),
     Funnel_700Bold: require("../assets/fonts/EN/FunnelDisplay-Bold.ttf"),
     Funnel_600SemiBold: require("../assets/fonts/EN/FunnelDisplay-SemiBold.ttf"),

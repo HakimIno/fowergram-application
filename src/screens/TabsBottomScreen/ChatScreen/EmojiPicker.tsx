@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     },
     tabText: {
         fontSize: 15,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         fontWeight: '500',
     },
     emojiGrid: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 8,
         fontSize: 15,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
     },
     gifGrid: {
         flex: 1,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     },
     stickerSetName: {
         fontSize: 13,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         paddingHorizontal: 16,
         marginBottom: 8,
     },

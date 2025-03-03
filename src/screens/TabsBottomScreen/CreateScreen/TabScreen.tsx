@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     durationText: {
         fontSize: 12,
         color: "white",
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     selectedPhotoContainer: {
         position: 'relative',

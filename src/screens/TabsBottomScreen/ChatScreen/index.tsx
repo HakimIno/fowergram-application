@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         marginLeft: 8,
-        fontFamily: 'LINESeedSansTH_A_Rg'
+        fontFamily: 'SukhumvitSet_Me'
     },
     listContainer: {
         paddingHorizontal: 16,
@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         flex: 1,
         marginRight: 8,
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     timestamp: {
         fontSize: 13,
-        fontFamily: 'LINESeedSansTH_A_Rg'
+        fontFamily: 'SukhumvitSet_Me'
     },
     chatPreview: {
         flexDirection: 'row',
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         flex: 1,
         marginRight: 8,
-        fontFamily: 'LINESeedSansTH_A_Rg'
+        fontFamily: 'SukhumvitSet_Me'
     },
     typingText: {
         fontSize: 15,

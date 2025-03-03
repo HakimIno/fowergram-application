@@ -226,17 +226,12 @@ const TabContent = memo(({ posts }: TabContentProps) => {
                 } else if (position === 1 || position === 2) {
                     layout.span = 1;
                     layout.size = baseSize;
-                    layout.offset = baseSize * 2;
                 } else if (position >= 3 && position <= 6) {
                     layout.span = 1;
                     layout.size = baseSize;
-                    const row = Math.floor((position - 3) / 3);
-                    const col = (position - 3) % 3;
-                    layout.offset = col * baseSize;
                 } else if (position === 7) {
                     layout.span = 1;
                     layout.size = baseSize * 2;
-                    layout.offset = isTallImageOnRight ? baseSize * 2 : 0;
                 }
             }}
         />

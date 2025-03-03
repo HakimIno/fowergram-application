@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
         color: '#666',
         fontSize: 14,
-        fontFamily: 'LINESeedSansTH_A_Rg'
+        fontFamily: 'SukhumvitSet_Me'
     },
     closeButton: {
         position: 'absolute',
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     counterText: {
         fontSize: 12,
         color: 'white',
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     bottomSheetHeader: {
         paddingHorizontal: 20,
@@ -399,12 +399,12 @@ const styles = StyleSheet.create({
     },
     profileName: {
         fontSize: 15,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         color: '#242424'
     },
     dateText: {
         fontSize: 12,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         color: '#6b7280'
     },
     followButton: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     followButtonText: {
         fontSize: 14,
         color: 'white',
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     zoomIndicator: {
         position: 'absolute',
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     zoomText: {
         color: 'white',
         fontSize: 12,
-        fontFamily: 'LINESeedSansTH_A_Rg'
+        fontFamily: 'SukhumvitSet_Me'
     }
 })
 

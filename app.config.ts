@@ -6,9 +6,9 @@ const IS_PROD = APP_VARIANT === 'production';
 
 const getAppName = () => {
     const variant = process.env.APP_VARIANT;
-    if (variant === 'development') return '(Dev) Janjao';
-    if (variant === 'production') return 'Janjao';
-    return 'Janjao';
+    if (variant === 'development') return '(Dev) flowergram';
+    if (variant === 'production') return 'flowergram';
+    return 'flowergram';
 };
 
 const getBundleId = () => {
@@ -28,9 +28,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     userInterfaceStyle: 'light',
 
     splash: {
-        image: './assets/splash.png',
+        image: './assets/icon.png',
         resizeMode: 'contain',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#5271ff',
     },
 
     assetBundlePatterns: ['**/*'],
@@ -48,8 +48,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
     android: {
         adaptiveIcon: {
-            foregroundImage: './assets/adaptive-icon.png',
-            backgroundColor: '#ffffff',
+            foregroundImage: './assets/icon.png',
+            backgroundColor: '#5271ff',
         },
         package: getBundleId(),
         permissions: [
@@ -115,5 +115,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     owner: 'kimsnow33',
     runtimeVersion: {
         policy: "nativeVersion"
-    }
+    },
+
 });

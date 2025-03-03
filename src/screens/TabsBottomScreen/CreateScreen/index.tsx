@@ -17,7 +17,7 @@ import { RootState } from 'src/redux-store'
 
 const { width, height } = Dimensions.get("window")
 
-export type CreateNavigationProp = StackNavigationProp<RootStackParamList, "create_screen">
+export type CreateNavigationProp = StackNavigationProp<RootStackParamList>
 
 interface AlbumInfo {
     title: string
@@ -200,6 +200,12 @@ const CreateScreen: React.FC<{ navigation: CreateNavigationProp }> = ({ navigati
                         </Animated.View>
                     </Pressable>
                     <View>
+                        <Pressable
+                            onPress={() => navigation.navigate('edit_screen')}
+                            style={styles.nextContainer}
+                        >
+                            <Text style={styles.nextText}>Edit</Text>
+                        </Pressable>
                         {selectedPhotos.length > 0 && (
                             <Pressable
                                 onPress={handleNavigateToPreview}
@@ -328,7 +334,7 @@ const styles = StyleSheet.create({
     },
     nextText: {
         fontSize: 13,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         color: 'white',
     },
     countBadge: {
@@ -344,7 +350,7 @@ const styles = StyleSheet.create({
     },
     countText: {
         fontSize: 8,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         color: 'white',
     },
     image: {
@@ -354,7 +360,7 @@ const styles = StyleSheet.create({
     },
     textHeaderTitle: {
         color: "white",
-        fontFamily: 'LINESeedSansTH_A_Bd'
+        fontFamily: 'SukhumvitSet_Bd'
     },
     contentContainer: {
         position: 'absolute',
@@ -390,7 +396,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly'
     },
     assetCountText: {
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         marginLeft: 5,
         color: "white",
         fontSize: 12

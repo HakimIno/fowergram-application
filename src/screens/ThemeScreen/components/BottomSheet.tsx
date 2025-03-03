@@ -178,13 +178,13 @@ const styles = StyleSheet.create({
     },
     textTitle: {
         fontSize: 22,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
         marginTop: 40,
         marginBottom: 14,
 
     },
     text: {
         fontSize: 16,
-        fontFamily: 'LINESeedSansTH_A_Rg'
+        fontFamily: 'SukhumvitSet_Me'
     },
 });

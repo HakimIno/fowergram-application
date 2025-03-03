@@ -1,21 +1,25 @@
 import { View, Text, StyleSheet, Pressable, Dimensions, Platform } from 'react-native'
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback, useEffect, useState } from 'react'
 import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
-import Animated, { interpolate, useAnimatedStyle, withSpring } from 'react-native-reanimated'
 import { FlashList } from '@shopify/flash-list'
+import Animated, {
+    interpolate,
+    useAnimatedStyle,
+    withTiming,
+    runOnJS,
+    Extrapolate
+} from 'react-native-reanimated'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 const STICKER_SIZE = (SCREEN_WIDTH - 32) / 4
-
-// Calculate keyboard height based on device
 const KEYBOARD_HEIGHT = Platform.select({
-    ios: SCREEN_HEIGHT * 0.4, // 40% of screen height for iOS
-    android: 300, // Fixed height for Android
+    ios: SCREEN_HEIGHT * 0.4,
+    android: 300,
     default: 300
 })
 
-// แยก data ออกมาเป็น constant
+// Categories and Stickers Data
 const STICKER_CATEGORIES = [
     {
         id: 'recent',
@@ -42,11 +46,6 @@ const STICKER_CATEGORIES = [
             { id: '18', url: 'https://media.tenor.com/kdfWfHvqvy0AAAAi/utya-utya-duck.gif' },
             { id: '19', url: 'https://media.tenor.com/icPog2Shcm4AAAAi/utya-telegram.gif' },
             { id: '20', url: 'https://media.tenor.com/-I-6w9klVyEAAAAi/utya-telegram.gif' },
-            { id: '21', url: 'https://media.tenor.com/YhNac8PQeJwAAAAi/utya-telegram.gif' },
-            { id: '22', url: 'https://media.tenor.com/YhNac8PQeJwAAAAi/utya-telegram.gif' },
-            { id: '23', url: 'https://media.tenor.com/YhNac8PQeJwAAAAi/utya-telegram.gif' },
-            { id: '24', url: 'https://media.tenor.com/YhNac8PQeJwAAAAi/utya-telegram.gif' },
-            { id: '25', url: 'https://media.tenor.com/YhNac8PQeJwAAAAi/utya-telegram.gif' },
         ]
     },
 
@@ -55,81 +54,7 @@ const STICKER_CATEGORIES = [
 interface StickerType {
     id: string
     url: string
-    value?: string
 }
-
-interface CategoryTabProps {
-    id: string
-    name: string
-    icon: string
-    isSelected: boolean
-    theme: any
-    onPress: () => void
-}
-
-// แยก CategoryTab ออกมาเป็น Component แยก
-const CategoryTab: React.FC<CategoryTabProps> = React.memo(({
-    id,
-    name,
-    icon,
-    isSelected,
-    theme,
-    onPress
-}) => (
-    <Pressable
-        style={({ pressed }) => [
-            styles.categoryTab,
-            isSelected && [
-                styles.selectedCategoryTab,
-                { backgroundColor: theme.primary + '20' }
-            ],
-            pressed && { opacity: 0.7 }
-        ]}
-        onPress={onPress}
-    >
-        <Ionicons
-            name={icon as any}
-            size={20}
-            color={isSelected ? theme.primary : theme.textColor}
-            style={styles.categoryIcon}
-        />
-        <Text style={[
-            styles.categoryText,
-            { color: isSelected ? theme.primary : theme.textColor }
-        ]}>
-            {name}
-        </Text>
-    </Pressable>
-))
-
-interface StickerItemProps {
-    item: StickerType
-    onPress: (sticker: StickerType) => void
-}
-
-// แยก StickerItem ออกมาเป็น Component แยก
-const StickerItem: React.FC<StickerItemProps> = React.memo(({ item, onPress }) => (
-    <Pressable
-        style={({ pressed }) => [
-            styles.stickerButton,
-            pressed && styles.stickerButtonPressed
-        ]}
-        onPress={() => onPress(item)}
-    >
-        <Image
-            source={{ uri: item.url }}
-            style={styles.stickerImage}
-            contentFit="contain"
-            transition={200}
-            cachePolicy="memory-disk"
-            recyclingKey={item.id}
-            placeholder={Platform.select({
-                ios: 'BLURHASH',
-                android: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4'
-            })}
-        />
-    </Pressable>
-))
 
 interface StickerPickerProps {
     isVisible: boolean
@@ -139,6 +64,149 @@ interface StickerPickerProps {
     onSelectSticker: (sticker: StickerType) => void
 }
 
+// Progressive Loading Sticker Item
+const ProgressiveStickerItem = React.memo(({
+    item,
+    onPress,
+    theme,
+    index
+}: {
+    item: StickerType
+    onPress: (sticker: StickerType) => void
+    theme: any
+    index: number
+}) => {
+    const [isLoading, setIsLoading] = useState(true)
+    const [hasError, setHasError] = useState(false)
+    const [shouldLoad, setShouldLoad] = useState(index < 8)
+
+    useEffect(() => {
+        if (index >= 8) {
+            const timer = setTimeout(() => {
+                setShouldLoad(true)
+            }, index * 100) // Stagger loading
+            return () => clearTimeout(timer)
+        }
+    }, [index])
+
+    const handlePress = useCallback(() => {
+        requestAnimationFrame(() => onPress(item))
+    }, [item, onPress])
+
+    if (hasError) {
+        return (
+            <View style={[styles.stickerButton, { backgroundColor: theme.cardBackground + '20' }]}>
+                <Ionicons name="alert-circle-outline" size={24} color={theme.textColor + '80'} />
+            </View>
+        )
+    }
+
+    return (
+        <Pressable
+            style={({ pressed }) => [
+                styles.stickerButton,
+                pressed && styles.stickerButtonPressed
+            ]}
+            onPress={handlePress}
+        >
+            {isLoading && (
+                <View style={[
+                    styles.placeholder,
+                    { backgroundColor: theme.cardBackground + '40' }
+                ]} />
+            )}
+            {shouldLoad && (
+                <Image
+                    source={{ uri: item.url }}
+                    style={styles.stickerImage}
+                    contentFit="contain"
+                    recyclingKey={item.id}
+                    cachePolicy="memory-disk"
+                    onLoadStart={() => setIsLoading(true)}
+                    onLoadEnd={() => setIsLoading(false)}
+                    onError={() => setHasError(true)}
+                    placeholder={Platform.select({
+                        ios: 'BLURHASH',
+                        android: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4'
+                    })}
+                    transition={150}
+                />
+            )}
+        </Pressable>
+    )
+})
+
+// Optimized Grid Component
+const StickersGrid = React.memo(({
+    stickers,
+    onSelectSticker,
+    theme
+}: {
+    stickers: StickerType[]
+    onSelectSticker: (sticker: StickerType) => void
+    theme: any
+}) => {
+    // Preload images
+    useEffect(() => {
+        const preloadImages = stickers.slice(0, 12).map(sticker =>
+            Image.prefetch(sticker.url)
+        )
+        Promise.all(preloadImages)
+    }, [stickers])
+
+    const renderSticker = useCallback(({ item, index }: { item: StickerType, index: number }) => (
+        <ProgressiveStickerItem
+            item={item}
+            onPress={onSelectSticker}
+            theme={theme}
+            index={index}
+        />
+    ), [onSelectSticker, theme])
+
+    return (
+        <FlashList
+            keyExtractor={item => item.id}
+            data={stickers}
+            renderItem={renderSticker}
+            numColumns={4}
+            estimatedItemSize={STICKER_SIZE}
+            removeClippedSubviews={true}
+            estimatedFirstItemOffset={0}
+            drawDistance={STICKER_SIZE * 4}
+            overrideItemLayout={(layout, item) => {
+                layout.size = STICKER_SIZE
+            }}
+            contentContainerStyle={styles.stickersGridContent}
+            showsVerticalScrollIndicator={false}
+        />
+    )
+})
+
+// Header Component
+const StickerPickerHeader = React.memo(({
+    theme,
+    onClose
+}: {
+    theme: any
+    onClose: () => void
+}) => (
+    <View style={[styles.header, { borderBottomColor: theme.textColor + '20' }]}>
+        <Text style={[styles.title, { color: theme.textColor }]}>
+            สติกเกอร์
+        </Text>
+        <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [
+                styles.closeButton,
+                pressed && { opacity: 0.7 }
+            ]}
+        >
+            <Ionicons name="close" size={24} color={theme.textColor} />
+        </Pressable>
+    </View>
+))
+
+// Main StickerPicker Component
 const StickerPicker: React.FC<StickerPickerProps> = ({
     isVisible,
     height,
@@ -146,85 +214,50 @@ const StickerPicker: React.FC<StickerPickerProps> = ({
     onClose,
     onSelectSticker
 }) => {
-    const [selectedCategory, setSelectedCategory] = React.useState(STICKER_CATEGORIES[0].id)
-
-    // ใช้ useMemo เพื่อ cache stickers ของ category ที่เลือก
     const selectedStickers = useMemo(() =>
-        STICKER_CATEGORIES.find(c => c.id === selectedCategory)?.stickers || [],
-        [selectedCategory]
+        STICKER_CATEGORIES[0].stickers,
+        []
     )
 
-    const animatedStyle = useAnimatedStyle(() => ({
-        height: interpolate(
-            height.value,
-            [0, 1],
-            [0, KEYBOARD_HEIGHT]
-        ),
-        transform: [
-            {
+    const handleClose = useCallback(() => {
+        height.value = withTiming(0, {
+            duration: 250,
+        }, () => {
+            runOnJS(onClose)()
+        })
+    }, [onClose, height])
+
+    // Animated container style
+    const animatedStyle = useAnimatedStyle(() => {
+        'worklet'
+        return {
+            transform: [{
                 translateY: interpolate(
                     height.value,
                     [0, 1],
-                    [KEYBOARD_HEIGHT, 0]
+                    [KEYBOARD_HEIGHT, 0],
+                    Extrapolate.CLAMP
                 )
-            }
-        ],
-        opacity: height.value
-    }))
+            }],
+            opacity: height.value
+        }
+    }, [])
 
-    // ใช้ useCallback เพื่อ memoize render item function
-    const renderSticker = React.useCallback(({ item }: { item: StickerType }) => (
-        <StickerItem item={item} onPress={onSelectSticker} />
-    ), [onSelectSticker])
+    const containerStyle = useMemo(() => [
+        styles.container,
+        { backgroundColor: theme.backgroundColor },
+        animatedStyle
+    ], [theme.backgroundColor, animatedStyle])
 
     if (!isVisible) return null
 
     return (
-        <Animated.View style={[styles.container, animatedStyle, { backgroundColor: theme.backgroundColor }]}>
-            <View style={[styles.header, { borderBottomColor: theme.textColor + '20' }]}>
-                <Text style={[styles.title, { color: theme.textColor }]}>สติกเกอร์</Text>
-                <Pressable
-                    onPress={onClose}
-                    style={({ pressed }) => [
-                        styles.closeButton,
-                        { opacity: pressed ? 0.7 : 1 }
-                    ]}
-                >
-                    <Ionicons name="close" size={24} color={theme.textColor} />
-                </Pressable>
-            </View>
-
-            {/* <FlashList
-                data={STICKER_CATEGORIES}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                estimatedItemSize={100}
-                renderItem={({ item }) => (
-                    <CategoryTab
-                        id={item.id}
-                        name={item.name}
-                        icon={item.icon}
-                        isSelected={selectedCategory === item.id}
-                        theme={theme}
-                        onPress={() => setSelectedCategory(item.id)}
-                    />
-                )}
-                contentContainerStyle={styles.categoryTabsContent}
-                style={styles.categoryTabs}
-            /> */}
-
-            <FlashList
-                keyExtractor={item => item.id}
-                data={selectedStickers}
-                renderItem={renderSticker}
-                numColumns={4}
-                estimatedItemSize={STICKER_SIZE}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.stickersGridContent}
-                style={styles.stickersGrid}
-                removeClippedSubviews={true}
-                estimatedFirstItemOffset={0}
-                drawDistance={STICKER_SIZE * 8}
+        <Animated.View style={containerStyle}>
+            <StickerPickerHeader theme={theme} onClose={handleClose} />
+            <StickersGrid
+                stickers={selectedStickers}
+                onSelectSticker={onSelectSticker}
+                theme={theme}
             />
         </Animated.View>
     )
@@ -238,20 +271,29 @@ const styles = StyleSheet.create({
         right: 0,
         overflow: 'hidden',
         zIndex: 1,
-        height: KEYBOARD_HEIGHT, // Set default height
+        height: KEYBOARD_HEIGHT,
+        ...Platform.select({
+            android: {
+                elevation: 0,
+                overflow: 'hidden'
+            },
+            ios: {
+                shadowColor: 'transparent'
+            }
+        })
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 12,
-        paddingVertical: 4,
+        paddingVertical: 8,
         borderBottomWidth: 0.5,
     },
     title: {
         fontSize: 16,
         fontWeight: '600',
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
     },
     closeButton: {
         width: 32,
@@ -260,47 +302,25 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    categoryTabs: {
-        flexGrow: 0,
-        marginVertical: 4, // Reduced vertical margin
-        height: 45, // Slightly reduced height
-    },
-    categoryTabsContent: {
-        paddingHorizontal: 12,
-        gap: 8,
-    },
-    categoryTab: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        gap: 6,
-    },
-    categoryIcon: {
-        opacity: 0.9,
-    },
-    selectedCategoryTab: {
-        backgroundColor: 'transparent',
-    },
-    categoryText: {
-        fontSize: 14,
-        fontFamily: 'LINESeedSansTH_A_Rg',
-    },
-    stickersGrid: {
-        flex: 1,
-        marginTop: 4, // Add small margin top
-    },
     stickersGridContent: {
-        padding: 4, // Reduced padding
-        gap: 2, // Reduced gap
+        padding: 4,
+        gap: 2,
     },
     stickerButton: {
         width: STICKER_SIZE,
         aspectRatio: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 2, // Reduced padding
+        padding: 2,
+        ...Platform.select({
+            android: {
+                elevation: 0,
+                overflow: 'hidden'
+            },
+            ios: {
+                shadowColor: 'transparent'
+            }
+        })
     },
     stickerButtonPressed: {
         transform: [{ scale: 0.95 }],
@@ -309,7 +329,15 @@ const styles = StyleSheet.create({
     stickerImage: {
         width: '100%',
         height: '100%',
+        backfaceVisibility: 'hidden',
+        transform: [{ perspective: 1000 }]
     },
+    placeholder: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        borderRadius: 8,
+    }
 })
 
-export default React.memo(StickerPicker)
+export default StickerPicker

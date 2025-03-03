@@ -86,12 +86,12 @@ const styles = StyleSheet.create({
     followButtonText: {
         color: 'white',
         fontSize: 15,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
     },
     messageButtonText: {
         color: '#1a1a1a',
         fontSize: 15,
-        fontFamily: 'LINESeedSansTH_A_Bd',
+        fontFamily: 'SukhumvitSet_Bd',
     },
     buttonPressed: {
         opacity: 0.7,

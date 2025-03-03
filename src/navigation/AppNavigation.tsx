@@ -22,7 +22,7 @@ const AppNavigation = () => {
             headerTitleAlign: 'center',
             headerTitleStyle: {
                 fontSize: 18,
-                fontFamily: 'LINESeedSansTH_A_Bd',
+                fontFamily: 'SukhumvitSet_Bd',
             },
             headerStyle: {
                 backgroundColor: '#f2f2f2',
@@ -107,6 +107,16 @@ const AppNavigation = () => {
                             animation: "slide_from_right"
                         }}
                     />
+
+                    {/* <AppStack.Screen
+                        name="edit_screen"
+                        component={EditScreen}
+                        options={{
+                            headerShown: false,
+                            presentation: "card",
+                            animation: "fade"
+                        }}
+                    /> */}
 
                     <AppStack.Screen
                         name="chat_conversation"

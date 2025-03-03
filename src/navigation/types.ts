@@ -9,8 +9,8 @@ export type RootStackParamList = {
     profile_details_screen: { image: string, username: string };
     image_profile_screen: { image: string, username: string }
     gallery_screen: { index: number, feed: any }
-    create_screen: undefined,
-    camera_screen: undefined,
+    create_screen: undefined;
+    camera_screen: undefined;
     preview_screen: {
         selectedMedia: {
             uri: string;
@@ -19,6 +19,7 @@ export type RootStackParamList = {
             height?: number;
         };
     };
+    edit_screen: undefined;
     chat_conversation: {
         user: {
             id: string;
@@ -36,13 +37,11 @@ export type RootStackParamList = {
         };
         type: 'voice' | 'video';
     };
-    //Auth
-    authenticated: undefined
-    login_screen: undefined
+    login_screen: undefined;
 };
 
 export type BottomBarParamList = {
-    bottom_bar_home: undefined;
+    bottom_bar_home: { refresh?: number } | undefined;
     bottom_bar_search: undefined;
     bottom_bar_create: undefined;
     bottom_bar_message: undefined;
@@ -61,3 +60,18 @@ export type BottomBarParamList = {
     //Auth
     login_screen: undefined
 };
+
+export interface AnimatedIconProps {
+    focused: boolean;
+    icon: string;
+    isDarkMode: boolean;
+    size?: number;
+}
+
+export interface ThemeContextType {
+    isDarkMode: boolean;
+    theme: {
+        backgroundColor: string;
+        // ... add other theme properties as needed
+    };
+}

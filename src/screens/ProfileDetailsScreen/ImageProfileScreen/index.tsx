@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     },
     textCard: {
         fontSize: 12,
-        fontFamily: 'LINESeedSansTH_A_Rg',
+        fontFamily: 'SukhumvitSet_Me',
         textAlign: 'center',
     },
     icon: {
