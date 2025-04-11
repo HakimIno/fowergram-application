@@ -1,5 +1,5 @@
 import { Dimensions, ListRenderItemInfo, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
@@ -14,10 +14,12 @@ import AnimatedText from 'src/components/AnimatedText'
 import TabScreen from './TabScreen'
 import { useSelector } from 'react-redux'
 import { RootState } from 'src/redux-store'
+import { useRoute, RouteProp } from '@react-navigation/native'
 
 const { width, height } = Dimensions.get("window")
 
 export type CreateNavigationProp = StackNavigationProp<RootStackParamList>
+type CreateScreenRouteProp = RouteProp<RootStackParamList, 'create_screen'>
 
 interface AlbumInfo {
     title: string
@@ -110,17 +112,26 @@ const RenderItem: React.FC<RenderItemProps> = ({ item, index, handelSelectAlbums
 
 const CreateScreen: React.FC<{ navigation: CreateNavigationProp }> = ({ navigation }) => {
     const insets = useSafeAreaInsets()
+    const route = useRoute<CreateScreenRouteProp>()
     const listRef = useAnimatedRef<View>()
     const heightValue = useSharedValue(0)
     const open = useSharedValue(false)
     const progress = useDerivedValue(() =>
         open.value ? withTiming(1) : withTiming(0)
     )
+    const [editedImage, setEditedImage] = useState<string | null>(null)
 
     const { loading, loadMore, photos, videos, allFiles, albumsInfo, loadPhotos, selectAlbums, handelSelectAlbums } = useCreateScreen()
     const selectedPhotos = useSelector((state: RootState) => state.medias.selectedPhotos)
 
-
+    // Check for edited image from route params
+    useEffect(() => {
+        if (route.params?.editedImageUri) {
+            setEditedImage(route.params.editedImageUri)
+            // Clear the parameter to prevent reprocessing on navigation events
+            navigation.setParams({ editedImageUri: undefined })
+        }
+    }, [route.params?.editedImageUri])
 
     const heightAnimationStyle = useAnimatedStyle(() => ({
         height: heightValue.value,
@@ -157,22 +168,42 @@ const CreateScreen: React.FC<{ navigation: CreateNavigationProp }> = ({ navigati
     };
 
     const handleNavigateToPreview = () => {
+        if (editedImage) {
+            // If we have an edited image, use it directly
+            const selectedMedia = {
+                uri: editedImage,
+                type: 'image' as const,
+                width: 0, // These will be determined by the image itself
+                height: 0
+            };
+            
+            navigation.navigate("preview_screen", {
+                selectedMedia
+            });
+            return;
+        }
+        
         if (selectedPhotos.length > 0) {
             const mediaType = selectedPhotos[0].mediaType;
             if (!isValidMediaType(mediaType)) {
-                return; // หรือจัดการ error ตามที่ต้องการ
+                return; // Or handle error as needed
             }
 
-            const selectedMedia = {
+            const selectedMedia: {
+                uri: string;
+                type: 'video' | 'image';
+                width: number;
+                height: number;
+            } = {
                 uri: selectedPhotos[0].uri,
-                type: mediaType,
+                type: mediaType === 'photo' ? 'image' : 'video',
                 width: selectedPhotos[0].width,
                 height: selectedPhotos[0].height
             };
 
-            // navigation.navigate("preview_screen", {
-            //     selectedMedia
-            // });
+            navigation.navigate("preview_screen", {
+                selectedMedia
+            });
         }
     };
 
@@ -200,13 +231,7 @@ const CreateScreen: React.FC<{ navigation: CreateNavigationProp }> = ({ navigati
                         </Animated.View>
                     </Pressable>
                     <View>
-                        <Pressable
-                            onPress={() => navigation.navigate('edit_screen')}
-                            style={styles.nextContainer}
-                        >
-                            <Text style={styles.nextText}>Edit</Text>
-                        </Pressable>
-                        {selectedPhotos.length > 0 && (
+                        {(selectedPhotos.length > 0 || editedImage) && (
                             <Pressable
                                 onPress={handleNavigateToPreview}
                                 style={styles.nextContainer}
@@ -214,14 +239,43 @@ const CreateScreen: React.FC<{ navigation: CreateNavigationProp }> = ({ navigati
                                 <Text style={styles.nextText}>Next</Text>
                                 <View style={styles.countBadge}>
                                     <Text style={styles.countText}>
-                                        {selectedPhotos.length}
+                                        {editedImage ? 1 : selectedPhotos.length}
                                     </Text>
                                 </View>
                             </Pressable>
-
                         )}
                     </View>
                 </View>
+
+                {/* Edited Image Preview (if available) */}
+                {editedImage && (
+                    <View style={styles.editedImageContainer}>
+                        <Image
+                            source={{ uri: editedImage }}
+                            style={styles.editedImage}
+                            contentFit="cover"
+                        />
+                        <Pressable 
+                            style={styles.editAgainButton}
+                            onPress={() => {
+                                navigation.navigate("edit_screen", {
+                                    selectedMedia: {
+                                        uri: editedImage,
+                                        type: 'image',
+                                    }
+                                });
+                            }}
+                        >
+                            <Text style={styles.editAgainText}>Edit Again</Text>
+                        </Pressable>
+                        <Pressable 
+                            style={styles.clearEditButton}
+                            onPress={() => setEditedImage(null)}
+                        >
+                            <Ionicons name="close-circle" size={24} color="white" />
+                        </Pressable>
+                    </View>
+                )}
 
                 {/* Dropdown */}
                 <Animated.View style={heightAnimationStyle}>
@@ -247,56 +301,58 @@ const CreateScreen: React.FC<{ navigation: CreateNavigationProp }> = ({ navigati
                     </Animated.View>
                 </Animated.View>
 
-                {/* Tab Navigator */}
-                <Tab.Navigator
-                    style={styles.tabNavigator}
-                    screenOptions={{
-                        tabBarStyle: styles.tabBar,
-                        tabBarIndicatorStyle: styles.tabIndicator,
-                        tabBarActiveTintColor: "white",
-                        tabBarShowLabel: false
-                    }}
-                >
-                    <Tab.Screen
-                        name="Alls"
-                        component={AllsTabScreen}
-                        options={{
-                            tabBarIcon: ({ color, focused }) => (
-                                <Ionicons
-                                    name={focused ? "images" : "images-outline"}
-                                    color={color}
-                                    size={24}
-                                />
-                            ),
+                {/* Tab Navigator - Hide when edited image is shown */}
+                {!editedImage && (
+                    <Tab.Navigator
+                        style={styles.tabNavigator}
+                        screenOptions={{
+                            tabBarStyle: styles.tabBar,
+                            tabBarIndicatorStyle: styles.tabIndicator,
+                            tabBarActiveTintColor: "white",
+                            tabBarShowLabel: false
                         }}
-                    />
-                    <Tab.Screen
-                        name="Photos"
-                        component={PhotosTabScreen}
-                        options={{
-                            tabBarIcon: ({ color, focused }) => (
-                                <Ionicons
-                                    name={focused ? "image" : "image-outline"}
-                                    color={color}
-                                    size={24}
-                                />
-                            ),
-                        }}
-                    />
-                    <Tab.Screen
-                        name="Videos"
-                        component={VideosTabScreen}
-                        options={{
-                            tabBarIcon: ({ color, focused }) => (
-                                <Ionicons
-                                    name={focused ? "videocam" : "videocam-outline"}
-                                    color={color}
-                                    size={24}
-                                />
-                            ),
-                        }}
-                    />
-                </Tab.Navigator>
+                    >
+                        <Tab.Screen
+                            name="Alls"
+                            component={AllsTabScreen}
+                            options={{
+                                tabBarIcon: ({ color, focused }) => (
+                                    <Ionicons
+                                        name={focused ? "images" : "images-outline"}
+                                        color={color}
+                                        size={24}
+                                    />
+                                ),
+                            }}
+                        />
+                        <Tab.Screen
+                            name="Photos"
+                            component={PhotosTabScreen}
+                            options={{
+                                tabBarIcon: ({ color, focused }) => (
+                                    <Ionicons
+                                        name={focused ? "image" : "image-outline"}
+                                        color={color}
+                                        size={24}
+                                    />
+                                ),
+                            }}
+                        />
+                        <Tab.Screen
+                            name="Videos"
+                            component={VideosTabScreen}
+                            options={{
+                                tabBarIcon: ({ color, focused }) => (
+                                    <Ionicons
+                                        name={focused ? "videocam" : "videocam-outline"}
+                                        color={color}
+                                        size={24}
+                                    />
+                                ),
+                            }}
+                        />
+                    </Tab.Navigator>
+                )}
 
                 {/* Camera Button */}
                 <Pressable
@@ -426,6 +482,38 @@ const styles = StyleSheet.create({
         padding: 5,
         borderRadius: 100,
         elevation: 10
+    },
+    editedImageContainer: {
+        width: '100%',
+        height: height * 0.6,
+        position: 'relative',
+        marginBottom: 10,
+    },
+    editedImage: {
+        width: '100%',
+        height: '100%',
+    },
+    editAgainButton: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+    },
+    editAgainText: {
+        color: 'white',
+        fontFamily: 'SukhumvitSet_Bd',
+        fontSize: 14,
+    },
+    clearEditButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 20,
+        padding: 5,
     }
 })
 

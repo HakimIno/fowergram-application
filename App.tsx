@@ -10,6 +10,7 @@ import { PottaOne_400Regular } from '@expo-google-fonts/potta-one'
 import { AuthProvider } from './src/contexts/auth.context'
 import store from './src/redux-store';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { Host } from 'react-native-portalize';
 
 import {
   QueryClient,
@@ -32,6 +33,11 @@ export default function App() {
     "Funnel_400Regular": FORNTS.Funnel_400Regular,
     "Funnel_600SemiBold": FORNTS.Funnel_600SemiBold,
     "Funnel_700Bold": FORNTS.Funnel_700Bold,
+
+    "Chirp_Bold": FORNTS.Chirp_Bold,
+    "Chirp_Heavy": FORNTS.Chirp_Heavy,
+    "Chirp_Medium": FORNTS.Chirp_Medium,
+    "Chirp_Regular": FORNTS.Chirp_Regular
     
   });
 
@@ -41,12 +47,14 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1, width: '100%', height: '100%' }}>
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
               <SafeAreaProvider>
-                <Navigation />
+                <Host>
+                  <Navigation />
+                </Host>
               </SafeAreaProvider>
             </AuthProvider>
           </QueryClientProvider>

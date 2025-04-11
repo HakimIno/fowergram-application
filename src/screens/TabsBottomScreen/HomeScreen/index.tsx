@@ -1,17 +1,16 @@
-import { StatusBar, Text, View, SafeAreaView, useWindowDimensions, Pressable, Platform, FlexAlignType, StyleSheet, RefreshControl, } from 'react-native'
+import { StatusBar, Text, View, SafeAreaView, useWindowDimensions, Pressable, Platform, FlexAlignType, StyleSheet, RefreshControl, NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialCommunityIcons, Octicons } from '@expo/vector-icons'
 import Svg, { Path, Circle, G } from 'react-native-svg'
-import Card from './components/Card'
+import { Card } from './components/Card'
 import { generateMockGridFeed } from 'src/data/mockFeedData'
 import BottomSheet, { BottomSheetMethods } from 'src/components/BottomSheet'
-import { useFocusEffect } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { BottomBarParamList } from 'src/navigation/types'
 import { FlashList } from '@shopify/flash-list'
 import Animated, {
-    useAnimatedRef,
+
     useAnimatedStyle,
     useDerivedValue,
     useSharedValue,
@@ -19,23 +18,19 @@ import Animated, {
     runOnUI,
     measure,
     withSpring,
-    interpolateColor,
-    withSequence,
-    Easing,
-    withRepeat,
-    withDelay
+    useAnimatedScrollHandler,
+
 } from 'react-native-reanimated'
 import AnimatedText from 'src/components/AnimatedText'
-import { useTheme, lightTheme, darkTheme } from 'src/context/ThemeContext'
+import { useTheme, } from 'src/context/ThemeContext'
 import type { Theme } from 'src/context/ThemeContext'
 import { Image } from 'expo-image'
-import LottieView from 'lottie-react-native'
 
 interface FeedInfo {
     id: string
     images: string[]
     title: string
-    likes: number
+    likes: string
     comments: number
     description: string
     isVideo: boolean
@@ -71,29 +66,6 @@ const headerStyles = {
 } as const;
 
 const SunIcon = ({ color }: { color: string }) => (
-    // <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    //     <Circle cx="12" cy="12" r="4" fill={color} />
-    //     <Circle cx="12" cy="12" r="3" fill={color} opacity="0.3" />
-
-    //     <Path d="M12 5V3" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    //     <Path d="M12 21V19" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    //     <Path d="M19 12H21" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    //     <Path d="M3 12H5" stroke={color} strokeWidth="2" strokeLinecap="round" />
-
-    //     <Path d="M17.657 6.343L18.95 5.05" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    //     <Path d="M5.05 18.95L6.343 17.657" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    //     <Path d="M18.95 18.95L17.657 17.657" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    //     <Path d="M5.05 5.05L6.343 6.343" stroke={color} strokeWidth="2" strokeLinecap="round" />
-
-    //     <Circle
-    //         cx="12"
-    //         cy="12"
-    //         r="6"
-    //         stroke={color}
-    //         strokeWidth="1.5"
-    //         strokeDasharray="1 2"
-    //     />
-    // </Svg>
     <Svg width="22" height="22" viewBox="0 0 24 24" fill={color}>
         <G>
             <Path fill="none" d="M0 0h24v24H0z" />
@@ -103,24 +75,6 @@ const SunIcon = ({ color }: { color: string }) => (
 );
 
 const MoonIcon = ({ color }: { color: string }) => (
-    // <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    //     <Path
-    //         d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.1546 15.0821 7.84277 10.7703 7.84277 5.44975C7.84277 3.99474 8.20599 2.62458 8.84643 1.42485C5.08506 2.42485 2.34277 5.85095 2.34277 9.91711C2.34277 14.9677 6.36277 19.0821 11.3427 19.0821C15.4089 19.0821 18.835 16.3398 19.835 12.5784C20.4693 13.1334 21.0161 13.5784 21.5 14.0784Z"
-    //         fill={color}
-    //         opacity="0.2"
-    //     />
-    //     <Path
-    //         d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.1546 15.0821 7.84277 10.7703 7.84277 5.44975C7.84277 3.99474 8.20599 2.62458 8.84643 1.42485C5.08506 2.42485 2.34277 5.85095 2.34277 9.91711C2.34277 14.9677 6.36277 19.0821 11.3427 19.0821C15.4089 19.0821 18.835 16.3398 19.835 12.5784"
-    //         stroke={color}
-    //         strokeWidth="2"
-    //         strokeLinecap="round"
-    //         strokeLinejoin="round"
-    //     />
-
-    //     <Circle cx="19.5" cy="4.5" r="1.5" fill={color} />
-    //     <Circle cx="15.5" cy="3.5" r="1" fill={color} opacity="0.6" />
-    //     <Circle cx="20.5" cy="8.5" r="0.5" fill={color} opacity="0.4" />
-    // </Svg>
     <Svg width="24" height="24" viewBox="0 0 24 24">
         <G>
             <Path fill="none" d="M0 0h24v24H0z" />
@@ -147,7 +101,7 @@ const Header = React.memo(({
     };
 
     return (
-        <View style={[styles.headerContainer, { backgroundColor: theme.backgroundColor, shadowColor: !isDarkMode ? '#000' : '#fff', borderColor: !isDarkMode ? '#000' : '#fff' }]}>
+        <View style={[styles.headerContainer, { backgroundColor: theme.backgroundColor }]}>
             <View style={[styles.subHeaderContainer, { marginTop: insets.top }]}>
                 <Pressable style={headerStyles.logoContainer}>
                     <Text style={[styles.logoText, { color: theme.textColor, zIndex: 1, marginBottom: 2, }]}>fl</Text>
@@ -190,106 +144,47 @@ const Header = React.memo(({
     );
 });
 
-// Add FlowerLoader component
-const FlowerLoader = ({ color = '#f43f5e', size = 40 }) => {
-    const rotation = useSharedValue(0);
-    const scale = useSharedValue(1);
-
-    React.useEffect(() => {
-        rotation.value = withRepeat(
-            withTiming(360, {
-                duration: 2000,
-                easing: Easing.linear,
-            }),
-            -1, // infinite
-            false
-        );
-
-        scale.value = withRepeat(
-            withSequence(
-                withTiming(1.2, {
-                    duration: 1000,
-                    easing: Easing.bezier(0.4, 0, 0.2, 1),
-                }),
-                withTiming(1, {
-                    duration: 1000,
-                    easing: Easing.bezier(0.4, 0, 0.2, 1),
-                })
-            ),
-            -1,
-            true
-        );
-    }, []);
-
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [
-                { rotate: `${rotation.value}deg` },
-                { scale: scale.value }
-            ],
-        };
-    });
-
+// แยก FeedItem ออกมาเป็น memoized component
+const FeedItem = React.memo(({
+    item,
+    index,
+    navigation
+}: {
+    item: FeedInfo;
+    index: number;
+    navigation: HomeNavigationProp
+}) => {
     return (
-        <Animated.View style={[{ width: size, height: size }, animatedStyle]}>
-            <Svg width={size} height={size} viewBox="0 0 24 24">
-                <G>
-                    <Path
-                        d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                        fill={color}
-                        transform="rotate(0, 12, 12)"
-                    />
-                    <Path
-                        d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                        fill={color}
-                        transform="rotate(72, 12, 12)"
-                    />
-                    <Path
-                        d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                        fill={color}
-                        transform="rotate(144, 12, 12)"
-                    />
-                    <Path
-                        d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                        fill={color}
-                        transform="rotate(216, 12, 12)"
-                    />
-                    <Path
-                        d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                        fill={color}
-                        transform="rotate(288, 12, 12)"
-                    />
-                    <Circle cx="12" cy="12" r="3" fill={color} />
-                </G>
-            </Svg>
-        </Animated.View>
-    );
-};
-
-// Add LottieRefreshControl component
-const LottieRefreshControl = React.memo(({ refreshing }: { refreshing: boolean }) => {
-    const lottieRef = useRef<LottieView>(null);
-
-    useEffect(() => {
-        if (refreshing) {
-            lottieRef.current?.play();
-        } else {
-            lottieRef.current?.reset();
-        }
-    }, [refreshing]);
-
-    return (
-        <View style={styles.lottieContainer}>
-            <LottieView
-                ref={lottieRef}
-                source={require('../../../assets/lottie/pull.json')}
-                style={styles.lottieStyle}
-                loop={true}
-                autoPlay={false}
-            />
-        </View>
+        <Card
+            navigation={navigation}
+            images={item.images}
+            caption={item.description}
+            title={item.title}
+            likes={item.likes}
+            onZoomStateChange={() => { }}
+            cardIndex={index}
+        />
     );
 });
+
+interface AnimatedHeaderProps extends HeaderProps {
+    style: any;
+}
+
+const AnimatedHeader = React.memo((props: AnimatedHeaderProps) => (
+    <Animated.View style={props.style}>
+        <Header
+            insets={props.insets}
+            onNotificationPress={props.onNotificationPress}
+            iconStyle={props.iconStyle}
+            handlePress={props.handlePress}
+            isDarkMode={props.isDarkMode}
+            onThemePress={props.onThemePress}
+            themeIconStyle={props.themeIconStyle}
+            theme={props.theme}
+        />
+    </Animated.View>
+));
 
 const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; route: any }) => {
     const insets = useSafeAreaInsets();
@@ -297,6 +192,8 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
     const [feed, setFeed] = useState<FeedInfo[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMoreData, setHasMoreData] = useState(true);
     const { isDarkMode, toggleTheme, theme, animatedValue } = useTheme();
 
     // Animated values
@@ -308,22 +205,66 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
     );
     const themeRotation = useSharedValue(0);
 
-    // Add header animation values
+    // Improved header animation values
     const scrollY = useSharedValue(0);
     const lastScrollY = useSharedValue(0);
+    const velocityY = useSharedValue(0);
     const headerTranslateY = useSharedValue(0);
+    const isScrollingUp = useSharedValue(false);
     const HEADER_HEIGHT = 60;
     const HIDE_HEADER_SCROLL_DISTANCE = HEADER_HEIGHT + insets.top;
+    const SCROLL_THRESHOLD = 5; // ลดลงเพื่อให้ตอบสนองเร็วขึ้น
+    const MIN_SCROLL_TO_HIDE = 50; // ต้องเลื่อนลงอย่างน้อยเท่านี้ถึงจะซ่อน header
 
-    // Header animation style
+    // Calculate header position based on scroll direction using derived value
+    const derivedHeaderTranslateY = useDerivedValue(() => {
+        // เช็คว่ายังอยู่ด้านบนสุดหรือไม่
+        if (scrollY.value <= 10) {
+            // ถ้าอยู่ด้านบนสุด ให้แสดง header เสมอ
+            return withSpring(0, {
+                damping: 15,
+                mass: 0.2,
+                stiffness: 150
+            });
+        }
+
+        // เลื่อนลงและเลยระยะที่กำหนด
+        if (!isScrollingUp.value && scrollY.value > MIN_SCROLL_TO_HIDE) {
+            return withSpring(-HIDE_HEADER_SCROLL_DISTANCE, {
+                damping: 30,
+                mass: 0.2,
+                stiffness: 350,
+                overshootClamping: true,
+            });
+        }
+
+        // เลื่อนขึ้น
+        if (isScrollingUp.value) {
+            return withSpring(0, {
+                damping: 20,
+                mass: 0.2,
+                stiffness: 200,
+            });
+        }
+
+        // ใช้ตำแหน่งปัจจุบัน
+        return headerTranslateY.value;
+    });
+
+    // Enhanced header animation style with improved timing and hardware acceleration
     const headerAnimatedStyle = useAnimatedStyle(() => {
         return {
-            transform: [{ translateY: headerTranslateY.value }],
+            transform: [
+                { translateY: derivedHeaderTranslateY.value },
+                { perspective: 1000 }, // Add perspective for hardware acceleration
+            ],
             position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             zIndex: 100,
+            backfaceVisibility: 'hidden', // Hardware acceleration
+            ...(Platform.OS === 'android' ? { elevation: 1 } : {}), // Hardware acceleration on Android
         };
     });
 
@@ -331,85 +272,6 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
     const refreshRotation = useSharedValue(0);
     const refreshScale = useSharedValue(1);
 
-    // Start refresh animation
-    const startRefreshAnimation = useCallback(() => {
-        refreshRotation.value = withRepeat(
-            withTiming(360, {
-                duration: 1000,
-                easing: Easing.linear,
-            }),
-            -1,
-            false
-        );
-
-        refreshScale.value = withRepeat(
-            withSequence(
-                withTiming(1.2, {
-                    duration: 500,
-                    easing: Easing.bezier(0.4, 0, 0.2, 1),
-                }),
-                withTiming(1, {
-                    duration: 500,
-                    easing: Easing.bezier(0.4, 0, 0.2, 1),
-                })
-            ),
-            -1,
-            true
-        );
-    }, []);
-
-    // Stop refresh animation
-    const stopRefreshAnimation = useCallback(() => {
-        refreshRotation.value = withTiming(0);
-        refreshScale.value = withTiming(1);
-    }, []);
-
-    // Custom refresh component
-    const CustomRefresh = useCallback(() => {
-        const animatedStyle = useAnimatedStyle(() => {
-            return {
-                transform: [
-                    { rotate: `${refreshRotation.value}deg` },
-                    { scale: refreshScale.value }
-                ],
-            };
-        });
-
-        return (
-            <Animated.View style={[{ padding: 10 }, animatedStyle]}>
-                <Svg width={30} height={30} viewBox="0 0 24 24">
-                    <G>
-                        <Path
-                            d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                            fill={theme.textColor}
-                            transform="rotate(0, 12, 12)"
-                        />
-                        <Path
-                            d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                            fill={theme.textColor}
-                            transform="rotate(72, 12, 12)"
-                        />
-                        <Path
-                            d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                            fill={theme.textColor}
-                            transform="rotate(144, 12, 12)"
-                        />
-                        <Path
-                            d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                            fill={theme.textColor}
-                            transform="rotate(216, 12, 12)"
-                        />
-                        <Path
-                            d="M12 8C8.13401 8 5 4.86599 5 1C5 0.447715 4.55228 0 4 0C3.44772 0 3 0.447715 3 1C3 5.97056 7.02944 10 12 10C16.9706 10 21 5.97056 21 1C21 0.447715 20.5523 0 20 0C19.4477 0 19 0.447715 19 1C19 4.86599 15.866 8 12 8Z"
-                            fill={theme.textColor}
-                            transform="rotate(288, 12, 12)"
-                        />
-                        <Circle cx="12" cy="12" r="3" fill={theme.textColor} />
-                    </G>
-                </Svg>
-            </Animated.View>
-        );
-    }, [theme.textColor, refreshRotation.value, refreshScale.value]);
 
     // Handle refresh
     const handleRefresh = useCallback(async () => {
@@ -417,9 +279,9 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
 
         setIsRefreshing(true);
         try {
-            const mockData = generateMockGridFeed(20);
+            const mockData = generateMockGridFeed(10);
             setFeed(mockData as unknown as FeedInfo[]);
-            await new Promise(resolve => setTimeout(resolve, 2000)); // เพิ่มเวลาให้เห็น animation ชัดๆ
+            await new Promise(resolve => setTimeout(resolve, 1500));
         } catch (error) {
             console.error('Error refreshing feed:', error);
         } finally {
@@ -427,41 +289,69 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
         }
     }, [isRefreshing]);
 
-    const handleScroll = useCallback((event: any) => {
-        'worklet';
+    // Add function to load more data
+    const handleLoadMore = useCallback(async () => {
+        if (isLoadingMore || !hasMoreData) return;
+
+        setIsLoadingMore(true);
+        try {
+            // Load only 5 more rows of data
+            const newData = generateMockGridFeed(5);
+            // Check if we've reached the end of data
+            if (newData.length === 0) {
+                setHasMoreData(false);
+                return;
+            }
+            setFeed(prev => [...prev, ...newData as unknown as FeedInfo[]]);
+        } catch (error) {
+            console.error('Error loading more data:', error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [isLoadingMore, hasMoreData]);
+
+    // Use more optimized animated scroll handler for smoother performance
+    const scrollHandler = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
 
-        // ใช้ withSpring เพื่อให้การเคลื่อนไหวนุ่มนวลขึ้น
-        if (currentScrollY > lastScrollY.value) {
-            // Scrolling down - hide header
-            headerTranslateY.value = withSpring(
-                Math.max(-HIDE_HEADER_SCROLL_DISTANCE, -currentScrollY),
-                {
-                    damping: 15,
-                    mass: 0.5,
-                    stiffness: 150,
-                    overshootClamping: true,
-                }
-            );
-        } else {
-            // Scrolling up - show header
-            headerTranslateY.value = withSpring(0, {
-                damping: 15,
-                mass: 0.5,
-                stiffness: 150,
-                overshootClamping: true,
-            });
+        // คำนวณทิศทางการเลื่อน (เลื่อนลง delta > 0, เลื่อนขึ้น delta < 0)
+        const delta = currentScrollY - lastScrollY.value;
+
+        // เก็บค่า velocity เฉพาะเมื่อเลื่อนระยะที่มากพอ เพื่อลดการตอบสนองต่อการเลื่อนเล็กๆ น้อยๆ
+        if (Math.abs(delta) > SCROLL_THRESHOLD) {
+            velocityY.value = delta;
+
+            // กำหนดทิศทางการเลื่อน
+            isScrollingUp.value = delta < 0;
+
+            // อัพเดทค่า header ทันทีตามทิศทาง (แบบ immediate) ทำให้การตอบสนองเร็วขึ้น
+            if (delta > SCROLL_THRESHOLD && currentScrollY > MIN_SCROLL_TO_HIDE) {
+                // เลื่อนลง และอยู่ต่ำกว่าระยะที่กำหนด
+                headerTranslateY.value = -HIDE_HEADER_SCROLL_DISTANCE;
+            } else if (delta < -SCROLL_THRESHOLD) {
+                // เลื่อนขึ้น
+                headerTranslateY.value = 0;
+            }
         }
 
+        // บันทึกค่าตำแหน่งปัจจุบัน
+        scrollY.value = currentScrollY;
         lastScrollY.value = currentScrollY;
     }, []);
 
-    // Initial load
+    const handleBeginDrag = useCallback(() => {
+        // Reset velocity when starting to drag
+        velocityY.value = 0;
+    }, []);
+
+    const handleEndDrag = useCallback(() => {
+        // ไม่ต้องกำหนดตำแหน่งอีกครั้งตอนปล่อยนิ้ว เพราะ derivedHeaderTranslateY จะจัดการให้
+    }, []);
+
     useEffect(() => {
         handleRefresh();
     }, []);
 
-    // Memoized styles
     const heightAnimationStyle = useAnimatedStyle(() => ({
         height: heightValue.value,
     }));
@@ -515,45 +405,89 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
 
     // Memoized handlers and components
     const renderItem = useCallback(({ item, index }: any) => (
-        <Card
+        <FeedItem
+            item={item}
+            index={index}
             navigation={navigation}
-            images={item.images}
-            title={item.title}
-            likes={item.likes}
-            onZoomStateChange={() => { }}
-            cardIndex={index}
-            key={`card-${item.id}-${index}`}
         />
     ), [navigation]);
 
     const keyExtractor = useCallback((item: FeedInfo, index: number) => `${item.id}-${index}`, []);
 
-    const ListEmptyComponent = useCallback(() => (
+    // Create memoized components
+    const MemoizedItemSeparator = React.memo(() => (
+        <View style={styles.separator} />
+    ));
+
+    const MemoizedEmptyComponent = React.memo(() => (
         <View style={styles.loadingContainer}>
             <AnimatedText text="Loading..." color="#000000" />
         </View>
-    ), []);
+    ));
 
-    const ItemSeparatorComponent = useCallback(() => (
-        <View style={styles.separator} />
-    ), []);
+    const MemoizedFooterComponent = useMemo(() =>
+        isLoadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+                <Text style={{ color: theme.textColor }}>Loading more...</Text>
+            </View>
+        ) : null
+        , [isLoadingMore, theme.textColor]);
+
+    // Memoize FlashList configuration to prevent re-renders
+    const flashListProps = useMemo(() => ({
+        data: feed,
+        keyExtractor,
+        renderItem,
+        estimatedItemSize: 400,
+        showsVerticalScrollIndicator: false,
+        ItemSeparatorComponent: MemoizedItemSeparator,
+        ListEmptyComponent: MemoizedEmptyComponent,
+        contentContainerStyle: {
+            ...styles.listContentContainer,
+            paddingTop: insets.top + (Platform.OS === 'ios' ? 0 : 60)
+        },
+        onScroll: scrollHandler,
+        onScrollBeginDrag: handleBeginDrag,
+        onScrollEndDrag: handleEndDrag,
+        scrollEventThrottle: 8,  // More frequent updates for smoother animation
+        onEndReached: handleLoadMore,
+        onEndReachedThreshold: 0.5,
+        ListFooterComponent: MemoizedFooterComponent,
+        removeClippedSubviews: true,
+        // Add more optimizations
+        initialNumToRender: 6,
+        maxToRenderPerBatch: 5,
+        windowSize: 6,
+        updateCellsBatchingPeriod: 50,
+
+    }), [
+        feed,
+        keyExtractor,
+        renderItem,
+        insets.top,
+        styles.listContentContainer,
+        scrollHandler,
+        handleBeginDrag,
+        handleEndDrag,
+        handleLoadMore,
+        MemoizedFooterComponent
+    ]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.backgroundColor} />
 
-            <Animated.View style={[styles.headerAnimated, headerAnimatedStyle]}>
-                <Header
-                    insets={insets}
-                    onNotificationPress={() => bottomSheetRef.current?.expand()}
-                    iconStyle={iconStyle}
-                    handlePress={handlePress}
-                    isDarkMode={isDarkMode}
-                    onThemePress={handleThemePress}
-                    themeIconStyle={themeIconStyle}
-                    theme={theme}
-                />
-            </Animated.View>
+            <AnimatedHeader
+                style={[styles.headerAnimated, headerAnimatedStyle]}
+                insets={insets}
+                onNotificationPress={() => bottomSheetRef.current?.expand()}
+                iconStyle={iconStyle}
+                handlePress={handlePress}
+                isDarkMode={isDarkMode}
+                onThemePress={handleThemePress}
+                themeIconStyle={themeIconStyle}
+                theme={theme}
+            />
 
             <View style={styles.mainContent}>
                 <Animated.View style={heightAnimationStyle}>
@@ -567,17 +501,9 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
                 <View style={styles.listContainer}>
                     <FlashList
                         ref={listRef}
-                        data={feed}
-                        keyExtractor={keyExtractor}
-                        renderItem={renderItem}
-                        estimatedItemSize={350}
-                        showsVerticalScrollIndicator={false}
-                        ItemSeparatorComponent={ItemSeparatorComponent}
-                        ListEmptyComponent={ListEmptyComponent}
-                        contentContainerStyle={{
-                            ...styles.listContentContainer,
-                            paddingTop: insets.top + Platform.OS === 'ios' ? 0 : 60
-                        }}
+                        {...flashListProps}
+                        bounces={false}
+                        overScrollMode="never"
                         refreshControl={
                             <RefreshControl
                                 refreshing={isRefreshing}
@@ -590,9 +516,6 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
                                 titleColor="transparent"
                             />
                         }
-                        // ListHeaderComponent={isRefreshing ? <LottieRefreshControl refreshing={isRefreshing} /> : null}
-                        onScroll={handleScroll}
-                        scrollEventThrottle={16}
                     />
                 </View>
             </View>
@@ -603,17 +526,8 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white'
     },
     headerContainer: {
-        backgroundColor: 'white',
-
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        elevation: 1,
         zIndex: 2,
     },
     subHeaderContainer: {
@@ -710,6 +624,10 @@ const styles = StyleSheet.create({
     lottieStyle: {
         width: 80,
         height: 80,
+    },
+    loadingMoreContainer: {
+        padding: 10,
+        alignItems: 'center',
     },
 });
 

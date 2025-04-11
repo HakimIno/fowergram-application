@@ -9,6 +9,7 @@ import { AuthContext } from 'src/contexts/auth.context';
 import { CreateScreen } from 'src/screens/TabsBottomScreen';
 import ChatConversationScreen from 'src/screens/TabsBottomScreen/ChatScreen/ChatConversationScreen';
 import CallScreen from 'src/screens/TabsBottomScreen/ChatScreen/CallScreen';
+import EditScreen from 'src/screens/TabsBottomScreen/CreateScreen/EditScreen';
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -108,7 +109,7 @@ const AppNavigation = () => {
                         }}
                     />
 
-                    {/* <AppStack.Screen
+                    <AppStack.Screen
                         name="edit_screen"
                         component={EditScreen}
                         options={{
@@ -116,7 +117,7 @@ const AppNavigation = () => {
                             presentation: "card",
                             animation: "fade"
                         }}
-                    /> */}
+                    />
 
                     <AppStack.Screen
                         name="chat_conversation"

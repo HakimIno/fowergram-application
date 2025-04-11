@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Dimensions, TouchableOpacity } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from 'src/navigation/types';
 import { Image as ExpoImage } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -18,6 +19,7 @@ interface MediaItemType {
 }
 
 type PreviewScreenRouteProp = RouteProp<RootStackParamList, 'preview_screen'>;
+type PreviewScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SPRING_CONFIG = {
     damping: 15,
@@ -27,6 +29,7 @@ const SPRING_CONFIG = {
 
 const MediaPlayer: React.FC = () => {
     const route = useRoute<PreviewScreenRouteProp>();
+    const navigation = useNavigation<PreviewScreenNavigationProp>();
     const [mediaItem, setMediaItem] = useState<MediaItemType | null>(null);
     const [isPlaying, setIsPlaying] = useState(true);
 
@@ -197,6 +200,26 @@ const MediaPlayer: React.FC = () => {
                     )}
                 </Animated.View>
             </GestureDetector>
+
+            {mediaItem?.type === 'video' && (
+                <TouchableOpacity style={styles.playButton} onPress={togglePlayback}>
+                    <Ionicons
+                        name={isPlaying ? 'pause' : 'play'}
+                        size={24}
+                        color="white"
+                    />
+                </TouchableOpacity>
+            )}
+            
+            {/* Edit Button */}
+            {mediaItem?.type === 'image' && (
+                <TouchableOpacity 
+                    style={styles.editButton}
+                    onPress={() => navigation.navigate('edit_screen', { selectedMedia: mediaItem })}
+                >
+                    <Ionicons name="brush-outline" size={24} color="white" />
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -222,6 +245,15 @@ const styles = StyleSheet.create({
         bottom: SCREEN_HEIGHT * 0.5,
         alignSelf: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 15,
+        borderRadius: 40,
+        zIndex: 10,
+    },
+    editButton: {
+        position: 'absolute',
+        bottom: 40,
+        right: 20,
+        backgroundColor: 'rgba(57, 151, 240, 0.8)',
         padding: 15,
         borderRadius: 40,
         zIndex: 10,

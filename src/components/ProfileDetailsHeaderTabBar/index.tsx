@@ -19,19 +19,7 @@ const ProfileDetailsHeaderTabBar = ({ navigationState, position, jumpTo, tabs }:
                 };
 
                 const inputRange = navigationState.routes.map((_: any, i: any) => i);
-                const translateX = (isText = false) =>
-                    Animated.multiply(
-                        position.interpolate({
-                            inputRange,
-                            outputRange: inputRange.map((i: number) => {
-                                const diff = i - index;
-                                const x = layoutWidth.current / tabs.length;
-                                const value = diff > 0 ? x : diff < 0 ? -x : 0;
-                                return !isText ? value : -value;
-                            }),
-                        }),
-                        I18nManager.isRTL ? -1 : 1
-                    );
+               
                 return (
                     <Pressable
                         key={`${route.name}_${index}`}

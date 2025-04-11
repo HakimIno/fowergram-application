@@ -8,6 +8,7 @@ import GalleryScreen from "./ProfileDetailsScreen/GalleryScreen";
 import CameraScreen from "./CameraScreen";
 import PreviewScreen from "./TabsBottomScreen/CreateScreen/PreviewScreen";
 import LoginScreen from "./Auth/LoginScreen";
+import EditScreen from "./TabsBottomScreen/CreateScreen/EditScreen";
 
 export {
     ThemeScreen,
@@ -20,5 +21,5 @@ export {
     CameraScreen,
     LoginScreen,
     PreviewScreen,
-    
+    EditScreen,
 }

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Platform, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, ViewStyle, TextStyle, InteractionManager } from 'react-native';
 import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import Lottie from 'lottie-react-native';
 import type LottieView from 'lottie-react-native';
@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from 'src/context/ThemeContext';
+import CommentBottomSheet, { CommentBottomSheetMethods } from '../Comment';
 
 // Constants
 const LIKE_COUNTER_HEIGHT = Platform.select({ ios: 18, android: 20 }) ?? 18;
@@ -23,6 +24,9 @@ interface TweetActionButtonsProps {
     Comments: number;
     retweets: number;
     likes: number;
+    isLiked?: boolean;
+    onLikePress?: () => void;
+    likeIconStyle?: any;
 }
 
 interface Theme {
@@ -79,7 +83,7 @@ const LottieAnimation = memo(({ lottieRef, onPress }: {
     <View style={styles.lottieContainer}>
         <Lottie
             ref={lottieRef}
-            source={require('../../../../assets/lottie/like.json')}
+            source={require('../../../../../assets/lottie/like.json')}
             style={styles.lottieAnimation}
             autoPlay={false}
             loop={false}
@@ -105,10 +109,14 @@ export default function TweetActionButtons({
     Comments,
     retweets,
     likes,
+    isLiked,
+    onLikePress,
+    likeIconStyle,
 }: TweetActionButtonsProps): JSX.Element {
     const { theme } = useTheme() as ThemeContextType;
     const lottieRef = useRef<LottieView>(null);
-    const [toggleLike, setToggleLike] = useState(false);
+    const commentBottomSheetRef = useRef<CommentBottomSheetMethods>(null);
+    const [toggleLike, setToggleLike] = useState(isLiked || false);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const translateY = useSharedValue(0);
     const bookmarkScale = useSharedValue(1);
@@ -144,6 +152,10 @@ export default function TweetActionButtons({
     }, [translateY]);
 
     useEffect(() => {
+        setToggleLike(isLiked || false);
+    }, [isLiked]);
+
+    useEffect(() => {
         if (toggleLike && lottieRef.current) {
             requestAnimationFrame(() => {
                 lottieRef.current?.play();
@@ -152,13 +164,18 @@ export default function TweetActionButtons({
     }, [toggleLike]);
 
     const handleLike = useCallback(() => {
-        setToggleLike(prev => !prev);
+        if (onLikePress) {
+            onLikePress();
+        } else {
+            setToggleLike(prev => !prev);
+        }
+        
         if (translateY.value === 0) {
             translateY.value = animateCounter(-LIKE_COUNTER_HEIGHT);
         } else if (translateY.value === -LIKE_COUNTER_HEIGHT) {
             translateY.value = animateCounter(-LIKE_COUNTER_HEIGHT * 2);
         }
-    }, [animateCounter, translateY]);
+    }, [animateCounter, translateY, onLikePress]);
 
     const handleBookmark = useCallback(() => {
         setIsBookmarked(prev => !prev);
@@ -194,6 +211,19 @@ export default function TweetActionButtons({
         }
     }, [isBookmarked, bookmarkScale, bookmarkRotate]);
 
+    const handleCommentPress = useCallback(() => {
+        // ใช้ InteractionManager เพื่อให้การโต้ตอบของ UI เสร็จสิ้นก่อน
+        InteractionManager.runAfterInteractions(() => {
+            if (commentBottomSheetRef.current) {
+                commentBottomSheetRef.current.expand();
+            }
+        });
+    }, []);
+
+    const handleCommentSheetClose = useCallback(() => {
+        // การจัดการเมื่อปิด BottomSheet
+    }, []);
+
     const renderCounter = useCallback(() => (
         <View style={styles.counterContainer}>
             <Animated.View style={counterAnimationStyle}>
@@ -222,7 +252,7 @@ export default function TweetActionButtons({
                         icon="heart-outline"
                         color={toggleLike ? 'transparent' : theme.textColor}
                         onPress={handleLike}
-                        size={22}
+                        size={20}
                     >
                         {renderCounter()}
                         {toggleLike && (
@@ -238,6 +268,8 @@ export default function TweetActionButtons({
                     <ActionButton
                         icon="chatbubble-outline"
                         color={theme.textColor}
+                        onPress={handleCommentPress}
+                        size={20}
                     >
                         <Text style={[styles.actionText, { color: theme.textColor }]}>
                             {formatNumber(Comments)}
@@ -269,6 +301,13 @@ export default function TweetActionButtons({
                     />
                 </View>
             </View>
+
+            {/* Comment Bottom Sheet */}
+            <CommentBottomSheet 
+                ref={commentBottomSheetRef}
+                handleClose={handleCommentSheetClose}
+                commentsCount={Comments}
+            />
         </View>
     );
 }

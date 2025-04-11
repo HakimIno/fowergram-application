@@ -9,7 +9,7 @@ export type RootStackParamList = {
     profile_details_screen: { image: string, username: string };
     image_profile_screen: { image: string, username: string }
     gallery_screen: { index: number, feed: any }
-    create_screen: undefined;
+    create_screen: { editedImageUri?: string } | undefined;
     camera_screen: undefined;
     preview_screen: {
         selectedMedia: {
@@ -19,7 +19,14 @@ export type RootStackParamList = {
             height?: number;
         };
     };
-    edit_screen: undefined;
+    edit_screen: {
+        selectedMedia: {
+            uri: string;
+            type: 'video' | 'image';
+            width?: number;
+            height?: number;
+        };
+    };
     chat_conversation: {
         user: {
             id: string;
@@ -47,7 +54,7 @@ export type BottomBarParamList = {
     bottom_bar_message: undefined;
     bottom_bar_account: undefined;
     profile_details_screen: { image: string, username: string };
-    create_screen: undefined;
+    create_screen: { editedImageUri?: string } | undefined;
     chat_conversation: {
         user: {
             id: string;

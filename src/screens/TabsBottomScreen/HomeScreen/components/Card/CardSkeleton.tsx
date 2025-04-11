@@ -1,7 +1,5 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewProps } from 'react-native';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import { Skeleton } from 'moti/skeleton'
 
 const styles = StyleSheet.create({
