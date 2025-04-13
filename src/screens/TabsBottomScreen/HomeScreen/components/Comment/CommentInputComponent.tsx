@@ -80,7 +80,7 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
               placeholder={replyingTo ? `Add a reply...` : "Add a comment..."}
               placeholderTextColor={colors.text.placeholder}
               style={styles.input}
-              value={inputText}
+              defaultValue={inputText}
               onChangeText={setInputText}
               multiline
               maxLength={1000}
