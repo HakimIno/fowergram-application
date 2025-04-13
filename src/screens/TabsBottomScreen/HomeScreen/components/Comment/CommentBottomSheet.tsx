@@ -3,7 +3,6 @@ import { View, Text, TextInput, Pressable, Linking, Alert, ScrollView, Touchable
 import { FlashList } from '@shopify/flash-list';
 import BottomSheet, { BottomSheetMethods } from 'src/components/BottomSheet';
 import { useTheme } from 'src/context/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Portal } from 'react-native-portalize';
 import { useCommentStore } from 'src/store/useCommentStore';
@@ -359,6 +358,7 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
           renderCommentText={renderCommentText}
           styles={styles}
           colors={colors}
+          isDarkMode
         />
       );
     }, [

@@ -27,7 +27,7 @@ export const colors = {
   
   // Border colors
   border: {
-    light: 'rgba(0, 0, 0, 0.1)',
+    light: '#e5e5e5',
     dark: '#333333',
   },
   

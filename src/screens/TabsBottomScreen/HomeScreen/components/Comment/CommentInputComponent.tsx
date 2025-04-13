@@ -1,5 +1,5 @@
 import React, { useRef, useState, RefObject } from 'react';
-import { View, TextInput, TouchableOpacity, Text, Animated } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SuggestionsListComponent from './SuggestionsListComponent';
 
@@ -75,7 +75,7 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
 
         <View style={styles.inputRow}>
           <View style={styles.inputWrapper}>
-            <TextInput
+          <TextInput
               ref={inputRefToUse}
               placeholder={replyingTo ? `Add a reply...` : "Add a comment..."}
               placeholderTextColor={colors.text.placeholder}
@@ -92,6 +92,15 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
                   }
                 }, 100);
               }}
+              keyboardType="default"
+              returnKeyType="done"
+              blurOnSubmit={false}
+              autoCapitalize="none"
+              autoCorrect={false}
+              enablesReturnKeyAutomatically={Platform.OS === 'ios'}
+              textAlignVertical="center"
+              scrollEnabled={Platform.OS === 'ios'}
+              keyboardAppearance={Platform.OS === 'ios' ? (colors.text.primary === '#ffffff' ? 'dark' : 'light') : undefined}
             />
           </View>
           <TouchableOpacity

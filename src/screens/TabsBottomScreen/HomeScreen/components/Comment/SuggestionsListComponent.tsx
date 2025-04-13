@@ -38,7 +38,7 @@ const SuggestionsListComponent: React.FC<SuggestionsListComponentProps> = ({
               source={{ uri: suggestion.avatar }}
               style={styles.suggestionAvatar}
             />
-            <Text style={styles.suggestionText}>@{suggestion.username}</Text>
+            <Text style={styles.suggestionText}>@{suggestion.username}xx</Text>
           </TouchableOpacity>
         ))}
         
