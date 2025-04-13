@@ -30,6 +30,8 @@ interface CommentContentProps {
   handleReply: (id: string, username: string) => void;
   handleMentionPress: (username: string) => void;
   renderCommentText: (text: string) => React.ReactNode;
+  showMenu?: boolean;
+  closeMenu?: () => void;
   styles: any;
   colors: any;
   isDarkMode?: boolean
@@ -43,7 +45,8 @@ const CommentContent: React.FC<CommentContentProps> = ({
   renderCommentText,
   styles,
   colors,
-  isDarkMode
+  showMenu,
+  closeMenu
 }) => (
   <View style={styles.commentContent}>
     <View style={styles.commentHeader}>
@@ -67,14 +70,24 @@ const CommentContent: React.FC<CommentContentProps> = ({
 
     <Pressable
       style={styles.replyButton}
-      onPress={() => handleReply(item.id, item.username)}
+      onPress={() => {
+        if (showMenu && typeof closeMenu === 'function') {
+          closeMenu();
+          // เพิ่มตัวหน่วงเวลาเล็กน้อยก่อนจะเรียก handleReply หลังจากปิด menu
+          setTimeout(() => {
+            handleReply(item.id, item.username);
+          }, 100);
+        } else {
+          handleReply(item.id, item.username);
+        }
+      }}
       delayHoverIn={0}
       delayLongPress={50}
       unstable_pressDelay={0}
     >
       <Text style={styles.replyText}>Reply</Text>
     </Pressable>
-  </View>
+  </View >
 );
 
 interface ContextMenuProps {
@@ -175,7 +188,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         activeOpacity={0.6}
       >
         <Ionicons name="ban" size={20} color={colors.text.primary} />
-        <Text style={{ color: colors.text.primary, fontFamily: 'Chirp_Medium',fontSize: 15 }}>บล็อกบัญชี</Text>
+        <Text style={{ color: colors.text.primary, fontFamily: 'Chirp_Medium', fontSize: 15 }}>บล็อกบัญชี</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -392,6 +405,7 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
       <View style={[
         styles.commentContainer,
         item.isReply && styles.replyContainer,
+
       ]}>
         {renderReplyLine()}
 
@@ -409,6 +423,8 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
           renderCommentText={renderCommentText}
           styles={styles}
           colors={colors}
+          showMenu={showMenu}
+          closeMenu={closeMenu}
         />
 
         <CommentActionsComponent
@@ -473,6 +489,21 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
 
       {showMenu && (
         <Portal>
+          {/* Backdrop for closing the menu */}
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9,
+              backgroundColor: 'transparent',
+            }}
+            activeOpacity={1}
+            onPress={closeMenu}
+          />
+          
           {/* Blur background */}
           <Animated.View
             style={{
@@ -481,9 +512,10 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
               left: 0,
               right: 0,
               bottom: 0,
-              zIndex: 99998,
+              zIndex: 10,
               opacity: blurAnimation,
             }}
+            pointerEvents="none"
           >
             <BlurView
               style={{ flex: 1 }}
@@ -493,19 +525,15 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
             />
           </Animated.View>
 
-          {/* Highlighted comment with FlatList for long content */}
           <View
             style={{
               position: 'absolute',
-              // For long comments, center on screen; otherwise show at comment position
               top: isLongComment
                 ? (screenHeight - modalMaxHeight) / 2 - (isKeyboardVisible ? keyboardHeight / 2 : 0)
                 : menuPosition.y,
-              // For long comments use a fixed width centered; otherwise use same position
               left: isLongComment
                 ? (screenWidth - Math.min(screenWidth * 0.9, 350)) / 2
                 : menuPosition.x,
-              // For long comments use larger width; otherwise keep same width
               width: isLongComment
                 ? Math.min(screenWidth * 0.9, 350)
                 : menuPosition.width,
@@ -553,20 +581,6 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
             colors={colors}
             screenDimensions={{ width: screenWidth, height: screenHeight }}
             isLongComment={isLongComment}
-          />
-
-          {/* Backdrop for closing the menu */}
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 99997,
-            }}
-            activeOpacity={1}
-            onPress={closeMenu}
           />
         </Portal>
       )}

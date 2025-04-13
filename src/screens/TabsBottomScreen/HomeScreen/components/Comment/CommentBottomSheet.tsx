@@ -68,8 +68,6 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
     }, [toggleShowAllReplies]);
 
     const handleReply = useCallback((commentId: string, username: string) => {
-      console.log('Replying to:', commentId, username);
-      
       setReplyingTo({
         parentId: commentId,
         username: username
@@ -98,12 +96,11 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
 
     const handleSubmitReply = useCallback(async () => {
       if (!replyingTo || !inputText.trim()) {
-        console.log('Cannot submit reply - no replyingTo or empty text', replyingTo);
+      
         return;
       }
 
-      console.log('Submitting reply to:', replyingTo.parentId, replyingTo.username);
-
+    
       const currentUser = getCurrentUser();
       const newReply = {
         id: generateRandomId(16),
