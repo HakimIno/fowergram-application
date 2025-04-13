@@ -14,6 +14,8 @@ import { createStyles } from './CommentBottomSheet.styles';
 import CommentItemComponent from './CommentItemComponent';
 import CommentInputComponent from './CommentInputComponent';
 import CommentTextComponent from './CommentTextComponent';
+import UserSelector from './UserSelector';
+import { MOCK_USERS } from './mockUsers';
 
 export interface CommentBottomSheetMethods extends BottomSheetMethods { }
 
@@ -35,6 +37,8 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
+    const inputRef = useRef<TextInput>(null);
+    const [selectedUserId, setSelectedUserId] = useState(MOCK_USERS[0].id);
 
     useImperativeHandle(ref, () => ({
       expand: () => {
@@ -64,19 +68,25 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
       toggleShowAllReplies(parentId);
     }, [toggleShowAllReplies]);
 
-    const handleReply = useCallback((parentId: string, username: string) => {
-      const targetComment = parentId ?
-        comments.find(c => c.id === parentId) :
-        comments.find(c => c.username === username);
+    const handleReply = useCallback((commentId: string, username: string) => {
+      console.log('Replying to:', commentId, username);
+      
+      setReplyingTo({
+        parentId: commentId,
+        username: username
+      });
+      
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
+    }, []);
 
-      if (targetComment) {
-        setReplyingTo({
-          parentId: targetComment.id,
-          username: username
-        });
-        setInputText(`@${username}`);
-      }
-    }, [comments]);
+    const getCurrentUser = useCallback(() => {
+      const user = MOCK_USERS.find(user => user.id === selectedUserId);
+      return user || MOCK_USERS[0];
+    }, [selectedUserId]);
 
     const generateRandomId = useCallback((length = 10) => {
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -87,47 +97,60 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
       return result;
     }, []);
 
-    const handleSubmitReply = useCallback(() => {
-      if (!replyingTo || !inputText.trim()) return;
+    const handleSubmitReply = useCallback(async () => {
+      if (!replyingTo || !inputText.trim()) {
+        console.log('Cannot submit reply - no replyingTo or empty text', replyingTo);
+        return;
+      }
 
+      console.log('Submitting reply to:', replyingTo.parentId, replyingTo.username);
+
+      const currentUser = getCurrentUser();
       const newReply = {
         id: generateRandomId(16),
-        username: 'current_user', // Replace with actual user data
-        avatar: 'https://picsum.photos/id/1/200', // Replace with actual user avatar
+        username: currentUser.username,
+        avatar: currentUser.avatar,
         comment: inputText.trim(),
         time: 'now',
         likes: 0,
         isLiked: false,
-        replyTo: replyingTo.username
+        replyTo: replyingTo.username,
+        isReply: true,
+        parentId: replyingTo.parentId
       };
 
-      addReply(replyingTo.parentId, newReply);
-      setInputText('');
-      setReplyingTo(null);
-
-      // Scroll to the parent comment after adding reply
-      const parentComment = comments.find(comment => comment.id === replyingTo.parentId);
-      if (parentComment && listRef.current) {
-        const index = flatComments.findIndex(comment => comment.id === parentComment.id);
-        if (index !== -1) {
-          setTimeout(() => {
-            listRef.current?.scrollToIndex({
-              index,
-              animated: true,
-              viewPosition: 0.3
-            });
-          }, 100);
+      try {
+        await addReply(replyingTo.parentId, newReply);
+        setInputText('');
+        setReplyingTo(null);
+        
+        // Scroll to the parent comment after adding reply
+        const parentComment = comments.find(comment => comment.id === replyingTo.parentId);
+        if (parentComment && listRef.current) {
+          const index = flatComments.findIndex(comment => comment.id === parentComment.id);
+          if (index !== -1) {
+            setTimeout(() => {
+              listRef.current?.scrollToIndex({
+                index,
+                animated: true,
+                viewPosition: 0.3
+              });
+            }, 100);
+          }
         }
+      } catch (error) {
+        console.error('Error adding reply:', error);
       }
-    }, [inputText, replyingTo, addReply, comments, flatComments, generateRandomId]);
+    }, [inputText, replyingTo, addReply, comments, flatComments, generateRandomId, getCurrentUser]);
 
     const handleSubmitComment = useCallback(() => {
       if (!inputText.trim()) return;
 
+      const currentUser = getCurrentUser();
       const newComment = {
         id: generateRandomId(16),
-        username: 'current_user', // Replace with actual user data
-        avatar: 'https://picsum.photos/id/1/200', // Replace with actual user avatar
+        username: currentUser.username,
+        avatar: currentUser.avatar,
         comment: inputText.trim(),
         time: 'now',
         likes: 0,
@@ -149,7 +172,7 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
           });
         }
       }, 300);
-    }, [inputText, addComment, generateRandomId]);
+    }, [inputText, addComment, generateRandomId, getCurrentUser]);
 
     // Load initial flattened comments
     React.useEffect(() => {
@@ -170,13 +193,22 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
       // Check if it's a mention (@)
       if (currentWord.startsWith('@') && currentWord.length > 1) {
         const query = currentWord.substring(1).toLowerCase();
-        // Filter from all available users or use existing users from comments
-        const filteredUsers = Array.from(new Set(
+        // Filter from all available users including mock users
+        const usersFromComments = Array.from(new Set(
           comments.map(c => ({ username: c.username, avatar: c.avatar }))
             .concat(comments.flatMap(c =>
               c.replies?.map(r => ({ username: r.username, avatar: r.avatar })) || []
             ))
-        )).filter(user =>
+        ));
+        
+        const mockUserSuggestions = MOCK_USERS.map(user => ({
+          username: user.username,
+          avatar: user.avatar
+        }));
+        
+        const allUsers = [...usersFromComments, ...mockUserSuggestions];
+        
+        const filteredUsers = allUsers.filter(user =>
           user.username.toLowerCase().includes(query)
         ).slice(0, 5); // Limit to 5 suggestions
 
@@ -295,13 +327,31 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
     }, [styles, colors, handleMentionPress, handleHashtagPress, handleLinkPress]);
 
     const renderComment = useCallback(({ item, index }: { item: CommentItem, index: number }) => {
+      // ถ้าเป็นการตอบกลับลูก (nested reply) ให้ดึงชื่อของ reply ที่กำลังตอบกลับมาด้วย
+      let replyingToUsername = item.replyTo;
+      
+      // ถ้ามี replyingToReplyId (กำลังตอบกลับ reply)
+      if (item.isReply && item.replyingToReplyId && item.parentId) {
+        // หา comment หลัก
+        const parentComment = comments.find(c => c.id === item.parentId);
+        if (parentComment && parentComment.replies) {
+          // หา reply ที่กำลังตอบกลับ
+          const replyingTo = parentComment.replies.find(r => r.id === item.replyingToReplyId);
+          if (replyingTo) {
+            replyingToUsername = replyingTo.username;
+          }
+        }
+      }
+
       return (
         <CommentItemComponent
-          item={item}
+          key={`comment-${item.id}-${index}`}
+          item={{...item, replyTo: replyingToUsername}}
           index={index}
           comments={comments}
           flatComments={flatComments}
           handleLike={handleLike}
+          handleReply={handleReply}
           handleShowAllReplies={handleShowAllReplies}
           handleMentionPress={handleMentionPress}
           handleHashtagPress={handleHashtagPress}
@@ -321,7 +371,8 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
       handleMentionPress,
       handleHashtagPress,
       handleLinkPress,
-      renderCommentText
+      renderCommentText,
+      handleReply
     ]);
 
 
@@ -333,6 +384,13 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
           title={`${commentsCount} comments`}
         >
           <View style={styles.container}>
+            <UserSelector 
+              users={MOCK_USERS}
+              selectedUserId={selectedUserId}
+              onSelectUser={setSelectedUserId}
+              colors={colors}
+            />
+            
             <View style={styles.listContainer}>
               <FlashList
                 ref={listRef}
@@ -368,6 +426,7 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetMethods, CommentBottomSh
             handleSubmitReply={handleSubmitReply}
             styles={styles}
             colors={colors}
+            inputRef={inputRef}
           />
         )}
       </Portal>

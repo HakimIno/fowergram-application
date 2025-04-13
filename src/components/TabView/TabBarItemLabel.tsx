@@ -35,7 +35,7 @@ TabBarItemLabel.displayName = 'TabBarItemLabel';
 const styles = StyleSheet.create({
   label: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: "Chirp_Medium",
     backgroundColor: 'transparent',
   },
 });

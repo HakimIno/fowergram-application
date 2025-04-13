@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, RefObject } from 'react';
 import { View, TextInput, TouchableOpacity, Text, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SuggestionsListComponent from './SuggestionsListComponent';
@@ -17,6 +17,7 @@ interface CommentInputComponentProps {
   handleSubmitReply: () => void;
   styles: any;
   colors: any;
+  inputRef?: RefObject<TextInput>;
 }
 
 const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
@@ -32,10 +33,14 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
   handleSubmitComment,
   handleSubmitReply,
   styles,
-  colors
+  colors,
+  inputRef: externalInputRef
 }) => {
-  const inputRef = useRef<TextInput>(null);
+  const localInputRef = useRef<TextInput>(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  
+  // ใช้ external input ref ถ้ามี หรือ local ref ถ้าไม่มี
+  const inputRefToUse = externalInputRef || localInputRef;
 
   return (
     <Animated.View style={styles.inputContainerWrapper}>
@@ -58,6 +63,7 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
             <TouchableOpacity
               style={styles.cancelReplyButton}
               onPress={() => {
+                console.log('Canceling reply');
                 setReplyingTo(null);
                 setInputText('');
               }}
@@ -70,7 +76,7 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
         <View style={styles.inputRow}>
           <View style={styles.inputWrapper}>
             <TextInput
-              ref={inputRef}
+              ref={inputRefToUse}
               placeholder={replyingTo ? `Add a reply...` : "Add a comment..."}
               placeholderTextColor={colors.text.placeholder}
               style={styles.input}
@@ -81,7 +87,7 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
               onFocus={() => setIsKeyboardVisible(true)}
               onBlur={() => {
                 setTimeout(() => {
-                  if (inputRef.current?.isFocused?.() !== true) {
+                  if (inputRefToUse.current?.isFocused?.() !== true) {
                     setIsKeyboardVisible(false);
                   }
                 }, 100);

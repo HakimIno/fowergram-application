@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { parseCommentText } from './utils';
+import { TextSegment } from './types';
 
 interface CommentTextComponentProps {
   text: string;
@@ -19,7 +20,7 @@ const CommentTextComponent: React.FC<CommentTextComponentProps> = ({
   styles,
   colors
 }) => {
-  const segments = parseCommentText(text);
+  const segments: TextSegment[] = parseCommentText(text);
 
   return (
     <Text style={styles.commentText}>

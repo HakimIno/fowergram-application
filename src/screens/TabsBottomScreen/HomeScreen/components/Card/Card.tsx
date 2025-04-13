@@ -534,12 +534,13 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
     },
     username: {
-        fontSize: 16,
-        fontWeight: '600'
+        fontSize: 15,
+        fontFamily: "Chirp_Bold",
     },
     timestamp: {
         fontSize: 12,
         color: '#9ca3af',
+        fontFamily: "Chirp_Regular",
     },
     contentContainer: {
         paddingHorizontal: 8,
@@ -548,6 +549,7 @@ const styles = StyleSheet.create({
     caption: {
         lineHeight: 20,
         marginBottom: 8,
+        fontFamily: "Chirp_Regular",
     },
     hashtagContainer: {
         flexDirection: 'row',
@@ -557,6 +559,7 @@ const styles = StyleSheet.create({
     hashtag: {
         color: '#5271ff',
         fontSize: 13,
+        fontFamily: "Chirp_Regular",
     },
     carouselContainer: {
         width: CAROUSEL_WIDTH,

@@ -1,7 +1,6 @@
 import { View, useWindowDimensions } from 'react-native';
 import React, { useState, useCallback, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { FlashList } from '@shopify/flash-list';
 import { TabView, SceneRendererProps, NavigationState } from '../../../components/TabView';
 import Animated, { useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { styles } from './styles';
@@ -28,11 +27,10 @@ const SearchScreen = () => {
 
     // Refs and animations
     const scrollY = useSharedValue(0);
-    const flashListRef = useRef<FlashList<any>>(null);
     const { width: screenWidth } = useWindowDimensions();
     
     // Constants
-    const pageSize = 20; // Number of post groups to generate at once
+    const pageSize = 20; 
     const routes: Route[] = [
         { key: 'forYou', title: 'For You' },
         { key: 'trending', title: 'Trending' },

@@ -1,157 +1,93 @@
-import { CommentType, CommentItem } from './types';
+import { CommentItem, TextSegment } from './types';
 
-export const flattenComments = (commentsData: CommentType[]): CommentItem[] => {
-  const flattened: CommentItem[] = [];
-
-  commentsData.forEach(comment => {
-    // Add parent comment with reply count
-    flattened.push({
-      ...comment,
-      isReply: false,
-      _replyCount: comment.replies.length,
-      _shouldShowViewAllButton: false,
-      _shouldShowHideButton: false
-    });
-
-    // Only add replies if this comment has replies
+export const flattenComments = (comments: CommentItem[]): CommentItem[] => {
+  const flattenedComments: CommentItem[] = [];
+  
+  comments.forEach(comment => {
+    flattenedComments.push(comment);
+    
     if (comment.replies && comment.replies.length > 0) {
-      // Get replies to show based on _showAllReplies flag
-      const repliesToShow = comment._showAllReplies || comment.replies.length <= 2
-        ? comment.replies
-        : comment.replies.slice(0, 2);
-
-      // Add each reply except the last one
-      repliesToShow.slice(0, -1).forEach(reply => {
-        flattened.push({
-          ...reply,
-          isReply: true,
-          parentId: comment.id,
-          _isLastReply: false,
-          _shouldShowViewAllButton: false,
-          _shouldShowHideButton: false
-        });
+      // Make sure replies are sorted by creation time (oldest first)
+      // This is simplified - in real app you'd parse timestamps properly
+      const sortedReplies = [...comment.replies].sort((a, b) => {
+        // If both have 'now', maintain original order
+        if (a.time === 'now' && b.time === 'now') return 0; 
+        if (a.time === 'now') return 1; // Put newer replies at the end
+        if (b.time === 'now') return -1;
+        return a.time.localeCompare(b.time);
       });
-
-      // Add the last reply with special flags for buttons
-      if (repliesToShow.length > 0) {
-        const lastReply = repliesToShow[repliesToShow.length - 1];
-        const hasMoreReplies = comment.replies.length > 2 && !comment._showAllReplies;
-        const isExpanded = comment._showAllReplies && comment.replies.length > 2;
-
-        flattened.push({
-          ...lastReply,
-          isReply: true,
-          parentId: comment.id,
-          _isLastReply: true,
-          _shouldShowViewAllButton: hasMoreReplies,
-          _shouldShowHideButton: isExpanded
-        });
-      }
+      
+      // If _showAllReplies is true, add all replies
+      // Otherwise add only the first 2 replies
+      const repliesToAdd = comment._showAllReplies 
+        ? sortedReplies 
+        : sortedReplies.slice(0, Math.min(2, sortedReplies.length));
+        
+      flattenedComments.push(...repliesToAdd);
     }
   });
-
-  return flattened;
+  
+  return flattenedComments;
 };
 
-export interface TextSegment {
-  type: 'text' | 'mention' | 'link' | 'hashtag';
-  text: string;
-  data?: {
-    username?: string;
-    url?: string;
-    tag?: string;
-  };
-}
-
-// Parse comment text to identify @mentions, #hashtags, and links
-export function parseCommentText(text: string): TextSegment[] {
+export const parseCommentText = (text: string): TextSegment[] => {
   const segments: TextSegment[] = [];
   let currentIndex = 0;
-
-  // Regular expressions for detection
-  const mentionRegex = /@(\w+)/g;
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const hashtagRegex = /#(\w+)/g;
   
-  // Temporary array to hold all matches
-  const matches: Array<{
-    type: 'mention' | 'link' | 'hashtag';
-    match: string;
-    index: number;
-    length: number;
-    data: { username?: string; url?: string; tag?: string };
-  }> = [];
+  // Match @mentions, #hashtags, and URLs
+  const pattern = /(?:^|\s)(@([a-zA-Z0-9._]+))|(?:^|\s)(#([a-zA-Z0-9_]+))|(?:^|\s)((https?:\/\/)?([a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+)(\/[a-zA-Z0-9-_.~!*'();:@&=+$,\/?#[\]]*)?)/g;
   
-  // Find mentions
-  let mentionMatch;
-  while ((mentionMatch = mentionRegex.exec(text)) !== null) {
-    matches.push({
-      type: 'mention',
-      match: mentionMatch[0],
-      index: mentionMatch.index,
-      length: mentionMatch[0].length,
-      data: { username: mentionMatch[1] }
-    });
-  }
-  
-  // Find URLs
-  let urlMatch;
-  while ((urlMatch = urlRegex.exec(text)) !== null) {
-    matches.push({
-      type: 'link',
-      match: urlMatch[0],
-      index: urlMatch.index,
-      length: urlMatch[0].length,
-      data: { url: urlMatch[0] }
-    });
-  }
-  
-  // Find hashtags
-  let hashtagMatch;
-  while ((hashtagMatch = hashtagRegex.exec(text)) !== null) {
-    matches.push({
-      type: 'hashtag',
-      match: hashtagMatch[0],
-      index: hashtagMatch.index,
-      length: hashtagMatch[0].length,
-      data: { tag: hashtagMatch[1] }
-    });
-  }
-  
-  // Sort matches by index
-  matches.sort((a, b) => a.index - b.index);
-  
-  // Process text with matches
-  for (const match of matches) {
-    if (match.index > currentIndex) {
-      // Add plain text before the match
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    const matchStart = match.index + (match[0].startsWith(' ') ? 1 : 0);
+    
+    // Add regular text before the match
+    if (matchStart > currentIndex) {
       segments.push({
-        type: 'text',
-        text: text.substring(currentIndex, match.index)
+        type: 'text' as const,
+        text: text.substring(currentIndex, matchStart)
       });
     }
     
-    // Add the match
-    segments.push({
-      type: match.type,
-      text: match.match,
-      data: match.data
-    });
+    // Add mention
+    if (match[1]) {
+      segments.push({
+        type: 'mention' as const,
+        text: match[1],
+        data: { username: match[2] }
+      });
+    } 
+    // Add hashtag
+    else if (match[3]) {
+      segments.push({
+        type: 'hashtag' as const,
+        text: match[3],
+        data: { tag: match[4] }
+      });
+    }
+    // Add URL
+    else if (match[5]) {
+      segments.push({
+        type: 'link' as const,
+        text: match[5],
+        data: { url: match[5].startsWith('http') ? match[5] : `http://${match[5]}` }
+      });
+    }
     
-    currentIndex = match.index + match.length;
+    currentIndex = matchStart + match[0].substr(match[0].startsWith(' ') ? 1 : 0).length;
   }
   
   // Add remaining text
   if (currentIndex < text.length) {
     segments.push({
-      type: 'text',
+      type: 'text' as const,
       text: text.substring(currentIndex)
     });
   }
   
   return segments;
-}
+};
 
-export const findCommentIndex = (comments: CommentItem[], targetId: string): number => {
-  return comments.findIndex(comment => comment.id === targetId);
+export const findCommentIndex = (comments: CommentItem[], id: string): number => {
+  return comments.findIndex(comment => comment.id === id);
 }; 

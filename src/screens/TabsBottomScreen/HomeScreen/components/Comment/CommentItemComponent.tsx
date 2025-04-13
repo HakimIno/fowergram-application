@@ -10,6 +10,7 @@ interface CommentItemComponentProps {
   comments: CommentItem[];
   flatComments: CommentItem[];
   handleLike: (id: string, isReply: boolean) => void;
+  handleReply: (id: string, username: string) => void;
   handleShowAllReplies: (parentId: string) => void;
   handleMentionPress: (username: string) => void;
   handleHashtagPress: (tag: string) => void;
@@ -25,7 +26,9 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
   comments,
   flatComments,
   handleLike,
+  handleReply,
   handleShowAllReplies,
+  handleMentionPress,
   renderCommentText,
   styles,
   colors
@@ -92,44 +95,72 @@ const CommentItemComponent: React.FC<CommentItemComponentProps> = ({
 
   return (
     <>
-      <View style={[
-        styles.commentContainer,
-        item.isReply && styles.replyContainer,
-      ]}>
-        {item.isReply && index > 0 && flatComments[index - 1].isReply !== true && (
-          <View style={[
-            styles.replyLineContainer,
-            {
-              top: -(parentComment ? 16 : 32),
-            }
-          ]}>
-            <View style={styles.replyCurve} />
-          </View>
-        )}
+      <View >
+        <View style={[
+          styles.commentContainer,
+          item.isReply && styles.replyContainer,
+        ]}>
+          {item.isReply && index > 0 && flatComments[index - 1].isReply !== true && (
+            <View style={[
+              styles.replyLineContainer,
+              {
+                top: -(parentComment ? 16 : 32),
+              }
+            ]}>
+              <View style={styles.replyCurve} />
+            </View>
+          )}
 
-        <Image source={{ uri: `https://avatar.iran.liara.run/public/boy?username=${item.username}` }} style={styles.avatar} priority={"low"} cachePolicy={"memory-disk"} />
+          <Image source={{ uri: `https://avatar.iran.liara.run/public/boy?username=${item.username}` }} style={styles.avatar} priority={"low"} cachePolicy={"memory-disk"} />
 
-        <View style={styles.commentContent}>
-          <View style={styles.commentHeader}>
-            <Text style={styles.username}>{item.username}</Text>
-            <Text style={styles.time}>{item.time} ago</Text>
+          <View style={styles.commentContent}>
+            <View style={styles.commentHeader}>
+              <Text style={styles.username}>{item.username}</Text>
+              <Text style={styles.time}>{item.time} ago</Text>
+            </View>
+            
+            {item.replyTo && (
+              <Text style={[styles.commentText, {fontSize: 12, color: colors.text.tertiary, marginBottom: 2}]}>
+                Replying to{' '}
+                <Text 
+                  style={{color: colors.primary}}
+                  onPress={() => handleMentionPress(item.replyTo || '')}
+                >
+                  @{item.replyTo}
+                </Text>
+              </Text>
+            )}
+            
+            {renderCommentText(item.comment)}
+
+            <Pressable
+              style={styles.replyButton}
+              onPress={() => {
+                console.log('Reply button pressed for:', item.id, item.username);
+                handleReply(item.id, item.username);
+              }}
+              delayHoverIn={0}
+              delayLongPress={50}
+              unstable_pressDelay={0}
+            >
+              <Text style={styles.replyText}>Reply</Text>
+            </Pressable>
           </View>
-          {renderCommentText(item.comment)}
+
+          <CommentActionsComponent
+            item={item}
+            onLike={handleLike}
+            styles={styles}
+            colors={colors}
+          />
         </View>
 
-        <CommentActionsComponent
-          item={item}
-          onLike={handleLike}
-          styles={styles}
-          colors={colors}
-        />
+        {shouldShowViewAllButton && item.parentId &&
+          renderViewAllRepliesButton(item.parentId, parentRepliesCount)}
+
+        {shouldShowHideButton && item.parentId &&
+          renderHideRepliesButton(item.parentId, parentRepliesCount)}
       </View>
-
-      {shouldShowViewAllButton && item.parentId &&
-        renderViewAllRepliesButton(item.parentId, parentRepliesCount)}
-
-      {shouldShowHideButton && item.parentId &&
-        renderHideRepliesButton(item.parentId, parentRepliesCount)}
     </>
   );
 };

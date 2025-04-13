@@ -30,14 +30,21 @@ export interface CommentItem {
   likes: number;
   isLiked: boolean;
   isReply?: boolean;
-  parentId?: string;
-  replies?: ReplyType[];
-  _showAllReplies?: boolean;
-  _replyCount?: number;
-  _isLastReply?: boolean;
-  _shouldShowViewAllButton?: boolean;
-  _shouldShowHideButton?: boolean;
   replyTo?: string;
+  parentId?: string;
+  replyingToReplyId?: string;
+  replies?: CommentItem[];
+  _showAllReplies?: boolean;
+}
+
+export interface TextSegment {
+  type: 'text' | 'mention' | 'hashtag' | 'link';
+  text: string;
+  data?: {
+    username?: string;
+    tag?: string;
+    url?: string;
+  };
 }
 
 export interface CommentBottomSheetProps {

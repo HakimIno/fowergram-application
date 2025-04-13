@@ -94,6 +94,20 @@ export const createStyles = (isDarkMode: boolean) => {
       alignItems: 'center',
       gap: 2
     },
+    replyButton: {
+      marginTop: 4,
+      alignSelf: 'flex-start',
+      paddingVertical: 2,
+      paddingHorizontal: 8,
+      borderRadius: 16,
+      backgroundColor: colors.background.secondary,
+    },
+    replyText: {
+      fontSize: 12,
+      fontFamily: "Chirp_Medium",
+      color: colors.text.secondary,
+      lineHeight: 12 * 1.2
+    },
     likesCount: {
       fontSize: 12,
       color: colors.text.tertiary,
