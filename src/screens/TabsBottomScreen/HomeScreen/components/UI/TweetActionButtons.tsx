@@ -14,6 +14,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from 'src/context/ThemeContext';
 import CommentBottomSheet, { CommentBottomSheetMethods } from '../Comment';
+import ShareBottomSheet, { ShareBottomSheetMethods } from '../Share';
 
 // Constants
 const LIKE_COUNTER_HEIGHT = Platform.select({ ios: 18, android: 20 }) ?? 18;
@@ -43,6 +44,7 @@ interface ActionButtonProps {
     color: string;
     children?: React.ReactNode;
     size?: number;
+    props?: any
 }
 
 const SPRING_CONFIG = {
@@ -55,8 +57,9 @@ const SPRING_CONFIG = {
 } as const;
 
 // Memoized Components
-const ActionButton = memo<ActionButtonProps>(({ onPress, icon, color, children, size = 20 }) => (
-    <Pressable style={styles.iconButton} onPress={onPress}>
+const ActionButton = memo<ActionButtonProps>(({ onPress, icon, color, children, size = 20, props }) => (
+    <Pressable style={styles.iconButton} onPress={onPress} {...props} >
+
         <Ionicons name={icon as any} size={size} color={color} />
         {children}
     </Pressable>
@@ -116,6 +119,7 @@ export default function TweetActionButtons({
     const { theme } = useTheme() as ThemeContextType;
     const lottieRef = useRef<LottieView>(null);
     const commentBottomSheetRef = useRef<CommentBottomSheetMethods>(null);
+    const shareBottomSheetRef = useRef<ShareBottomSheetMethods>(null);
     const [toggleLike, setToggleLike] = useState(isLiked || false);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const translateY = useSharedValue(0);
@@ -169,7 +173,7 @@ export default function TweetActionButtons({
         } else {
             setToggleLike(prev => !prev);
         }
-        
+
         if (translateY.value === 0) {
             translateY.value = animateCounter(-LIKE_COUNTER_HEIGHT);
         } else if (translateY.value === -LIKE_COUNTER_HEIGHT) {
@@ -224,6 +228,18 @@ export default function TweetActionButtons({
         // การจัดการเมื่อปิด BottomSheet
     }, []);
 
+    const handleSharePress = useCallback(() => {
+        InteractionManager.runAfterInteractions(() => {
+            if (shareBottomSheetRef.current) {
+                shareBottomSheetRef.current.expand();
+            }
+        });
+    }, []);
+
+    const handleShareSheetClose = useCallback(() => {
+        // Handle share sheet close if needed
+    }, []);
+
     const renderCounter = useCallback(() => (
         <View style={styles.counterContainer}>
             <Animated.View style={counterAnimationStyle}>
@@ -245,7 +261,6 @@ export default function TweetActionButtons({
     return (
         <View style={styles.container}>
             <View style={styles.actionRow}>
-
 
                 <View style={styles.actionItem}>
                     <ActionButton
@@ -292,21 +307,27 @@ export default function TweetActionButtons({
                     </Pressable>
                 </View>
 
-
-
                 <View style={styles.actionItem}>
                     <ActionButton
                         icon="share-social-outline"
                         color={theme.textColor}
+                        onPress={handleSharePress}
+                        props={{ android_ripple: { color: 'rgba(0,0,0,0.1)', borderless: true, radius: 20 } }}
                     />
                 </View>
             </View>
 
             {/* Comment Bottom Sheet */}
-            <CommentBottomSheet 
+            <CommentBottomSheet
                 ref={commentBottomSheetRef}
                 handleClose={handleCommentSheetClose}
                 commentsCount={Comments}
+            />
+
+            {/* Share Bottom Sheet */}
+            <ShareBottomSheet
+                ref={shareBottomSheetRef}
+                handleClose={handleShareSheetClose}
             />
         </View>
     );
@@ -330,7 +351,9 @@ const styles = StyleSheet.create({
     iconButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 4,
+        padding: 3,
+        paddingHorizontal: 6,
+        gap: 6,
     } as ViewStyle,
     actionText: {
         marginLeft: 4,
