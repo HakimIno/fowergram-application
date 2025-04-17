@@ -34,7 +34,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({
               styles.userButton,
               selectedUserId === user.id && { 
                 borderColor: colors.primary,
-                backgroundColor: colors.background.tertiary 
+                
               }
             ]}
             onPress={() => onSelectUser(user.id)}

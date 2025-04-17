@@ -9,7 +9,7 @@ const EmptyState = ({ isDarkMode, theme }: EmptyStateProps) => {
     const textColor = isDarkMode ? theme?.textColor || '#FFFFFF' : '#333';
     const secondaryTextColor = isDarkMode ? '#999' : '#666';
     const iconColor = isDarkMode ? '#444' : '#ddd';
-    const accentColor = theme?.primary || '#5271ff';
+    const accentColor = theme?.primary || '#8cc63f';
 
     return (
         <View style={[styles.emptyContainer, { backgroundColor }]}>

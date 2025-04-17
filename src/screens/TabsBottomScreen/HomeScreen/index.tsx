@@ -104,13 +104,13 @@ const Header = React.memo(({
         <View style={[styles.headerContainer, { backgroundColor: theme.backgroundColor }]}>
             <View style={[styles.subHeaderContainer, { marginTop: insets.top }]}>
                 <Pressable style={headerStyles.logoContainer}>
-                    <Text style={[styles.logoText, { color: theme.textColor, zIndex: 1, marginBottom: 2, }]}>fl</Text>
-                    {/* <Ionicons name="flower" size={20} color={theme.textColor} /> */}
                     <Image
-                        source={require('../../../../assets/app_logo.png')}
-                        style={[{ width: 25, height: 25, borderRadius: 45 }]}
+                        source={require('../../../../assets/fs.png')}
+                        style={[{ width: 26, height: 26 }]}
                     />
-                    <Text style={[styles.logoText, { color: theme.textColor, zIndex: 1, marginBottom: 2 }]}>wergram</Text>
+
+                    <Text style={[styles.logoText, { zIndex: 1, marginBottom: 2, color: theme.textColor }]}>F</Text>
+                    <Text style={[styles.logoText, { zIndex: 1, marginBottom: 2, color: '#8cc63f' }]}>rog</Text>
                 </Pressable>
 
                 <View style={styles.rightHeaderContainer}>
@@ -510,7 +510,7 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
                                 onRefresh={handleRefresh}
                                 tintColor="rgba(0,0,0,0)"
                                 progressBackgroundColor={theme.backgroundColor}
-                                colors={['#5271ff']}
+                                colors={['#8cc63f']}
                                 progressViewOffset={insets.top + 50}
                                 enabled={true}
                                 titleColor="transparent"
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10
     },
     logoText: {
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Funnel_700Bold',
         fontSize: 24,
         color: "#1a1a1a"
     },

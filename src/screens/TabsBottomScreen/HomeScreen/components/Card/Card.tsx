@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
         gap: 2,
     },
     hashtag: {
-        color: '#5271ff',
+        color: '#8cc63f',
         fontSize: 13,
         fontFamily: "Chirp_Regular",
     },

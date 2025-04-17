@@ -30,7 +30,7 @@ export const styles = StyleSheet.create({
         width: 'auto',  
     },
     tabIndicator: {
-        backgroundColor: '#5271ff',
+        backgroundColor: '#8cc63f',
         height: 2.5,
     },
     tabLabel: {
@@ -172,7 +172,7 @@ export const styles = StyleSheet.create({
         position: 'absolute',
         top: 8,
         left: 8,
-        backgroundColor: '#5271ff',
+        backgroundColor: '#8cc63f',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,
@@ -332,7 +332,7 @@ export const styles = StyleSheet.create({
         width: 20,
         height: 6,
         borderRadius: 3,
-        backgroundColor: '#5271ff',
+        backgroundColor: '#8cc63f',
     },
     scrollIndicatorDot: {
         width: 6,
@@ -416,12 +416,12 @@ export const styles = StyleSheet.create({
     },
     emptyActionButton: {
         marginTop: 32,
-        backgroundColor: '#5271ff',
+        backgroundColor: '#8cc63f',
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 24,
         elevation: 2,
-        shadowColor: '#5271ff',
+        shadowColor: '#8cc63f',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,

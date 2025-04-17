@@ -62,7 +62,7 @@ export const PullToRefreshExample = () => {
             onPullProgress={handlePullProgress}
             customIndicator={<CustomLottieIndicator />}
             pullThreshold={150}
-            indicatorColor="#5271ff"
+            indicatorColor="#8cc63f"
         >
             <View style={styles.container}>
                 {data.map((item) => (

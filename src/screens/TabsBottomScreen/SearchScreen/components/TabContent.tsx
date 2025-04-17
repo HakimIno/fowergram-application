@@ -43,7 +43,7 @@ const TabContent = memo(({
 
     const backgroundColor = isDarkMode ? theme?.backgroundColor || '#1a1a1a' : 'white';
     const textColor = isDarkMode ? theme?.textColor || '#FFFFFF' : '#333';
-    const accentColor = theme?.primary || '#5271ff';
+    const accentColor = theme?.primary || '#8cc63f';
 
     return (
         <View style={[styles.gridContainer, { flex: 1, backgroundColor }]}>
