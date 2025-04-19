@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialCommunityIcons, Octicons } from '@expo/vector-icons'
 import Svg, { Path, Circle, G } from 'react-native-svg'
 import { Card } from './components/Card'
-import { generateMockGridFeed } from 'src/data/mockFeedData'
+import { generateMockGridFeed, generateMockStories } from 'src/data/mockFeedData'
+import Stories, { StoryItem } from './components/Story'
 import BottomSheet, { BottomSheetMethods } from 'src/components/BottomSheet'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { BottomBarParamList } from 'src/navigation/types'
@@ -190,6 +191,7 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
     const insets = useSafeAreaInsets();
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
     const [feed, setFeed] = useState<FeedInfo[]>([]);
+    const [stories, setStories] = useState<StoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -280,7 +282,9 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
         setIsRefreshing(true);
         try {
             const mockData = generateMockGridFeed(10);
+            const mockStoryData = generateMockStories(15);
             setFeed(mockData as unknown as FeedInfo[]);
+            setStories(mockStoryData);
             await new Promise(resolve => setTimeout(resolve, 1500));
         } catch (error) {
             console.error('Error refreshing feed:', error);
@@ -433,7 +437,11 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
         ) : null
         , [isLoadingMore, theme.textColor]);
 
-    // Memoize FlashList configuration to prevent re-renders
+ 
+    const StoryHeaderComponent = useMemo(() => {
+        return () => <Stories stories={stories} />;
+    }, [stories]);
+
     const flashListProps = useMemo(() => ({
         data: feed,
         keyExtractor,
@@ -459,9 +467,10 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
         maxToRenderPerBatch: 5,
         windowSize: 6,
         updateCellsBatchingPeriod: 50,
-
+        ListHeaderComponent: StoryHeaderComponent,
     }), [
         feed,
+        stories,
         keyExtractor,
         renderItem,
         insets.top,
@@ -470,7 +479,8 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
         handleBeginDrag,
         handleEndDrag,
         handleLoadMore,
-        MemoizedFooterComponent
+        MemoizedFooterComponent,
+        StoryHeaderComponent
     ]);
 
     return (
@@ -490,14 +500,6 @@ const HomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; rou
             />
 
             <View style={styles.mainContent}>
-                <Animated.View style={heightAnimationStyle}>
-                    <Animated.View ref={listRef} style={styles.contentContainerX}>
-                        <View style={styles.content}>
-                            <Text style={{ color: theme.textColor }}>kimsnow</Text>
-                        </View>
-                    </Animated.View>
-                </Animated.View>
-
                 <View style={styles.listContainer}>
                     <FlashList
                         ref={listRef}

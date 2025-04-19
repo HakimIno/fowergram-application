@@ -10,6 +10,7 @@ import { CreateScreen } from 'src/screens/TabsBottomScreen';
 import ChatConversationScreen from 'src/screens/TabsBottomScreen/ChatScreen/ChatConversationScreen';
 import CallScreen from 'src/screens/TabsBottomScreen/ChatScreen/CallScreen';
 import EditScreen from 'src/screens/TabsBottomScreen/CreateScreen/EditScreen';
+import StoryScreen from 'src/screens/StoryScreen';
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -132,6 +133,16 @@ const AppNavigation = () => {
                     <AppStack.Screen
                         name="call_screen"
                         component={CallScreen}
+                        options={{
+                            headerShown: false,
+                            presentation: "transparentModal",
+                            animation: "fade"
+                        }}
+                    />
+
+                    <AppStack.Screen
+                        name="story_screen"
+                        component={StoryScreen}
                         options={{
                             headerShown: false,
                             presentation: "transparentModal",

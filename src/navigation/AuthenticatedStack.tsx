@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { MODAL_SCREEN_OPTIONS, TRANSPARENT_MODAL_OPTIONS } from './constants';
+import StoryScreen from 'src/screens/StoryScreen';
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -42,7 +43,7 @@ const AuthenticatedStack = memo(() => (
             component={GalleryScreen}
             options={{
                 ...TRANSPARENT_MODAL_OPTIONS,
-                animation: "ios"
+                animation: "slide_from_right"
             }}
         />
 
@@ -81,6 +82,15 @@ const AuthenticatedStack = memo(() => (
         <AppStack.Screen
             name="preview_screen"
             component={PreviewScreen}
+        />
+
+        <AppStack.Screen
+            name="story_screen"
+            component={StoryScreen}
+            options={{ 
+                headerShown: false,
+                presentation: 'transparentModal',
+            }}
         />
     </>
 ));

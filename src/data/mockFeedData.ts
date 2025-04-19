@@ -129,18 +129,40 @@ export const generateMockGridFeed = (rows: number = 10): FeedItem[] => {
     });
 };
 
-export const generateMockStories = (count: number = 10) => {
-    return Array.from({ length: count }, () => ({
-        id: faker.string.uuid(),
-        username: faker.internet.userName(),
-        avatar: getPicsumUrl(150, 150, Math.random()),
-        hasStory: faker.datatype.boolean(),
-        isViewed: faker.datatype.boolean()
-    }));
+export const generateMockStories = (count: number) => {
+    return Array.from({ length: count }).map((_, index) => {
+        const id = `story-${index}`;
+        return {
+            id,
+            title: `Story ${index + 1}`,
+            coverImage: `https://picsum.photos/500/800?random=${Math.floor(Math.random() * 1000)}`,
+            userAvatar: `https://avatar.iran.liara.run/public/${Math.random() > 0.5 ? 'boy' : 'girl'}?username=${Math.floor(Math.random() * 100)}`,
+            username: `user${index + 1}`,
+            category: ['Travel', 'Food', 'Fashion', 'Tech', 'Art'][Math.floor(Math.random() * 5)],
+            viewed: Math.random() > 0.7, // 30% chance of being viewed
+            content: [
+                {
+                    type: 'image' as 'image',
+                    url: `https://picsum.photos/500/800?random=${Math.floor(Math.random() * 1000)}`,
+                    duration: 5000,
+                },
+                {
+                    type: 'image' as 'image',
+                    url: `https://picsum.photos/500/800?random=${Math.floor(Math.random() * 1000)}`,
+                    duration: 5000,
+                },
+                {
+                    type: 'image' as 'image',
+                    url: `https://picsum.photos/500/800?random=${Math.floor(Math.random() * 1000)}`,
+                    duration: 5000,
+                }
+            ]
+        };
+    });
 };
 
 export const mockFeedData = generateMockFeed();
 export const mockGridFeedData = generateMockGridFeed();
-export const mockStories = generateMockStories();
+export const mockStories = generateMockStories(10);
 
 const DEMO_FEED = mockGridFeedData;

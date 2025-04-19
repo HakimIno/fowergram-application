@@ -6,8 +6,8 @@ const IS_PROD = APP_VARIANT === 'production';
 
 const getAppName = () => {
     const variant = process.env.APP_VARIANT;
-    if (variant === 'development') return '(Dev) flowergram';
-    if (variant === 'production') return 'flowergram';
+    if (variant === 'development') return '(Dev) frog';
+    if (variant === 'production') return 'frog';
     return 'flowergram';
 };
 

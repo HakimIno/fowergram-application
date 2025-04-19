@@ -9,6 +9,11 @@ export type RootStackParamList = {
     profile_details_screen: { image: string, username: string };
     image_profile_screen: { image: string, username: string }
     gallery_screen: { index: number, feed: any }
+    story_screen: { 
+        stories: any[];
+        initialIndex: number;
+        userId?: string;
+    };
     create_screen: { editedImageUri?: string } | undefined;
     camera_screen: undefined;
     preview_screen: {
