@@ -13,12 +13,8 @@ install! 'cocoapods',
 
 prepare_react_native_project!
 
-target 'Devflowergram' do
+target 'Devfrog' do
   use_expo_modules!
-
-  pod 'SDWebImage', '5.19.7', :modular_headers => true
-  pod 'SDWebImageWebPCoder', :modular_headers => true
-  pod 'iOSPhotoEditor', :git => 'https://github.com/ThienMD/photo-editor', :branch => 'master'
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
