@@ -97,6 +97,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 "supportsBackgroundPlayback": true,
                 "supportsPictureInPicture": true
             }
+        ],
+        [
+            "expo-build-properties",
+            {
+                "android": {
+                    "compileSdkVersion": 34,
+                    "targetSdkVersion": 34,
+                    "buildToolsVersion": "34.0.0"
+                }
+            }
         ]
     ],
 
