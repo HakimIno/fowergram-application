@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  eas-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - ~/.eas-cli:/root/.eas-cli
+      - ~/.expo:/root/.expo
+      - android-build:/app/android
+    environment:
+      - EXPO_TOKEN=${EXPO_TOKEN}
+    stdin_open: true
+    tty: true
+
+volumes:
+  android-build: 

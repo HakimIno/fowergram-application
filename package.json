@@ -47,7 +47,7 @@
     "@shopify/react-native-skia": "1.5.0",
     "@tanstack/react-query": "^5.45.1",
     "axios": "^1.7.2",
-    "expo": "~52.0.46",
+    "expo": "^52.0.46",
     "expo-av": "^15.0.2",
     "expo-blur": "^14.0.3",
     "expo-brightness": "~13.0.3",
@@ -79,12 +79,14 @@
     "react-native-svg": "15.8.0",
     "react-native-tab-view": "^4.0.5",
     "react-native-vision-camera": "^4.6.4",
+    "react-native-worklets-core": "^1.5.0",
     "react-redux": "^9.1.2",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@babel/plugin-transform-template-literals": "^7.24.1",
+    "@react-native-community/cli": "^18.0.0",
     "@types/lodash": "^4.17.13",
     "@types/react": "~18.3.12",
     "lodash": "^4.17.21",
@@ -99,7 +101,8 @@
       "reactNativeDirectoryCheck": {
         "exclude": [
           "@faker-js/faker",
-          "react-native-portalize"
+          "react-native-portalize",
+          "react-native-pinchable"
         ],
         "listUnknownPackages": false
       }
