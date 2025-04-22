@@ -15,6 +15,7 @@ import { useTheme } from 'src/context/ThemeContext';
 import CommentBottomSheet, { CommentBottomSheetMethods } from '../Comment';
 import ShareBottomSheet, { ShareBottomSheetMethods } from '../Share';
 import LikeButtonWithFlower from './LikeButtonWithFlower';
+import * as Haptics from 'expo-haptics';
 
 // Constants - moved to object for better organization and reuse
 const CONSTANTS = {
@@ -149,7 +150,7 @@ const TweetActionButtons = ({
     const { theme } = useTheme() as ThemeContextType;
     const commentBottomSheetRef = useRef<CommentBottomSheetMethods>(null);
     const shareBottomSheetRef = useRef<ShareBottomSheetMethods>(null);
-    
+
     // Use global state for bookmark status
     const initialBookmarkState = bookmarkedItems.has(uniqueId);
     const [toggleLike, setToggleLike] = useState(isLiked || false);
@@ -234,6 +235,9 @@ const TweetActionButtons = ({
 
         likeProcessedRef.current = true;
 
+        // Trigger haptic feedback
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
         // Call external handler if provided
         if (onLikePress) {
             onLikePress();
@@ -260,7 +264,10 @@ const TweetActionButtons = ({
     const handleBookmark = useCallback(() => {
         const newBookmarkState = !isBookmarked;
         setIsBookmarked(newBookmarkState);
-        
+
+        // Trigger haptic feedback when bookmarking
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
         // Update global bookmark state
         if (newBookmarkState) {
             bookmarkedItems.add(componentId);
@@ -411,9 +418,9 @@ const TweetActionButtons = ({
             </View>
         </View>
     ), [
-        memoizedLikeButton, 
-        memoizedCounter, 
-        formattedComments, 
+        memoizedLikeButton,
+        memoizedCounter,
+        formattedComments,
         bookmarkIcon,
         theme.textColor,
         handleLike,
@@ -470,6 +477,7 @@ const styles = StyleSheet.create({
     } as ViewStyle,
     actionText: {
         fontSize: 13,
+        fontFamily: 'Chirp_Regular'
     } as TextStyle,
     counterContainer: {
         height: CONSTANTS.LIKE_COUNTER_HEIGHT,
@@ -478,6 +486,7 @@ const styles = StyleSheet.create({
     counterText: {
         height: CONSTANTS.LIKE_COUNTER_HEIGHT,
         fontSize: 13,
+        fontFamily: 'Chirp_Regular',
         textAlign: 'center',
         textAlignVertical: 'center',
     } as TextStyle,

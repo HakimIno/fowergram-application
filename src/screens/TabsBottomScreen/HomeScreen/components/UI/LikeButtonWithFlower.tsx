@@ -11,13 +11,14 @@ import Animated, {
     interpolate,
     cancelAnimation
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 const DEFAULT_BTN_SIZE = 18;
 const DEFAULT_INACTIVE_COLOR = '#1a1a1a';
 const DEFAULT_ACTIVE_COLOR = '#f91980';
-const DEFAULT_BURST_COLORS = ['#f91980', '#e11d48', '#f472b6', '#fecdd3', '#ffe4e6'];
+const DEFAULT_BURST_COLORS = ['#f91980', '#f91980', '#f91980', '#f91980', '#f91980'];
 const DOT_COUNT = 12;
-const SPARK_COUNT = 16;
+const SPARK_COUNT = 12;
 const PETAL_COUNT = 6;
 
 // Component หลัก
@@ -62,6 +63,9 @@ const LikeButtonWithFlower = forwardRef<LikeButtonWithFlowerRef, LikeButtonWithF
         cancelAnimation(petalRotation);
 
         isAnimating.value = true;
+        
+        // Trigger haptic feedback with the flower animation
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         // Sequence หลักของปุ่ม: หดตัว -> ขยายตัว -> ปกติ
         scale.value = withSequence(
@@ -469,6 +473,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 5,
+        borderRadius: 100
     },
 });
 
