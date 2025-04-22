@@ -11,6 +11,8 @@ import ChatConversationScreen from 'src/screens/TabsBottomScreen/ChatScreen/Chat
 import CallScreen from 'src/screens/TabsBottomScreen/ChatScreen/CallScreen';
 import EditScreen from 'src/screens/TabsBottomScreen/CreateScreen/EditScreen';
 import StoryScreen from 'src/screens/StoryScreen';
+import RegisterScreen from 'src/screens/Auth/RegisterScreen';
+import RegisterBirthdayScreen from 'src/screens/Auth/RegisterBirthdayScreen';
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -33,7 +35,7 @@ const AppNavigation = () => {
     };
     return (
         <AppStack.Navigator screenOptions={{ headerShown: false }}>
-            {true ? (
+            {false ? (
                 <>
                     <AppStack.Screen name="bottom_bar" component={BottomBarTab} />
 
@@ -151,14 +153,31 @@ const AppNavigation = () => {
                     />
                 </>
             ) : (
-                <AppStack.Screen
-                    name="login_screen"
-                    component={LoginScreen}
-                    options={{
-                        headerShown: false,
-                        animation: "slide_from_bottom"
-                    }}
-                />
+                <>
+                    <AppStack.Screen
+                        name="login_screen"
+                        component={LoginScreen}
+                        options={{
+                            headerShown: false,
+                  
+                        }}
+                    />
+                    <AppStack.Screen
+                        name="register_screen"
+                        component={RegisterScreen}
+                        options={{
+                            headerShown: false,
+                        
+                        }}
+                    />
+                    <AppStack.Screen
+                        name="register_birthday_screen"
+                        component={RegisterBirthdayScreen}
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
+                </>
             )}
         </AppStack.Navigator>
     )

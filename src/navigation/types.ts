@@ -50,6 +50,11 @@ export type RootStackParamList = {
         type: 'voice' | 'video';
     };
     login_screen: undefined;
+    register_screen: undefined;
+    register_birthday_screen: {
+        username: string;
+        password: string;
+    };
 };
 
 export type BottomBarParamList = {

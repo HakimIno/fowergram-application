@@ -16,7 +16,7 @@ interface FlowergramLogoProps {
   width?: number;
   height?: number;
   fontSize?: number;
-  theme: Theme;
+  theme: Pick<Theme, 'textColor'>;
 }
 
 export const FlowergramLogo: React.FC<FlowergramLogoProps> = ({
@@ -27,16 +27,16 @@ export const FlowergramLogo: React.FC<FlowergramLogoProps> = ({
 }) => {
   // Font for generating the text path
   const font = useFont(require('../assets/fonts/Pacifico-Regular.ttf'), fontSize);
-  
+
   // Create text path
   const textPath = React.useMemo(() => {
     if (font === null) {
       return null;
     }
-    
+
     const text = 'flowergram';
     const textWidth = font.getTextWidth(text);
-    
+
     return Skia.Path.MakeFromText(
       text,
       (width - textWidth) / 2, // Center horizontally
@@ -44,23 +44,24 @@ export const FlowergramLogo: React.FC<FlowergramLogoProps> = ({
       font
     );
   }, [font, width, height, fontSize]);
-  
+
   // Define gradient colors
   const rainbowColors = [
-    theme.textColor, // Violet
-    theme.textColor, // Royal Blue  
-    theme.textColor, // Cyan
-    theme.textColor, // Lime Green
-    theme.textColor, // Gold
-    theme.textColor, // Coral
-    theme.textColor, // Hot Pink
+    theme.textColor === "#f43f5e" ? theme.textColor : theme.textColor,
+    theme.textColor === "#f43f5e" ? theme.textColor : theme.textColor,
+    theme.textColor === "#f43f5e" ? "" : theme.textColor,
+    theme.textColor === "#f43f5e" ? "" : theme.textColor,
+    theme.textColor === "#f43f5e" ? "" : theme.textColor,
+    theme.textColor === "#f43f5e" ? "" : theme.textColor,
+    theme.textColor === "#f43f5e" ? theme.textColor : theme.textColor,
+    theme.textColor === "#f43f5e" ? theme.textColor : theme.textColor,
   ];
-  
+
   // No text path if font is not loaded
   if (!textPath) {
     return <View style={{ width, height }} />;
   }
-  
+
   return (
     <View style={[styles.container]}>
       <Canvas style={{ width, height }}>

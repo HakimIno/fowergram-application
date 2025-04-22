@@ -8,6 +8,8 @@ import GalleryScreen from "./ProfileDetailsScreen/GalleryScreen";
 import CameraScreen from "./CameraScreen";
 import PreviewScreen from "./TabsBottomScreen/CreateScreen/PreviewScreen";
 import LoginScreen from "./Auth/LoginScreen";
+import RegisterScreen from "./Auth/RegisterScreen";
+import RegisterBirthdayScreen from "./Auth/RegisterBirthdayScreen";
 import EditScreen from "./TabsBottomScreen/CreateScreen/EditScreen";
 
 export {
@@ -20,6 +22,8 @@ export {
     GalleryScreen,
     CameraScreen,
     LoginScreen,
+    RegisterScreen,
+    RegisterBirthdayScreen,
     PreviewScreen,
     EditScreen,
 }
