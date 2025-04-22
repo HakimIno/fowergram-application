@@ -130,14 +130,34 @@ export const generateMockGridFeed = (rows: number = 10): FeedItem[] => {
 };
 
 export const generateMockStories = (count: number) => {
+    const igStyleUsernames = [
+        'travel_lover',
+        'photo_addict',
+        'food_explorer',
+        'tech_geek',
+        'fitness_guru',
+        'fashion_icon',
+        'art_enthusiast',
+        'music_beats',
+        'urban_explorer',
+        'nature_seeker',
+        'coffee_addict',
+        'code_ninja',
+        'book_worm',
+        'pet_lover',
+        'sunset_chaser'
+    ];
+
     return Array.from({ length: count }).map((_, index) => {
         const id = `story-${index}`;
+        const randomUsername = igStyleUsernames[Math.floor(Math.random() * igStyleUsernames.length)];
+        
         return {
             id,
             title: `Story ${index + 1}`,
             coverImage: `https://picsum.photos/500/800?random=${Math.floor(Math.random() * 1000)}`,
             userAvatar: `https://avatar.iran.liara.run/public/${Math.random() > 0.5 ? 'boy' : 'girl'}?username=${Math.floor(Math.random() * 100)}`,
-            username: `user${index + 1}`,
+            username: randomUsername + (Math.random() > 0.5 ? Math.floor(Math.random() * 100) : ''),
             category: ['Travel', 'Food', 'Fashion', 'Tech', 'Art'][Math.floor(Math.random() * 5)],
             viewed: Math.random() > 0.7, // 30% chance of being viewed
             content: [

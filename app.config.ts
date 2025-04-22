@@ -6,14 +6,14 @@ const IS_PROD = APP_VARIANT === 'production';
 
 const getAppName = () => {
     const variant = process.env.APP_VARIANT;
-    if (variant === 'development') return '(Dev) frog';
-    if (variant === 'production') return 'frog';
+    if (variant === 'development') return '(Dev) flowergram';
+    if (variant === 'production') return 'flowergram';
     return 'flowergram';
 };
 
 const getBundleId = () => {
     const variant = process.env.APP_VARIANT;
-    const baseBundleId = 'com.kimsnow33.pocappui';
+    const baseBundleId = 'com.kimsnow33.flowergram';
     if (variant === 'development') return `${baseBundleId}.dev`;
     if (variant === 'preview') return `${baseBundleId}.preview`;
     return baseBundleId;
@@ -101,12 +101,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         [
             "expo-build-properties",
             {
-                "android": {
-                    "compileSdkVersion": 34,
-                    "targetSdkVersion": 34,
-                    "buildToolsVersion": "34.0.0"
-                }
-            }
+                android: {
+                    compileSdkVersion: 35,
+                    targetSdkVersion: 35,
+                    buildToolsVersion: '35.0.0',
+                },
+                ios: {
+                    deploymentTarget: '15.1',
+                },
+            },
         ]
     ],
 

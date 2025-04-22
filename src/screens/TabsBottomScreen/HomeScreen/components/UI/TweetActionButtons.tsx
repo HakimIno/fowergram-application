@@ -1,7 +1,5 @@
 import { View, Text, StyleSheet, Pressable, Platform, ViewStyle, TextStyle, InteractionManager } from 'react-native';
-import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
-import Lottie from 'lottie-react-native';
-import type LottieView from 'lottie-react-native';
+import React, { useEffect, useRef, useState, useCallback, memo, useMemo } from 'react';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -10,24 +8,35 @@ import Animated, {
     withSequence,
     Easing,
     WithTimingConfig,
+    runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from 'src/context/ThemeContext';
 import CommentBottomSheet, { CommentBottomSheetMethods } from '../Comment';
 import ShareBottomSheet, { ShareBottomSheetMethods } from '../Share';
+import LikeButtonWithFlower from './LikeButtonWithFlower';
 
-// Constants
-const LIKE_COUNTER_HEIGHT = Platform.select({ ios: 18, android: 20 }) ?? 18;
-const ANIMATION_DURATION = Platform.select({ ios: 300, android: 200 });
+// Constants - moved to object for better organization and reuse
+const CONSTANTS = {
+    LIKE_COUNTER_HEIGHT: Platform.select({ ios: 18, android: 20 }) ?? 18,
+    ANIMATION_DURATION: Platform.select({ ios: 300, android: 200 }),
+    LIKE_COLOR: '#f91980',
+    BOOKMARK_COLOR: '#3533cd',
+    ANIMATION_TIMEOUT: 300
+} as const;
 
-// Types and Interfaces
+// Global state for bookmarks to persist across renders
+const bookmarkedItems = new Set<string>();
+
+// Types and Interfaces - improved typing
 interface TweetActionButtonsProps {
     Comments: number;
     retweets: number;
     likes: number;
     isLiked?: boolean;
     onLikePress?: () => void;
-    likeIconStyle?: any;
+    likeIconStyle?: Record<string, unknown>;
+    uniqueId?: string;
 }
 
 interface Theme {
@@ -44,9 +53,10 @@ interface ActionButtonProps {
     color: string;
     children?: React.ReactNode;
     size?: number;
-    props?: any
+    props?: Record<string, unknown>;
 }
 
+// Animation configs
 const SPRING_CONFIG = {
     damping: 8,
     mass: 0.5,
@@ -56,10 +66,39 @@ const SPRING_CONFIG = {
     restSpeedThreshold: 0.01,
 } as const;
 
+const TIMING_CONFIG: WithTimingConfig = {
+    duration: CONSTANTS.ANIMATION_DURATION,
+    easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+};
+
+// Optimized formatNumber function - memoizing calculations
+const formatNumberCache = new Map<number, string>();
+
+const formatNumber = (num: number): string => {
+    if (!num && num !== 0) return '0';
+
+    // Check cache first
+    if (formatNumberCache.has(num)) {
+        return formatNumberCache.get(num)!;
+    }
+
+    let result: string;
+    if (num >= 1000000) {
+        result = (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+    } else if (num >= 1000) {
+        result = (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    } else {
+        result = num.toString();
+    }
+
+    // Store in cache
+    formatNumberCache.set(num, result);
+    return result;
+};
+
 // Memoized Components
 const ActionButton = memo<ActionButtonProps>(({ onPress, icon, color, children, size = 20, props }) => (
     <Pressable style={styles.iconButton} onPress={onPress} {...props} >
-
         <Ionicons name={icon as any} size={size} color={color} />
         {children}
     </Pressable>
@@ -67,69 +106,100 @@ const ActionButton = memo<ActionButtonProps>(({ onPress, icon, color, children, 
 
 ActionButton.displayName = 'ActionButton';
 
-const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-        const value = Math.floor((num / 100000)) / 10;
-        return `${value}m`;
-    }
-    if (num >= 1000) {
-        const value = Math.floor((num / 100)) / 10;
-        return `${value}k`;
-    }
-    return num.toString();
-};
+// Memoized Counter Component - optimized rendering
+const Counter = memo(({ value, isLiked, animationStyle, textColor: propTextColor }: {
+    value: number,
+    isLiked: boolean,
+    animationStyle: any,
+    textColor: string
+}) => {
+    const formattedValue = useMemo(() => formatNumber(value), [value]);
+    const formattedValuePlus = useMemo(() => formatNumber(isLiked ? value : value + 1), [value, isLiked]);
 
-const LottieAnimation = memo(({ lottieRef, onPress }: {
-    lottieRef: React.RefObject<LottieView>;
-    onPress: () => void;
-}) => (
-    <View style={styles.lottieContainer}>
-        <Lottie
-            ref={lottieRef}
-            source={require('../../../../../assets/lottie/like.json')}
-            style={styles.lottieAnimation}
-            autoPlay={false}
-            loop={false}
-            speed={Platform.select({ ios: 1, android: 3 })} // เพิ่ม speed บน Android
-            progress={0.3}
-            resizeMode="contain"
-            cacheComposition={true}
-            renderMode={Platform.select({
-                ios: 'HARDWARE',
-                android: 'HARDWARE' // บางครั้ง SOFTWARE mode อาจทำงานได้ดีกว่าบน Android
-            })}
-        />
-        <Pressable
-            onPress={onPress}
-            style={styles.lottieButton}
-        />
-    </View>
-));
+    const textColorValue = isLiked ? CONSTANTS.LIKE_COLOR : propTextColor;
 
-LottieAnimation.displayName = 'LottieAnimation';
+    return (
+        <View style={styles.counterContainer}>
+            <Animated.View style={animationStyle}>
+                <Text style={[styles.counterText, { color: textColorValue }]}>
+                    {formattedValue}
+                </Text>
+                <Text style={[styles.counterText, { color: textColorValue }]}>
+                    {formattedValuePlus}
+                </Text>
+                <Text style={[styles.counterText, { color: textColorValue }]}>
+                    {formattedValue}
+                </Text>
+            </Animated.View>
+        </View>
+    );
+});
 
-export default function TweetActionButtons({
+Counter.displayName = 'Counter';
+
+const TweetActionButtons = ({
     Comments,
     retweets,
     likes,
     isLiked,
     onLikePress,
     likeIconStyle,
-}: TweetActionButtonsProps): JSX.Element {
+    uniqueId = 'default',
+}: TweetActionButtonsProps): JSX.Element => {
     const { theme } = useTheme() as ThemeContextType;
-    const lottieRef = useRef<LottieView>(null);
     const commentBottomSheetRef = useRef<CommentBottomSheetMethods>(null);
     const shareBottomSheetRef = useRef<ShareBottomSheetMethods>(null);
+    
+    // Use global state for bookmark status
+    const initialBookmarkState = bookmarkedItems.has(uniqueId);
     const [toggleLike, setToggleLike] = useState(isLiked || false);
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isBookmarked, setIsBookmarked] = useState(initialBookmarkState);
+
+    // Animation shared values
     const translateY = useSharedValue(0);
     const bookmarkScale = useSharedValue(1);
     const bookmarkRotate = useSharedValue(0);
     const bookmarkY = useSharedValue(0);
 
+    // Refs for optimizing updates
+    const likeProcessedRef = useRef<boolean>(false);
+    const lastLikeProps = useRef<{ likes: number, isLiked: boolean }>({ likes, isLiked: isLiked || false });
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Store the component ID to enable stable references
+    const componentId = useRef(uniqueId).current;
+
+    // Memoize formatted values to prevent recalculation on every render
+    const formattedComments = useMemo(() => formatNumber(Comments), [Comments]);
+    const formattedRetweets = useMemo(() => formatNumber(retweets), [retweets]);
+
+    // Cleanup timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+            if (interactionTimeoutRef.current) {
+                clearTimeout(interactionTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Update when props change but avoid unnecessary updates
+    useEffect(() => {
+        // Check if the props actually changed to prevent double updates
+        if (lastLikeProps.current.likes !== likes || lastLikeProps.current.isLiked !== isLiked) {
+            setToggleLike(isLiked || false);
+            lastLikeProps.current = { likes, isLiked: isLiked || false };
+            likeProcessedRef.current = false;
+        }
+    }, [isLiked, likes, uniqueId]);
+
+    // Memoized animation styles
     const counterAnimationStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: translateY.value }],
-        height: LIKE_COUNTER_HEIGHT * 3,
+        height: CONSTANTS.LIKE_COUNTER_HEIGHT * 3,
         alignItems: 'center',
         justifyContent: 'center',
     }));
@@ -142,49 +212,64 @@ export default function TweetActionButtons({
         ],
     }));
 
-    const animateCounter = useCallback((value: number) => {
-        const config: WithTimingConfig = {
-            duration: ANIMATION_DURATION,
-            easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        };
+    // Reset like processed flag
+    const resetLikeProcessed = useCallback(() => {
+        likeProcessedRef.current = false;
+    }, []);
 
-        return withTiming(value, config, (finished?: boolean) => {
-            if (finished && translateY.value === -LIKE_COUNTER_HEIGHT * 2) {
+    // Optimized animation function
+    const animateCounter = useCallback((value: number) => {
+        return withTiming(value, TIMING_CONFIG, (finished?: boolean) => {
+            if (finished && translateY.value === -CONSTANTS.LIKE_COUNTER_HEIGHT * 2) {
                 translateY.value = withTiming(0, { duration: 0 });
             }
         });
     }, [translateY]);
 
-    useEffect(() => {
-        setToggleLike(isLiked || false);
-    }, [isLiked]);
-
-    useEffect(() => {
-        if (toggleLike && lottieRef.current) {
-            requestAnimationFrame(() => {
-                lottieRef.current?.play();
-            });
-        }
-    }, [toggleLike]);
-
     const handleLike = useCallback(() => {
+        // Prevent double-firing of like handler
+        if (likeProcessedRef.current) {
+            return;
+        }
+
+        likeProcessedRef.current = true;
+
+        // Call external handler if provided
         if (onLikePress) {
             onLikePress();
         } else {
             setToggleLike(prev => !prev);
         }
 
+        // Animate counter
         if (translateY.value === 0) {
-            translateY.value = animateCounter(-LIKE_COUNTER_HEIGHT);
-        } else if (translateY.value === -LIKE_COUNTER_HEIGHT) {
-            translateY.value = animateCounter(-LIKE_COUNTER_HEIGHT * 2);
+            translateY.value = animateCounter(-CONSTANTS.LIKE_COUNTER_HEIGHT);
+        } else if (translateY.value === -CONSTANTS.LIKE_COUNTER_HEIGHT) {
+            translateY.value = animateCounter(-CONSTANTS.LIKE_COUNTER_HEIGHT * 2);
         }
-    }, [animateCounter, translateY, onLikePress]);
+
+        // Clean up previous timeout if exists
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        // Reset the processed flag after animation completes
+        timeoutRef.current = setTimeout(resetLikeProcessed, CONSTANTS.ANIMATION_TIMEOUT);
+    }, [animateCounter, translateY, onLikePress, resetLikeProcessed]);
 
     const handleBookmark = useCallback(() => {
-        setIsBookmarked(prev => !prev);
+        const newBookmarkState = !isBookmarked;
+        setIsBookmarked(newBookmarkState);
+        
+        // Update global bookmark state
+        if (newBookmarkState) {
+            bookmarkedItems.add(componentId);
+        } else {
+            bookmarkedItems.delete(componentId);
+        }
 
         if (!isBookmarked) {
+            // Animate bookmark when activating
             bookmarkScale.value = withSequence(
                 withTiming(0.8, {
                     duration: 150,
@@ -208,130 +293,158 @@ export default function TweetActionButtons({
                 })
             );
         } else {
+            // Simpler animation when deactivating
             bookmarkScale.value = withSequence(
                 withSpring(0.9, SPRING_CONFIG),
                 withSpring(1, SPRING_CONFIG)
             );
         }
-    }, [isBookmarked, bookmarkScale, bookmarkRotate]);
+    }, [isBookmarked, bookmarkScale, bookmarkRotate, componentId]);
+
+    // Use InteractionManager to defer non-critical animations and actions
+    const handleBottomSheetOpen = useCallback((ref: React.RefObject<CommentBottomSheetMethods | ShareBottomSheetMethods>) => {
+        // Clear any existing timeout
+        if (interactionTimeoutRef.current) {
+            clearTimeout(interactionTimeoutRef.current);
+        }
+
+        // Defer bottom sheet opening to ensure UI remains responsive
+        interactionTimeoutRef.current = setTimeout(() => {
+            InteractionManager.runAfterInteractions(() => {
+                if (ref.current) {
+                    ref.current.expand();
+                }
+            });
+        }, 50);
+    }, []);
 
     const handleCommentPress = useCallback(() => {
-        // ใช้ InteractionManager เพื่อให้การโต้ตอบของ UI เสร็จสิ้นก่อน
-        InteractionManager.runAfterInteractions(() => {
-            if (commentBottomSheetRef.current) {
-                commentBottomSheetRef.current.expand();
-            }
-        });
-    }, []);
+        handleBottomSheetOpen(commentBottomSheetRef);
+    }, [handleBottomSheetOpen]);
+
+    const handleSharePress = useCallback(() => {
+        handleBottomSheetOpen(shareBottomSheetRef);
+    }, [handleBottomSheetOpen]);
 
     const handleCommentSheetClose = useCallback(() => {
         // การจัดการเมื่อปิด BottomSheet
-    }, []);
-
-    const handleSharePress = useCallback(() => {
-        InteractionManager.runAfterInteractions(() => {
-            if (shareBottomSheetRef.current) {
-                shareBottomSheetRef.current.expand();
-            }
-        });
     }, []);
 
     const handleShareSheetClose = useCallback(() => {
         // Handle share sheet close if needed
     }, []);
 
-    const renderCounter = useCallback(() => (
-        <View style={styles.counterContainer}>
-            <Animated.View style={counterAnimationStyle}>
-                {[likes, likes + 1, likes].map((value, index) => (
-                    <Text
-                        key={index}
-                        style={[
-                            styles.counterText,
-                            { color: toggleLike ? '#f91980' : theme.textColor }
-                        ]}
-                    >
-                        {formatNumber(value)}
-                    </Text>
-                ))}
-            </Animated.View>
-        </View>
-    ), [likes, toggleLike, theme.textColor, counterAnimationStyle]);
+    // Memoized components for optimal rendering
+    const memoizedLikeButton = useMemo(() => (
+        <LikeButtonWithFlower
+            size={16}
+            active={toggleLike}
+            onPress={handleLike}
+            inactiveColor={theme.textColor}
+        />
+    ), [toggleLike, handleLike, theme.textColor]);
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.actionRow}>
+    const memoizedCounter = useMemo(() => (
+        <Counter
+            value={likes}
+            isLiked={toggleLike}
+            animationStyle={counterAnimationStyle}
+            textColor={theme.textColor}
+        />
+    ), [likes, toggleLike, counterAnimationStyle, theme.textColor]);
 
-                <View style={styles.actionItem}>
-                    <ActionButton
-                        icon="heart-outline"
-                        color={toggleLike ? 'transparent' : theme.textColor}
-                        onPress={handleLike}
-                        size={20}
-                    >
-                        {renderCounter()}
-                        {toggleLike && (
-                            <LottieAnimation
-                                lottieRef={lottieRef}
-                                onPress={handleLike}
-                            />
-                        )}
-                    </ActionButton>
-                </View>
+    // Memoized bookmark icon
+    const bookmarkIcon = useMemo(() => (
+        <Animated.View style={bookmarkAnimationStyle}>
+            <Ionicons
+                name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={20}
+                color={isBookmarked ? CONSTANTS.BOOKMARK_COLOR : theme.textColor}
+            />
+        </Animated.View>
+    ), [bookmarkAnimationStyle, isBookmarked, theme.textColor]);
 
-                <View style={styles.actionItem}>
-                    <ActionButton
-                        icon="chatbubble-outline"
-                        color={theme.textColor}
-                        onPress={handleCommentPress}
-                        size={20}
-                    >
-                        <Text style={[styles.actionText, { color: theme.textColor }]}>
-                            {formatNumber(Comments)}
-                        </Text>
-                    </ActionButton>
-                </View>
-
-                <View style={styles.actionItem}>
-                    <Pressable
-                        onPress={handleBookmark}
-                        style={styles.iconButton}
-                    >
-                        <Animated.View style={bookmarkAnimationStyle}>
-                            <Ionicons
-                                name={isBookmarked ? "bookmark" : "bookmark-outline"}
-                                size={20}
-                                color={isBookmarked ? "#3533cd" : theme.textColor}
-                            />
-                        </Animated.View>
-                    </Pressable>
-                </View>
-
-                <View style={styles.actionItem}>
-                    <ActionButton
-                        icon="share-social-outline"
-                        color={theme.textColor}
-                        onPress={handleSharePress}
-                        props={{ android_ripple: { color: 'rgba(0,0,0,0.1)', borderless: true, radius: 20 } }}
-                    />
-                </View>
+    // Memoize entire action row to prevent unnecessary re-renders
+    const actionRow = useMemo(() => (
+        <View style={styles.actionRow}>
+            <View style={styles.actionItem}>
+                <Pressable
+                    style={styles.iconButton}
+                    onPress={handleLike}
+                >
+                    <View style={styles.likeButtonContainer}>
+                        {memoizedLikeButton}
+                        {memoizedCounter}
+                    </View>
+                </Pressable>
             </View>
 
-            {/* Comment Bottom Sheet */}
+            <View style={styles.actionItem}>
+                <ActionButton
+                    icon="chatbubble-outline"
+                    color={theme.textColor}
+                    onPress={handleCommentPress}
+                    size={20}
+                >
+                    <Text style={[styles.actionText, { color: theme.textColor }]}>
+                        {formattedComments}
+                    </Text>
+                </ActionButton>
+            </View>
+
+            <View style={styles.actionItem}>
+                <Pressable
+                    onPress={handleBookmark}
+                    style={styles.iconButton}
+                >
+                    {bookmarkIcon}
+                </Pressable>
+            </View>
+
+            <View style={styles.actionItem}>
+                <ActionButton
+                    icon="share-social-outline"
+                    color={theme.textColor}
+                    onPress={handleSharePress}
+                    props={{ android_ripple: { color: 'rgba(0,0,0,0.1)', borderless: true, radius: 20 } }}
+                />
+            </View>
+        </View>
+    ), [
+        memoizedLikeButton, 
+        memoizedCounter, 
+        formattedComments, 
+        bookmarkIcon,
+        theme.textColor,
+        handleLike,
+        handleCommentPress,
+        handleBookmark,
+        handleSharePress
+    ]);
+
+    // Memoize bottom sheets to prevent unnecessary re-renders
+    const bottomSheets = useMemo(() => (
+        <>
             <CommentBottomSheet
                 ref={commentBottomSheetRef}
                 handleClose={handleCommentSheetClose}
                 commentsCount={Comments}
             />
 
-            {/* Share Bottom Sheet */}
             <ShareBottomSheet
                 ref={shareBottomSheetRef}
                 handleClose={handleShareSheetClose}
             />
+        </>
+    ), [Comments, handleCommentSheetClose, handleShareSheetClose]);
+
+    return (
+        <View style={styles.container}>
+            {actionRow}
+            {bottomSheets}
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -356,44 +469,34 @@ const styles = StyleSheet.create({
         gap: 6,
     } as ViewStyle,
     actionText: {
-        marginLeft: 4,
         fontSize: 13,
     } as TextStyle,
     counterContainer: {
-        height: LIKE_COUNTER_HEIGHT,
-        marginLeft: 4,
+        height: CONSTANTS.LIKE_COUNTER_HEIGHT,
         overflow: 'hidden',
     } as ViewStyle,
     counterText: {
-        height: LIKE_COUNTER_HEIGHT,
+        height: CONSTANTS.LIKE_COUNTER_HEIGHT,
         fontSize: 13,
         textAlign: 'center',
         textAlignVertical: 'center',
     } as TextStyle,
-    lottieContainer: {
-        width: 40,
-        height: 40,
-        position: 'absolute',
-        ...Platform.select({
-            ios: {
-                left: -4,
-                top: -4,
-            },
-
-        })
-    } as ViewStyle,
-    lottieAnimation: {
-        width: '100%',
-        height: '100%',
-        transform: [{
-            scale: Platform.select({ ios: 4, android: 4 })
-        }],
-    } as ViewStyle,
-    lottieButton: {
-        position: 'absolute',
-        width: '50%',
-        height: '50%',
-        left: '25%',
-        top: '25%',
+    likeButtonContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
     } as ViewStyle,
 });
+
+// Optimized equality check for memo comparison
+const arePropsEqual = (prevProps: TweetActionButtonsProps, nextProps: TweetActionButtonsProps) => {
+    return (
+        prevProps.likes === nextProps.likes &&
+        prevProps.isLiked === nextProps.isLiked &&
+        prevProps.Comments === nextProps.Comments &&
+        prevProps.uniqueId === nextProps.uniqueId &&
+        prevProps.retweets === nextProps.retweets
+    );
+};
+
+// Use memo for the entire component with optimized comparison
+export default memo(TweetActionButtons, arePropsEqual);

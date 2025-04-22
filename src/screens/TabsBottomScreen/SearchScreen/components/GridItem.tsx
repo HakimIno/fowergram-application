@@ -64,7 +64,7 @@ const GridItem = memo(({
 
     const position = getPosition();
     const backgroundColor = isDarkMode ? theme?.cardBackground || '#0a0a0a' : '#fafafa';
-    const accentColor = theme?.primary || '#8cc63f';
+    const accentColor = theme?.primary || '#4f46e5';
     const trendingColor = '#ff0050';
 
     return (

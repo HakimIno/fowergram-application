@@ -26,7 +26,7 @@ export const lightTheme: Theme = {
     textColor: '#1a1a1a',
     headerBackground: '#FFFFFF',
     cardBackground: '#FFFFFF',
-    primary: '#8cc63f',
+    primary: '#4f46e5',
     secondary: '#2563eb',
     textMessage: '#eff6ff'
 };
@@ -36,7 +36,7 @@ export const darkTheme: Theme = {
     textColor: '#FFFFFF',
     headerBackground: '#242424',
     cardBackground: '#0a0a0a',
-    primary: '#8cc63f',
+    primary: '#4f46e5',
     secondary: '#2563eb',
     textMessage: '#eff6ff'
 };

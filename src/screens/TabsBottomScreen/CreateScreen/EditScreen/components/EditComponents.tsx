@@ -118,7 +118,7 @@ export const EditCategories = ({
               <FontAwesome5
                 name={category.icon}
                 size={20}
-                color={currentCategory === category.id ? '#8cc63f' : '#fff'}
+                color={currentCategory === category.id ? '#4f46e5' : '#fff'}
               />
               <Text style={[
                 styles.categoryText,
@@ -208,7 +208,7 @@ export const AdjustmentIcon = ({
         <FontAwesome5
           name={getIcon()}
           size={22}
-          color={isActive ? '#8cc63f' : '#fff'}
+          color={isActive ? '#4f46e5' : '#fff'}
         />
         <Text style={[
           styles.adjustmentIconText,
@@ -417,7 +417,7 @@ export const AdjustmentSlider = ({
           maximumValue={adjustment.max}
           value={value}
           onValueChange={(val) => onChange(index, val)}
-          minimumTrackTintColor="#8cc63f"
+          minimumTrackTintColor="#4f46e5"
           maximumTrackTintColor="rgba(255,255,255,0.3)"
           thumbTintColor="#fff"
         />
@@ -621,10 +621,10 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     padding: 12,
-    backgroundColor: '#8cc63f',
+    backgroundColor: '#4f46e5',
     borderRadius: 25,
     paddingHorizontal: 20,
-    shadowColor: '#8cc63f',
+    shadowColor: '#4f46e5',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   activeEditTabText: {
-    color: '#8cc63f',
+    color: '#4f46e5',
   },
   contentContainer: {
     flex: 1,
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   selectedFilterName: {
-    color: '#8cc63f',
+    color: '#4f46e5',
     fontWeight: '700',
   },
   filterName: {
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     height: 3,
     width: 20,
-    backgroundColor: '#8cc63f',
+    backgroundColor: '#4f46e5',
     borderRadius: 1.5,
   },
   cropContainer: {
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeCategoryText: {
-    color: '#8cc63f',
+    color: '#4f46e5',
     fontWeight: '700',
   },
   activeIndicator: {
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     left: '25%',
     right: '25%',
     height: 3,
-    backgroundColor: '#8cc63f',
+    backgroundColor: '#4f46e5',
     borderRadius: 1.5,
   },
   adjustmentContent: {
@@ -864,14 +864,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activeAdjustmentIconText: {
-    color: '#8cc63f',
+    color: '#4f46e5',
     fontWeight: '600',
   },
   adjustmentValueBadge: {
     position: 'absolute',
     top: 5,
     right: 5,
-    backgroundColor: '#8cc63f',
+    backgroundColor: '#4f46e5',
     borderRadius: 10,
     width: 32,
     height: 20,
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sliderValue: {
-    color: '#8cc63f',
+    color: '#4f46e5',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   selectedFilterCategoryText: {
-    color: '#8cc63f',
+    color: '#4f46e5',
   },
   filterCategoryIndicator: {
     position: 'absolute',
@@ -999,7 +999,7 @@ const styles = StyleSheet.create({
     left: '25%',
     right: '25%',
     height: 3,
-    backgroundColor: '#8cc63f',
+    backgroundColor: '#4f46e5',
     borderRadius: 1.5,
   },
 }); 

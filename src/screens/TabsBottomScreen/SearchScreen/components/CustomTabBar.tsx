@@ -13,7 +13,7 @@ const CustomTabBar = ({ props, isLoadingMore, refreshing, isDarkMode, theme }: C
 
     const backgroundColor = isDarkMode ? theme?.backgroundColor || '#1a1a1a' : 'white';
     const inactiveColor = isDarkMode ? '#d4d4d4' : '#1a1a1a';
-    const activeColor = theme?.primary || '#8cc63f';
+    const activeColor = theme?.primary || '#4f46e5';
 
     return (
         <TabBar

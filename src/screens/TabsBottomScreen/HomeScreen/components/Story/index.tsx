@@ -1,5 +1,5 @@
-import React, { memo, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Dimensions } from 'react-native';
+import React, { memo, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useTheme } from 'src/context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,54 +27,56 @@ export interface StoryItem {
 }
 
 interface StoryProps {
+    isDarkMode: boolean;
     stories: StoryItem[];
 }
 
-// Create Story component
+const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
+
+// Create Story component - Instagram style
 const CreateStoryCard = memo(() => {
     const { theme } = useTheme();
     const navigation = useNavigation<StoryNavigationProp>();
-    
-    const handlePress = () => {
+
+    const handlePress = useCallback(() => {
         console.log('Create story pressed');
         // navigation.navigate('camera_screen');
-    };
-    
+    }, []);
+
     return (
         <Pressable
-            style={styles.storyCard}
+            style={styles.storyItem}
             onPress={handlePress}
         >
-            <View style={styles.imageContainer}>
+            <View style={styles.createStoryContainer}>
+                <View style={styles.createStoryIconContainer}>
+                    <Ionicons name="add" size={20} color="white" />
+                </View>
                 <Image
                     source={{ uri: 'https://avatar.iran.liara.run/public/boy?username=34' }}
-                    style={styles.coverImage}
+                    style={styles.storyAvatar}
                     contentFit="cover"
-                    transition={300}
+                    placeholder={blurhash}
+                    cachePolicy="memory-disk"
+                    transition={200}
                 />
-                <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.7)']}
-                    style={styles.gradient}
-                />
-                <View style={styles.userInfo}>
-                    <View style={styles.plusIconContainer}>
-                        <Ionicons name="add" size={24} color="white" />
-                    </View>
-                    <Text style={styles.username} numberOfLines={1}>
-                        Your Story
-                    </Text>
-                </View>
             </View>
+            <Text
+                style={[styles.storyUsername, { color: theme.textColor }]}
+                numberOfLines={1}
+            >
+                Your Story
+            </Text>
         </Pressable>
     );
 });
 
-// Story card component
-const StoryCard = memo(({ item, index, stories }: { item: StoryItem; index: number; stories: StoryItem[] }) => {
+// Story card component - Instagram style
+const StoryCard = memo(({ item, index, stories, }: { item: StoryItem; index: number; stories: StoryItem[] }) => {
     const { theme } = useTheme();
     const navigation = useNavigation<StoryNavigationProp>();
 
-    const handlePress = () => {
+    const handlePress = useCallback(() => {
         console.log('Story pressed:', item.id);
         // Navigate to story screen with the story data
         navigation.navigate('story_screen', {
@@ -82,196 +84,169 @@ const StoryCard = memo(({ item, index, stories }: { item: StoryItem; index: numb
             initialIndex: index - 1, // Subtract 1 because the first item is CreateStory
             userId: item.id
         });
-    };
+    }, [item.id, index, stories, navigation]);
 
     return (
         <Pressable
-            style={styles.storyCard}
+            style={styles.storyItem}
             onPress={handlePress}
         >
-            <View style={styles.imageContainer}>
-                <Image
-                    source={{ uri: item.coverImage }}
-                    style={styles.coverImage}
-                    contentFit="fill"
-                    transition={300}
-                />
-                <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.7)']}
-                    style={styles.gradient}
-                />
-                <View style={styles.userInfo}>
-                    <View style={styles.avatarContainer}>
-                        {!item.viewed && (
-                            <LinearGradient
-                                colors={['#FF5C87', '#FF9F5C', '#FFDB4C']}
-                                style={styles.avatarGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            />
-                        )}
-                        <View style={styles.avatarInnerContainer}>
-                            <Image
-                                source={{ uri: item.userAvatar }}
-                                style={styles.userAvatar}
-                                contentFit="cover"
-                            />
-                        </View>
-                    </View>
-                    <Text style={styles.username} numberOfLines={1}>
-                        {item.username}
-                    </Text>
+            <View style={styles.avatarBorder}>
+                {!item.viewed ? (
+                    <LinearGradient
+                        colors={['#FF5C87', '#4f46e5', '#9333ea']}
+                        style={styles.gradientBorder}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                    />
+                ) : (
+                    <View style={styles.viewedBorder} />
+                )}
+                <View style={styles.avatarContainer}>
+                    <Image
+                        source={{ uri: item.userAvatar }}
+                        style={styles.storyAvatar}
+                        contentFit="cover"
+                        placeholder={blurhash}
+                        cachePolicy="memory-disk"
+                        transition={200}
+                        recyclingKey={item.id}
+                    />
                 </View>
             </View>
+            <Text
+                style={[styles.storyUsername, { color: theme.textColor }]}
+                numberOfLines={1}
+            >
+                {item.username}
+            </Text>
         </Pressable>
     );
 });
 
 
-const Stories = ({ stories }: StoryProps) => {
+const Stories = ({ stories, isDarkMode }: StoryProps) => {
     const { theme } = useTheme();
-    
+
     // Prepare data with Create Story as the first item
     const storyData = useMemo(() => {
         return [{ id: 'create-story' }, ...stories];
     }, [stories]);
 
-    const renderItem = ({ item, index }: { item: any; index: number }) => {
+    const renderItem = useCallback(({ item, index }: { item: any; index: number }) => {
         if (index === 0) {
             return <CreateStoryCard />;
         }
         return <StoryCard item={item} index={index} stories={stories} />;
-    };
+    }, [stories]);
+
+    const keyExtractor = useCallback((item: any) => item.id, []);
+
+    const gradientColors = isDarkMode
+        ? ['rgba(0,0,0,0)', 'rgb(23, 1, 33)'] as const
+        : ['rgba(255,255,255,1)', 'rgba(255,255,255,1)', 'rgb(255, 255, 255)'] as const;
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+        <LinearGradient
+            colors={gradientColors}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.container]}
+        >
             <FlashList
                 data={storyData}
-                keyExtractor={(item) => item.id}
+                keyExtractor={keyExtractor}
                 renderItem={renderItem}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.storiesContainer}
-                decelerationRate="fast"
-                estimatedItemSize={50}
+                estimatedItemSize={80}
+                removeClippedSubviews={true}
+                overScrollMode="never"
             />
-        </View>
+        </LinearGradient>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 0,
-        marginBottom: 16,
-    },
-    categoryText: {
-        fontSize: 15,
-        fontWeight: '500',
+        flex: 1
     },
     storiesContainer: {
         paddingHorizontal: 12,
-        paddingBottom: 10,
+        paddingVertical: 8,
     },
-    storyCard: {
-        width: 110,
-        height: 160,
-        marginRight: 8,
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    imageContainer: {
-        width: '100%',
-        height: 160,
-    },
-    coverImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 8,
-    },
-    gradient: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 160,
-        borderBottomLeftRadius: 8,
-        borderBottomRightRadius: 8,
-    },
-    userInfo: {
-        position: 'absolute',
-        bottom: 5,
-        left: 0,
-        right: 0,
-        flexDirection: 'column',
+    storyItem: {
         alignItems: 'center',
-        justifyContent: 'center'
+        marginRight: 16,
+        width: 70,
     },
-    plusIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#8cc63f',
-        alignItems: 'center',
+    avatarBorder: {
+        width: 75,
+        height: 75,
+        borderRadius: 100,
         justifyContent: 'center',
-        marginBottom: 5,
+        alignItems: 'center',
+        position: 'relative',
+    },
+    gradientBorder: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 70,
+    },
+    viewedBorder: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 34,
     },
     avatarContainer: {
-        width: 36,
-        height: 36,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 36,
-    },
-    avatarGradient: {
-        position: 'absolute',
-        width: 36,
-        height: 36,
-        borderRadius: 36,
-    },
-    avatarInnerContainer: {
-        width: 36,
-        height: 36,
-        borderRadius: 36,
+        width: 70,
+        height: 70,
+        borderRadius: 70,
+        backgroundColor: 'white',
         padding: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    userAvatar: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 14,
+    storyAvatar: {
+        width: 70,
+        height: 70,
+        borderRadius: 70,
     },
-    username: {
-        color: 'white',
-        fontSize: 12,
-        fontFamily: 'Chirp_Medium',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-        marginTop: 3,
+    createStoryContainer: {
+        width: 70,
+        height: 70,
+        borderRadius: 70,
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    closeButton: {
+    createStoryIconContainer: {
         position: 'absolute',
-        top: 10,
-        left: 10,
-        width: 34,
-        height: 34,
+        bottom: 0,
+        right: 0,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: '#4f46e5',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 1,
+        borderWidth: 2,
+        borderColor: 'white',
     },
-    closeButtonInner: {
-        width: 26,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.5)',
-    },
-    closeButtonText: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginTop: -2,
+    storyUsername: {
+        fontSize: 12,
+        marginTop: 5,
+        textAlign: 'center',
+        fontFamily: 'Chirp_Regular',
+        width: 75,
     },
 });
 

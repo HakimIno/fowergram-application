@@ -164,11 +164,20 @@ const BottomBarTab = () => {
                 options={{ tabBarIcon: ({ focused }) => renderTabIcon('home', focused) }}
                 listeners={({ navigation }) => ({
                     tabPress: (e) => {
-                        e.preventDefault()
+                        e.preventDefault();
                         if (navigation.isFocused()) {
-                            navigation.setParams({ refresh: Date.now() } as any)
+                            const params = navigation.getState().routes.find(
+                                route => route.name === 'bottom_bar_home'
+                            )?.params;
+
+                            const lastRefresh = (params as any)?.refresh || 0;
+                            const currentTime = Date.now();
+
+                            if (currentTime - lastRefresh > 300) {
+                                navigation.setParams({ refresh: currentTime } as any);
+                            }
                         } else {
-                            navigation.navigate('bottom_bar_home')
+                            navigation.navigate('bottom_bar_home');
                         }
                     },
                 })}

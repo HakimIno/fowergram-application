@@ -1,6 +1,6 @@
 export const colors = {
   // Brand colors
-  primary: '#8cc63f',
+  primary: '#4f46e5',
   secondary: '#ff0050',
   tertiary: '#facc15',
   
