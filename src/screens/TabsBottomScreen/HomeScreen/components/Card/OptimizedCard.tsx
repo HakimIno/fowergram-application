@@ -151,6 +151,9 @@ export const OptimizedCard = memo(({
     );
   });
   
+  // ตัดชื่อผู้ใช้ให้สั้นลงถ้ายาวเกินไป
+  const formattedUsername = title.length > 25 ? `${title.substring(0, 22)}...` : title;
+  
   return (
     <Animated.View style={styles.root} key={cardKey}>
       <View style={styles.headerContainer}>
@@ -168,8 +171,8 @@ export const OptimizedCard = memo(({
             />
           </View>
           <View style={styles.userInfo}>
-            <Text style={[styles.username, { color: theme.textColor }]} numberOfLines={1}>
-              {title}
+            <Text style={[styles.username, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="tail">
+              {formattedUsername}
             </Text>
             <Text style={styles.timestamp}>2h ago</Text>
           </View>
@@ -237,10 +240,12 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flexDirection: 'column',
+    flex: 1, // เพิ่ม flex เพื่อให้ข้อความอยู่ภายในพื้นที่
+    marginRight: 8, // เพิ่มระยะห่างด้านขวา
   },
   username: {
-    fontSize: 15,
-    fontFamily: "Chirp_Bold",
+    fontFamily: "Chirp_Medium",
+    flexShrink: 1, 
   },
   timestamp: {
     fontSize: 12,

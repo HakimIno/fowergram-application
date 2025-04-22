@@ -6,7 +6,7 @@ import { Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
 const CAROUSEL_WIDTH = SCREEN_WIDTH - 16;
-const CAROUSEL_HEIGHT = SCREEN_HEIGHT / 1.7;
+const CAROUSEL_HEIGHT = SCREEN_HEIGHT / 1.8;
 
 // ค่า blurhash ที่สั้นแต่มีคุณภาพเพียงพอ
 const DEFAULT_BLURHASH = 'L6PZfSi_.AyE_3t7t7R*0KtQ%MRj';

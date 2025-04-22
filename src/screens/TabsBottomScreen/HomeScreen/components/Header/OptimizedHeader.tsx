@@ -1,11 +1,12 @@
 import React, { useCallback } from 'react';
-import { View, Pressable, StyleSheet, StyleProp, ViewStyle, FlexAlignType } from 'react-native';
+import { View, Pressable, StyleSheet, StyleProp, ViewStyle, FlexAlignType, Text } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SunIcon, MoonIcon } from './ThemeIcons';
 import FlowerLogo from '../UI/FlowerLogo';
 import type { Theme } from 'src/context/ThemeContext';
+import FlowergramLogo from 'src/components/FlowergramLogo';
 
 interface HeaderProps {
   insets: {
@@ -61,29 +62,41 @@ export const OptimizedHeader = React.memo(({
       style={styles.headerContainer}
     >
       <View style={[styles.subHeaderContainer, { marginTop: insets.top }]}>
-        <Pressable
-          style={styles.iconButton}
-          onPress={handleThemePress}
-        >
-          <Animated.View style={themeIconStyle}>
-            {!isDarkMode ? (
-              <MoonIcon color={theme.textColor} />
-            ) : (
-              <SunIcon color={theme.textColor} />
-            )}
-          </Animated.View>
-        </Pressable>
-
-        <Pressable style={[headerStyles.logoContainer, { marginRight: 20 }]} onPress={onRefresh}>
-          <FlowerLogo
-            isRefreshing={isRefreshing}
-            onRefresh={onRefresh}
-            color={"#4f46e5"}
-            size={38}
-          />
-        </Pressable>
+        <View style={styles.logoWrapper}>
+          {/* Flower logo as refresh button */}
+          {/* <Pressable style={styles.flowerLogoContainer} onPress={onRefresh}>
+            <FlowerLogo
+              isRefreshing={isRefreshing}
+              onRefresh={onRefresh}
+              color={"#4f46e5"}
+              size={32}
+            />
+          </Pressable> */}
+          
+          {/* Flowergram text logo */}
+          <Pressable style={styles.flowergramContainer} onPress={onRefresh}>
+            <FlowergramLogo
+              width={138}
+              height={40}
+              fontSize={24}
+              theme={theme}
+            />
+          </Pressable>
+        </View>
 
         <View style={styles.rightHeaderContainer}>
+          <Pressable
+            style={styles.iconButton}
+            onPress={handleThemePress}
+          >
+            <Animated.View style={themeIconStyle}>
+              {!isDarkMode ? (
+                <MoonIcon color={theme.textColor} />
+              ) : (
+                <SunIcon color={theme.textColor} />
+              )}
+            </Animated.View>
+          </Pressable>
           <Pressable
             style={headerStyles.notificationContainer}
             onPress={onNotificationPress}
@@ -119,6 +132,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingBottom: 5,
+  },
+  logoWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  flowerLogoContainer: {
+    marginRight: 8,
+  },
+  flowergramContainer: {
+    marginLeft: -5, // Slight overlap for visual connection
   },
   iconButton: {
     padding: 5,
