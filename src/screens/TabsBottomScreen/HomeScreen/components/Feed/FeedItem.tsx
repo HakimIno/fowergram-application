@@ -1,8 +1,12 @@
-import React from 'react';
-import Card from '../Card/Card';
-import { HomeNavigationProp } from '../../../HomeScreen';
+import React, { useRef } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { OptimizedCard } from '../Card/OptimizedCard';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { BottomBarParamList } from 'src/navigation/types';
 
-interface FeedInfo {
+export type HomeNavigationProp = StackNavigationProp<BottomBarParamList, "bottom_bar_home">;
+
+export interface FeedInfo {
   id: string;
   images: string[];
   title: string;
@@ -19,23 +23,36 @@ interface FeedItemProps {
   navigation: HomeNavigationProp;
 }
 
-const FeedItem = React.memo(({ 
-  item, 
-  index, 
-  navigation 
+// Optimized FeedItem component that minimizes re-renders
+export const FeedItem = React.memo(({
+  item,
+  index,
+  navigation
 }: FeedItemProps) => {
+  // Use stable key reference to avoid re-renders causing image loading issues
+  const stableKey = useRef(`feed-item-${item.id}`).current;
+
   return (
-    <Card
-      navigation={navigation}
-      images={item.images}
-      title={item.title}
-      likes={item.likes}
-      caption={""}
-      onZoomStateChange={() => { }}
-      cardIndex={index}
-    />
+    <View key={stableKey} style={styles.container}>
+      <OptimizedCard
+        navigation={navigation}
+        images={item.images}
+        caption={item.description}
+        title={item.title}
+        likes={item.likes}
+        cardIndex={index}
+        isVisible={true}
+      />
+    </View>
   );
+}, (prevProps, nextProps) => {
+  // Prevent unnecessary re-renders
+  return prevProps.item.id === nextProps.item.id &&
+    prevProps.index === nextProps.index;
 });
 
-export default FeedItem;
-export type { FeedInfo }; 
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 8,
+  }
+}); 
