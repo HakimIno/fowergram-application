@@ -344,7 +344,7 @@ const TweetActionButtons = ({
     // Memoized components for optimal rendering
     const memoizedLikeButton = useMemo(() => (
         <LikeButtonWithFlower
-            size={16}
+            size={13}
             active={toggleLike}
             onPress={handleLike}
             inactiveColor={theme.textColor}

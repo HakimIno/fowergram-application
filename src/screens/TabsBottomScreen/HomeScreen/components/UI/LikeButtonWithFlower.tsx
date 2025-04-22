@@ -19,7 +19,8 @@ const DEFAULT_ACTIVE_COLOR = '#f91980';
 const DEFAULT_BURST_COLORS = ['#f91980', '#f91980', '#f91980', '#f91980', '#f91980'];
 const DOT_COUNT = 12;
 const SPARK_COUNT = 12;
-const PETAL_COUNT = 6;
+const PETAL_COUNT = 9;
+const INNER_PETAL_COUNT = 5;
 
 // Component หลัก
 interface LikeButtonWithFlowerProps {
@@ -284,7 +285,7 @@ const LikeButtonWithFlower = forwardRef<LikeButtonWithFlowerRef, LikeButtonWithF
                 </Canvas>
             </Animated.View> */}
 
-            {/* 4. ปุ่มดอกไม้ */}
+            {/* 4. ปุ่มดอกกุหลาบ */}
             <Animated.View style={[styles.buttonContainer, dynamicStyles.buttonContainer, buttonStyle]}>
                 <TouchableOpacity
                     onPress={handlePress}
@@ -294,58 +295,66 @@ const LikeButtonWithFlower = forwardRef<LikeButtonWithFlowerRef, LikeButtonWithF
                 >
                     <Canvas style={[styles.canvas, dynamicStyles.canvas]}>
                         <Group>
-                            {/* วงกลมพื้นหลังสำหรับ outline mode - เพิ่มสีพื้นหลังอ่อนๆ */}
-
-                            {/* วาดกลีบดอกไม้ */}
+                            {/* กลีบดอกกุหลาบชั้นนอก */}
                             <Group transform={[{ rotate: petalRotation.value }]} origin={{ x: BTN_SIZE, y: BTN_SIZE }}>
                                 {Array.from({ length: PETAL_COUNT }).map((_, index) => {
                                     const angle = (index * Math.PI * 2) / PETAL_COUNT;
                                     return (
-                                        <PetalShape
-                                            key={index}
+                                        <RosePetal
+                                            key={`outer-${index}`}
                                             centerX={BTN_SIZE}
                                             centerY={BTN_SIZE}
                                             angle={angle}
-                                            size={BTN_SIZE * 0.95}
+                                            size={BTN_SIZE * 0.96}
                                             color={active ? activeColor : inactiveColor}
                                             colorLight={active ? activeColor : inactiveColor}
                                             isActive={active}
+                                            petalType="outer"
                                         />
                                     );
                                 })}
                             </Group>
 
-
+                            {/* กลีบดอกกุหลาบชั้นใน - เพิ่มความลึกให้กับดอกกุหลาบ */}
                             {active && (
-                                // เกสรดอกไม้เมื่อกดแล้ว
-                                <Group>
-                                    {Array.from({ length: 12 }).map((_, index) => {
-                                        const angle = (index * Math.PI * 2) / 12;
-                                        const distance = BTN_SIZE * 0.15;
-                                        // Lighten the main color for stamen
-                                        const stamenColor = '#fecdd3'; // Could be derived from activeColor
+                                <Group transform={[{ rotate: petalRotation.value * 1.2 }]} origin={{ x: BTN_SIZE, y: BTN_SIZE }}>
+                                    {Array.from({ length: INNER_PETAL_COUNT }).map((_, index) => {
+                                        const angle = (index * Math.PI * 2) / INNER_PETAL_COUNT + Math.PI / INNER_PETAL_COUNT;
                                         return (
-                                            <Circle
-                                                key={`stamen-${index}`}
-                                                cx={BTN_SIZE + Math.cos(angle) * distance}
-                                                cy={BTN_SIZE + Math.sin(angle) * distance}
-                                                r={BTN_SIZE * 0.04}
-                                                color={stamenColor}
+                                            <RosePetal
+                                                key={`inner-${index}`}
+                                                centerX={BTN_SIZE}
+                                                centerY={BTN_SIZE}
+                                                angle={angle}
+                                                size={BTN_SIZE * 0.6}
+                                                color={active ? '#f285a5' : inactiveColor} // ใช้สีอ่อนกว่าเล็กน้อย
+                                                colorLight={active ? '#f285a5' : inactiveColor}
+                                                isActive={active}
+                                                petalType="inner"
                                             />
                                         );
                                     })}
+                                </Group>
+                            )}
 
+                            {active && (
+                                // แสดงเกสรในกรณีที่เป็น active
+                                <Group>
                                     {/* วงกลมเกสรตรงกลาง */}
                                     <Circle
                                         cx={BTN_SIZE}
                                         cy={BTN_SIZE}
-                                        r={BTN_SIZE * 0.13}
-                                        color="#fb7185" // Could be derived from activeColor
+                                        r={BTN_SIZE * 0.15}
+                                        color="#f06292"
+                                    />
+                                    <Circle
+                                        cx={BTN_SIZE}
+                                        cy={BTN_SIZE}
+                                        r={BTN_SIZE * 0.09}
+                                        color="#e91e63"
                                     />
                                 </Group>
                             )}
-
-
                         </Group>
                     </Canvas>
                 </TouchableOpacity>
@@ -354,8 +363,8 @@ const LikeButtonWithFlower = forwardRef<LikeButtonWithFlowerRef, LikeButtonWithF
     );
 });
 
-// Component วาดกลีบดอกไม้
-interface PetalShapeProps {
+// แทนที่ PetalShape ด้วย RosePetal ที่มีรูปทรงคล้ายกลีบกุหลาบมากขึ้น
+interface RosePetalProps {
     centerX: number;
     centerY: number;
     angle: number;
@@ -363,64 +372,90 @@ interface PetalShapeProps {
     color: string;
     colorLight: string;
     isActive: boolean;
+    petalType: 'outer' | 'inner';
 }
 
-const PetalShape = ({ centerX, centerY, angle, size, color, colorLight, isActive }: PetalShapeProps) => {
-    // สร้าง path สำหรับกลีบดอกไม้แบบสวยงาม
+const RosePetal = ({ centerX, centerY, angle, size, color, colorLight, isActive, petalType }: RosePetalProps) => {
+    // สร้าง path สำหรับกลีบกุหลาบ
     const path = Skia.Path.Make();
-    const petalLength = size * 0.65;
-    const petalWidth = size * 0.4;
+    
+    // คำนวณขนาดและรูปทรงกลีบกุหลาบที่แตกต่างกันตามชั้น
+    const petalLength = petalType === 'outer' ? size * 0.75 : size * 0.6;
+    const petalWidth = petalType === 'outer' ? size * 0.5 : size * 0.4;
+    
+    // จุดเริ่มต้นของกลีบ - เลื่อนออกจากศูนย์กลางเล็กน้อยเพื่อสร้างรูปวงกลมตรงกลาง
+    const baseOffset = petalType === 'outer' ? size * 0.15 : size * 0.1;
+    const baseX = centerX + baseOffset * Math.cos(angle);
+    const baseY = centerY + baseOffset * Math.sin(angle);
 
-    // จุดปลายกลีบดอกไม้
+    // จุดปลายกลีบกุหลาบ
     const tipX = centerX + petalLength * Math.cos(angle);
     const tipY = centerY + petalLength * Math.sin(angle);
 
-    // จุดควบคุมข้างๆ - ทำให้กลีบป้อมขึ้นและโค้งมนมากขึ้น
-    const ctrl1Angle = angle + Math.PI * 0.2;
-    const ctrl2Angle = angle - Math.PI * 0.2;
-
-    // เพิ่มระยะขยายด้านข้างให้กลีบป้อมกว่าเดิม
-    const ctrl1X = centerX + petalWidth * 1.1 * Math.cos(ctrl1Angle);
-    const ctrl1Y = centerY + petalWidth * 1.1 * Math.sin(ctrl1Angle);
-
-    const ctrl2X = centerX + petalWidth * 1.1 * Math.cos(ctrl2Angle);
-    const ctrl2Y = centerY + petalWidth * 1.1 * Math.sin(ctrl2Angle);
-
-    // จุดควบคุมสำหรับปลายกลีบ - ปรับแต่งให้ปลายกลีบมนและโค้งสวยงามขึ้น
-    const tipCtrl1X = centerX + (petalLength * 0.85) * Math.cos(angle + 0.1);
-    const tipCtrl1Y = centerY + (petalLength * 0.85) * Math.sin(angle + 0.1);
-
-    const tipCtrl2X = centerX + (petalLength * 0.85) * Math.cos(angle - 0.1);
-    const tipCtrl2Y = centerY + (petalLength * 0.85) * Math.sin(angle - 0.1);
+    // กุหลาบมีกลีบที่โค้งและบานตรงปลาย
+    const ctrlMultiplier = petalType === 'outer' ? 1.8 : 1.4;
+    
+    // จุดควบคุมด้านข้าง - ทำให้กลีบกุหลาบบานออกด้านข้าง
+    const ctrl1Angle = angle + Math.PI * 0.15;
+    const ctrl2Angle = angle - Math.PI * 0.15;
+    
+    // ปรับจุดควบคุมให้กลีบโค้งและป้อมตรงกลาง ปลายบานออกแบบกุหลาบ
+    const ctrl1X = centerX + (petalWidth * ctrlMultiplier) * Math.cos(ctrl1Angle);
+    const ctrl1Y = centerY + (petalWidth * ctrlMultiplier) * Math.sin(ctrl1Angle);
+    
+    const ctrl2X = centerX + (petalWidth * ctrlMultiplier) * Math.cos(ctrl2Angle);
+    const ctrl2Y = centerY + (petalWidth * ctrlMultiplier) * Math.sin(ctrl2Angle);
+    
+    // จุดควบคุมสำหรับปลายกลีบ - ทำให้ปลายกลีบโค้งคล้ายกลีบกุหลาบ
+    const tipOffset = petalType === 'outer' ? 0.12 : 0.08;
+    const tipCtrl1X = centerX + (petalLength * 0.9) * Math.cos(angle + tipOffset);
+    const tipCtrl1Y = centerY + (petalLength * 0.9) * Math.sin(angle + tipOffset);
+    
+    const tipCtrl2X = centerX + (petalLength * 0.9) * Math.cos(angle - tipOffset);
+    const tipCtrl2Y = centerY + (petalLength * 0.9) * Math.sin(angle - tipOffset);
+    
+    // เพิ่มความโค้งตรงโคนกลีบเพื่อให้โคนกลีบบีบเข้า
+    const baseCtrlOffset = petalType === 'outer' ? 0.1 : 0.06;
+    const baseCtrl1X = baseX + (baseOffset * 0.5) * Math.cos(angle + Math.PI * baseCtrlOffset);
+    const baseCtrl1Y = baseY + (baseOffset * 0.5) * Math.sin(angle + Math.PI * baseCtrlOffset);
+    
+    const baseCtrl2X = baseX + (baseOffset * 0.5) * Math.cos(angle - Math.PI * baseCtrlOffset);
+    const baseCtrl2Y = baseY + (baseOffset * 0.5) * Math.sin(angle - Math.PI * baseCtrlOffset);
 
     // วาด path
-    path.moveTo(centerX, centerY);
+    path.moveTo(baseX, baseY);
     path.cubicTo(ctrl1X, ctrl1Y, tipCtrl1X, tipCtrl1Y, tipX, tipY);
-    path.cubicTo(tipCtrl2X, tipCtrl2Y, ctrl2X, ctrl2Y, centerX, centerY);
+    path.cubicTo(tipCtrl2X, tipCtrl2Y, ctrl2X, ctrl2Y, baseX, baseY);
+
+    // ความโปร่งใสของกลีบชั้นใน
+    const opacity = petalType === 'inner' ? (isActive ? 0.9 : 0.7) : 1;
+    
+    // กำหนดสี - กลีบใน/กลีบนอก
+    const petalColor = isActive 
+        ? (petalType === 'inner' ? '#fb7185' : color) 
+        : color;
 
     return (
         <Group>
-            {/* กลีบดอกไม้หลัก */}
-            <Group transform={[{ scale: 0.95 }]} origin={{ x: centerX, y: centerY }}>
-                {isActive ? (
-                    // เมื่อ active เป็นสีเต็ม
-                    <Path
-                        path={path}
-                        color={color}
-                        style="fill"
-                    />
-                ) : (
-                    // เมื่อไม่ active เป็น outline
-                    <Path
-                        path={path}
-                        color={color}
-                        style="stroke"
-                        strokeWidth={1.5}
-                        strokeJoin="round"
-                        strokeCap="round"
-                    />
-                )}
-            </Group>
+            {isActive ? (
+                // เมื่อ active เป็นสีเต็ม
+                <Path
+                    path={path}
+                    color={petalColor}
+                    style="fill"
+                    opacity={opacity}
+                />
+            ) : (
+                // เมื่อไม่ active เป็น outline
+                <Path
+                    path={path}
+                    color={petalColor}
+                    style="stroke"
+                    strokeWidth={1.5}
+                    strokeJoin="round"
+                    strokeCap="round"
+                />
+            )}
         </Group>
     );
 };
