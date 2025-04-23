@@ -54,3 +54,27 @@ export const register = async (userData: RegisterData): Promise<Jwt> => {
         throw error;
     }
 };
+
+/**
+ * ดึงข้อมูลผู้ใช้โดยใช้ token
+ * @param token JWT token สำหรับการรับรองตัวตน
+ * @returns ข้อมูลผู้ใช้งาน
+ */
+export const getProfile = async (token: string): Promise<any> => {
+    try {
+        // เพิ่ม authorization header พร้อม token
+        const headers = {
+            Authorization: `Bearer ${token}`
+        };
+        
+        const response = await httpEndpoint.get('/api/v1/users/me', { headers });
+        
+        // แสดงข้อมูลที่ได้รับเพื่อการดีบัก
+        console.log('Profile API response:', JSON.stringify(response.data, null, 2));
+        
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        throw error;
+    }
+};

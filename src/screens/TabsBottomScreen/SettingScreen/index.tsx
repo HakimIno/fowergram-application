@@ -1,5 +1,5 @@
 import { View, Text, Animated, Image, Platform, StyleSheet, StatusBar, TouchableOpacity, Easing } from 'react-native'
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -10,7 +10,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { BottomBarParamList } from 'src/navigation/types';
-import { AuthContext } from 'src/contexts/auth.context';
+import { useAuth } from 'src/contexts/auth';
 
 
 const isCheckPlatform = Platform.OS === 'ios';
@@ -161,7 +161,7 @@ const SettingScreen = () => {
         }, [])
     );
 
-    const { onLogout } = useContext(AuthContext);
+    const { onLogout } = useAuth();
 
     const onPressNavigation = (route: Route) => {
         if (route.screen === "logout") {

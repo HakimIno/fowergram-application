@@ -8,8 +8,8 @@ export const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     logoContainer: {
-        height: height * 0.4,
-        marginTop: height * 0.1,
+        height: height * 0.3,
+        marginTop: height * 0.06,
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%'
@@ -22,37 +22,86 @@ export const styles = StyleSheet.create({
         textAlign: 'center',
         paddingHorizontal: 20
     },
-    buttonContainer: {
+    savedAccountsContainer: {
         width: '100%',
         paddingHorizontal: 30,
-        marginTop: height * 0.05
+        marginBottom: 20,
+    },
+    savedAccountsTitle: {
+        fontFamily: 'Chirp_Bold',
+        fontSize: 16,
+        color: '#1F2937',
+        marginBottom: 10,
+    },
+    accountsList: {
+        maxHeight: height * 0.2,
+    },
+    accountItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    accountAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#e5e7eb',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    accountAvatarText: {
+        fontFamily: 'Chirp_Bold',
+        fontSize: 16,
+        color: '#4b5563',
+    },
+    accountInfo: {
+        flex: 1,
+    },
+    accountName: {
+        fontFamily: 'Chirp_Bold',
+        fontSize: 14,
+        color: '#000',
+    },
+    accountEmail: {
+        fontFamily: 'Chirp_Regular',
+        fontSize: 12,
+        color: '#6b7280',
+    },
+    buttonContainer: {
+        width: '100%',
+        paddingHorizontal: 20,
+        marginBottom: 80,
     },
     loginButton: {
         backgroundColor: '#000',
-        height: 54,
+        height: 50,
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16
+
     },
     loginButtonText: {
         color: '#fff',
         fontFamily: 'Chirp_Bold',
-        fontSize: 16
+        lineHeight: 14 * 1.4
     },
     registerButton: {
         backgroundColor: '#fff',
-        height: 54,
+        height: 50,
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: '#ddd'
+        borderColor: '#ddd',
+        marginBottom: 16
     },
     registerButtonText: {
         color: '#000',
         fontFamily: 'Chirp_Bold',
-        fontSize: 16
+        lineHeight: 14 * 1.4
     },
     footer: {
         position: 'absolute',
@@ -67,6 +116,13 @@ export const styles = StyleSheet.create({
         color: '#6b7280',
         fontSize: 12,
         lineHeight: 12 * 1.4
+    },
+    noAccountsText: {
+        fontFamily: 'Chirp_Regular',
+        fontSize: 14,
+        color: '#6b7280',
+        textAlign: 'center',
+        fontStyle: 'italic',
     }
 });
 

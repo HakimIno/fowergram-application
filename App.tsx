@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Knewave_400Regular } from '@expo-google-fonts/knewave';
 import { PottaOne_400Regular } from '@expo-google-fonts/potta-one'
-import { AuthProvider } from './src/contexts/auth.context'
+import { AuthProvider } from './src/contexts/auth'
 import store from './src/redux-store';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { Host } from 'react-native-portalize';

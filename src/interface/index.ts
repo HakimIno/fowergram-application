@@ -1,8 +1,10 @@
 export interface UserDetails {
     id: number;
-    firstName: string;
-    lastName: string;
+    username: string;
     email: string;
+    created_at?: string;
+    firstName?: string;
+    lastName?: string;
 }
 
 export interface NewUser {

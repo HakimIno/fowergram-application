@@ -1,5 +1,5 @@
 import { Dimensions, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, NativeScrollEvent, NativeSyntheticEvent, FlatList, Animated, ActivityIndicator } from 'react-native'
-import React, { useRef, useState, useEffect, useContext } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AntDesign, Ionicons } from '@expo/vector-icons'
@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { RouteProp } from '@react-navigation/native'
 import * as Haptics from 'expo-haptics'
 import { RegisterData } from 'src/api/Auth'
-import { AuthContext } from 'src/contexts/auth.context'
+import { useAuth } from 'src/contexts/auth'
 
 const { width, height } = Dimensions.get("window")
 
@@ -156,7 +156,7 @@ const WheelPicker = ({
 
 const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenProps) => {
     const { username, email, password } = route.params;
-    const { onRegister, isRegistering, registerError } = useContext(AuthContext);
+    const { onRegister, isRegistering, registerError } = useAuth();
     const insets = useSafeAreaInsets();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(50)).current;

@@ -1,10 +1,10 @@
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native'
-import React, { useContext, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from 'src/navigation/types'
 import { StackNavigationProp } from '@react-navigation/stack'
-import { AuthContext } from 'src/contexts/auth.context'
+import { useAuth } from 'src/contexts/auth'
 import FlowergramLogo from 'src/components/FlowergramLogo'
 import { useTheme } from 'src/context/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons'
 export type LoginNavigationProp = StackNavigationProp<RootStackParamList, "login_screen">;
 
 const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
-    const { isLoggingIn, onLogin, loginError } = useContext(AuthContext);
+    const { isLoggingIn, onLogin, loginError } = useAuth();
     const insets = useSafeAreaInsets();
     const { theme } = useTheme();
 

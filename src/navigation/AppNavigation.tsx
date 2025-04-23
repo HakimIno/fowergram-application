@@ -5,7 +5,7 @@ import { RootStackParamList } from './types';
 import BottomBarTab from './BottomBarTab';
 import { CameraScreen, GalleryScreen, ImageProfileScreen, LanguageScreen, LoginScreen, NotificationScreen, PreviewScreen, ProfileDetailsScreen, ProfileScreen, ThemeScreen } from 'src/screens';
 import { StackNavigationOptions } from '@react-navigation/stack';
-import { AuthContext } from 'src/contexts/auth.context';
+import { useAuth } from 'src/contexts/auth';
 import { CreateScreen } from 'src/screens/TabsBottomScreen';
 import ChatConversationScreen from 'src/screens/TabsBottomScreen/ChatScreen/ChatConversationScreen';
 import CallScreen from 'src/screens/TabsBottomScreen/ChatScreen/CallScreen';
@@ -18,7 +18,7 @@ import WelcomeScreen from 'src/screens/Auth/WelcomeScreen';
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigation = () => {
-    const { isLoggedIn } = useContext(AuthContext);
+    const { isLoggedIn } = useAuth();
     const [isTest] = useState(true)
     const AppStackOptions = (title: string): StackNavigationOptions => {
         return {
