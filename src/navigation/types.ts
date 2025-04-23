@@ -53,6 +53,7 @@ export type RootStackParamList = {
     register_screen: undefined;
     register_birthday_screen: {
         username: string;
+        email: string;
         password: string;
     };
 };

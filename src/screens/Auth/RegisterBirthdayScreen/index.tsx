@@ -1,5 +1,5 @@
-import { Dimensions, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, NativeScrollEvent, NativeSyntheticEvent, FlatList, Animated } from 'react-native'
-import React, { useRef, useState, useEffect } from 'react'
+import { Dimensions, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, NativeScrollEvent, NativeSyntheticEvent, FlatList, Animated, ActivityIndicator } from 'react-native'
+import React, { useRef, useState, useEffect, useContext } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons'
@@ -9,6 +9,8 @@ import FlowergramLogo from 'src/components/FlowergramLogo'
 import { LinearGradient } from 'expo-linear-gradient'
 import { RouteProp } from '@react-navigation/native'
 import * as Haptics from 'expo-haptics'
+import { RegisterData } from 'src/api/Auth'
+import { AuthContext } from 'src/contexts/auth.context'
 
 const { width, height } = Dimensions.get("window")
 
@@ -153,7 +155,8 @@ const WheelPicker = ({
 };
 
 const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenProps) => {
-    const { username, password } = route.params;
+    const { username, email, password } = route.params;
+    const { onRegister, isRegistering, registerError } = useContext(AuthContext);
     const insets = useSafeAreaInsets();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(50)).current;
@@ -163,6 +166,7 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
     const [year, setYear] = useState('2000');
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [validDays, setValidDays] = useState<string[]>([]);
+    const [dateError, setDateError] = useState('');
 
     // Animation on component mount
     useEffect(() => {
@@ -237,6 +241,14 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
         };
     }, []);
 
+    // Reset error when registration status changes
+    useEffect(() => {
+        if (registerError) {
+            setDateError(registerError);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+    }, [registerError]);
+
     // Month names to display
     const monthNames = [
         "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
@@ -249,21 +261,45 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
     // Generate years (current year - 100)
     const years = Array.from({ length: 100 }, (_, i) => String(new Date().getFullYear() - i));
 
+    const validateBirthDate = (): boolean => {
+        // Check for minimum age (e.g., 13 years)
+        const birthYear = parseInt(year);
+        const currentYear = new Date().getFullYear();
+        
+        if (currentYear - birthYear < 13) {
+            setDateError('คุณต้องมีอายุอย่างน้อย 13 ปีเพื่อลงทะเบียน');
+            return false;
+        }
+        
+        setDateError('');
+        return true;
+    };
+
     const handleCreateAccount = () => {
         Keyboard.dismiss();
 
+        // Validate birth date
+        if (!validateBirthDate()) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return;
+        }
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-
-        console.log('Creating account with:', {
+        // Format date in the required format (YYYY-MM-DD)
+        const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        
+        // Call the register function from AuthContext
+        const registerData: RegisterData = {
             username,
             password,
-            birthday: `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}` // Format as DD/MM/YYYY
+            birth_date: formattedDate,
+            email
+        };
+        
+        // ส่ง callback เพื่อนำทางไปยังหน้า login หลังลงทะเบียนสำเร็จ
+        onRegister(registerData, () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            navigation.navigate('login_screen');
         });
-
-
-        navigation.navigate('login_screen');
     };
 
     const handleMonthChange = (value: string) => {
@@ -355,6 +391,10 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
                                 </View>
                             </View>
 
+                            {dateError ? (
+                                <Text style={styles.errorText}>{dateError}</Text>
+                            ) : null}
+
                             <View style={styles.infoContainer}>
                                 <AntDesign name="infocirlceo" size={16} color={COLORS.textSecondary} style={styles.infoIcon} />
                                 <Text style={styles.helperText}>
@@ -375,12 +415,17 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
                             bottom: keyboardVisible ? 10 : insets.bottom + 20,
                             left: 20,
                             right: 20,
-
+                            opacity: isRegistering ? 0.7 : 1
                         }
                     ]}
                     onPress={handleCreateAccount}
+                    disabled={isRegistering}
                 >
-                    <Text style={[styles.buttonText, { color: 'white' }]}>สร้างบัญชี</Text>
+                    {isRegistering ? (
+                        <ActivityIndicator color="white" size="small" />
+                    ) : (
+                        <Text style={[styles.buttonText, { color: 'white' }]}>สร้างบัญชี</Text>
+                    )}
                 </Pressable>
             </LinearGradient>
         </KeyboardAvoidingView>
@@ -537,14 +582,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 16,
-        shadowColor: "#f43f5e",
-        shadowOffset: {
-            width: 0,
-            height: 10,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        elevation: 10,
+       
     },
     buttonGradient: {
         flex: 1,
@@ -558,5 +596,12 @@ const styles = StyleSheet.create({
     },
     spacer: {
         flex: 1,
+    },
+    errorText: {
+        color: COLORS.error,
+        fontSize: 13,
+        marginTop: 8,
+        marginBottom: 8,
+        fontFamily: 'Chirp_Medium',
     },
 }) 

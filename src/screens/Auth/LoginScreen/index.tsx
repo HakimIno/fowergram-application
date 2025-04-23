@@ -9,33 +9,56 @@ import { AuthContext } from 'src/contexts/auth.context'
 import FlowergramLogo from 'src/components/FlowergramLogo'
 import { useTheme } from 'src/context/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
+import * as Haptics from 'expo-haptics'
+import * as yup from 'yup'
 
 const { width, height } = Dimensions.get("window")
 
 export type LoginNavigationProp = StackNavigationProp<RootStackParamList, "login_screen">;
 
+// สร้าง validation schema ด้วย Yup
+const loginSchema = yup.object().shape({
+  identifier: yup
+    .string()
+    .required('กรุณากรอกชื่อผู้ใช้หรืออีเมล'),
+  password: yup
+    .string()
+    .required('กรุณากรอกรหัสผ่าน')
+    .min(6, 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
+});
+
 const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
-    const { isLoggingIn, onLogin } = useContext(AuthContext);
-
+    const { isLoggingIn, onLogin, loginError } = useContext(AuthContext);
     const insets = useSafeAreaInsets();
-
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const { theme } = useTheme();
+    
+    // State สำหรับเก็บค่า form
+    const [formState, setFormState] = useState({
+        identifier: '',
+        password: '',
+    });
+    
+    // State สำหรับเก็บ error แต่ละ field
+    const [errors, setErrors] = useState<{
+        identifier?: string;
+        password?: string;
+        form?: string;
+    }>({});
+    
+    // State สำหรับตรวจสอบว่ากำลังกรอก email หรือ username
+    const [isEmail, setIsEmail] = useState(false);
+    
     const [showPassword, setShowPassword] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
-            () => {
-                setKeyboardVisible(true);
-            }
+            () => setKeyboardVisible(true)
         );
         const keyboardDidHideListener = Keyboard.addListener(
             'keyboardDidHide',
-            () => {
-                setKeyboardVisible(false);
-            }
+            () => setKeyboardVisible(false)
         );
 
         return () => {
@@ -43,13 +66,98 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
             keyboardDidHideListener.remove();
         };
     }, []);
-
-    const handleLogin = () => {
-        Keyboard.dismiss();
-        onLogin({ email, password });
+    
+    // ฟังก์ชันเปลี่ยนแปลงค่าใน input
+    const handleChange = (field: keyof typeof formState) => (text: string) => {
+        setFormState(prev => ({ ...prev, [field]: text }));
+        
+        // ตรวจสอบว่าเป็น email หรือไม่
+        if (field === 'identifier') {
+            const emailPattern = /\S+@\S+\.\S+/;
+            setIsEmail(emailPattern.test(text));
+        }
+        
+        // ล้าง error เมื่อมีการพิมพ์ใหม่
+        if (errors[field]) {
+            setErrors(prev => ({ ...prev, [field]: undefined }));
+        }
+    };
+    
+    // ตรวจสอบ field เดียวเมื่อ blur
+    const validateField = (field: keyof typeof formState) => async () => {
+        try {
+            // สร้าง schema สำหรับ field เดียว
+            const fieldSchema = yup.object().shape({
+                [field]: loginSchema.fields[field]
+            });
+            
+            await fieldSchema.validate({ [field]: formState[field] }, { abortEarly: false });
+            setErrors(prev => ({ ...prev, [field]: undefined }));
+        } catch (error) {
+            if (error instanceof yup.ValidationError) {
+                // แสดง error แรกของ field นั้น
+                const fieldError = error.inner.find(err => err.path === field);
+                if (fieldError) {
+                    setErrors(prev => ({ ...prev, [field]: fieldError.message }));
+                    // สั่นเบาๆ เมื่อ validation ไม่ผ่าน
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+            }
+        }
+    };
+    
+    // ตรวจสอบทั้ง form เมื่อกด login
+    const validateForm = async (): Promise<boolean> => {
+        try {
+            await loginSchema.validate(formState, { abortEarly: false });
+            return true;
+        } catch (error) {
+            if (error instanceof yup.ValidationError) {
+                // รวบรวม error ทั้งหมด
+                const validationErrors: {[key: string]: string} = {};
+                error.inner.forEach(err => {
+                    if (err.path) {
+                        validationErrors[err.path] = err.message;
+                    }
+                });
+                
+                setErrors(validationErrors);
+                // สั่นแรงเมื่อ form validation ไม่ผ่าน
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            return false;
+        }
     };
 
-    const { theme } = useTheme();
+    const handleLogin = async () => {
+        Keyboard.dismiss();
+        
+        const isValid = await validateForm();
+        if (isValid) {
+            onLogin(formState);
+        }
+    };
+
+    // กำหนดไอคอนตามประเภทข้อมูลที่กรอก
+    const renderidentifierIcon = () => {
+        if (formState.identifier === '') {
+            return (
+                <MaterialCommunityIcons 
+                    name="account-outline" 
+                    size={20} 
+                    color={errors.identifier ? "#ef4444" : "#6b7280"} 
+                />
+            );
+        }
+        
+        return (
+            <MaterialCommunityIcons 
+                name={isEmail ? "email-outline" : "account-outline"} 
+                size={20} 
+                color={errors.identifier ? "#ef4444" : "#6b7280"} 
+            />
+        );
+    };
 
     return (
         <KeyboardAvoidingView
@@ -83,28 +191,56 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
                             </View>
 
                             <View style={styles.formContainer}>
-                                <View style={styles.inputWrapper}>
-                                    <MaterialCommunityIcons name="account-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+                                {/* Username/Email Input */}
+                                <View style={[
+                                    styles.inputWrapper,
+                                    errors.identifier ? styles.inputWrapperError : null
+                                ]}>
+                                    <View style={styles.inputIcon}>
+                                        {renderidentifierIcon()}
+                                    </View>
                                     <TextInput
-                                        style={styles.input}
-                                        placeholder='ชื่อผู้ใช้'
-                                        autoComplete="username"
+                                        style={[styles.input, { backgroundColor: errors.identifier ? "rgba(255, 209, 209, 0.5)" : "rgba(229, 231, 235, 0.5)" }]}
+                                        placeholder='ชื่อผู้ใช้หรืออีเมล'
                                         placeholderTextColor={'#a1a1aa'}
-                                        value={email}
-                                        onChangeText={setEmail}
+                                        value={formState.identifier}
+                                        onChangeText={handleChange('identifier')}
+                                        onBlur={validateField('identifier')}
                                         autoCapitalize="none"
+                                        autoComplete="username"
+                                        keyboardType={isEmail ? "email-address" : "default"}
                                     />
+                                    {formState.identifier !== '' && (
+                                        <View style={styles.inputTypeIndicator}>
+                                            <Text style={styles.inputTypeText}>
+                                                {isEmail ? 'อีเมล' : 'ชื่อผู้ใช้'}
+                                            </Text>
+                                        </View>
+                                    )}
                                 </View>
+                                {errors.identifier ? (
+                                    <Text style={styles.errorText}>{errors.identifier}</Text>
+                                ) : null}
 
-                                <View style={styles.inputWrapper}>
-                                    <MaterialCommunityIcons name="lock-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+                                {/* Password Input */}
+                                <View style={[
+                                    styles.inputWrapper,
+                                    errors.password ? styles.inputWrapperError : null
+                                ]}>
+                                    <MaterialCommunityIcons 
+                                        name="lock-outline" 
+                                        size={20} 
+                                        color={errors.password ? "#ef4444" : "#6b7280"} 
+                                        style={styles.inputIcon} 
+                                    />
                                     <TextInput
-                                        style={[styles.input, { paddingRight: 50 }]}
+                                        style={[styles.input, { backgroundColor: errors.password ? "rgba(255, 209, 209, 0.5)" : "rgba(229, 231, 235, 0.5)" }]}
                                         placeholder='รหัสผ่าน'
                                         secureTextEntry={!showPassword}
                                         placeholderTextColor={'#a1a1aa'}
-                                        value={password}
-                                        onChangeText={setPassword}
+                                        value={formState.password}
+                                        onChangeText={handleChange('password')}
+                                        onBlur={validateField('password')}
                                     />
                                     <Pressable
                                         style={styles.passwordToggle}
@@ -113,13 +249,18 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
                                         <MaterialCommunityIcons
                                             name={showPassword ? "eye-off-outline" : "eye-outline"}
                                             size={22}
-                                            color="#6b7280"
+                                            color={errors.password ? "#ef4444" : "#6b7280"}
                                         />
                                     </Pressable>
-
                                 </View>
-
-
+                                {errors.password ? (
+                                    <Text style={styles.errorText}>{errors.password}</Text>
+                                ) : null}
+                                
+                                {/* Server Error Message */}
+                                {loginError ? (
+                                    <Text style={[styles.errorText, styles.generalError]}>{loginError}</Text>
+                                ) : null}
                             </View>
                             <View style={styles.helpLinksContainer}>
                                 <Pressable style={{}} onPress={() => navigation.navigate("register_screen")}>
@@ -135,18 +276,20 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
                     </TouchableWithoutFeedback>
                 </ScrollView>
 
-
+                {/* Login Button */}
                 <Pressable
-                    style={[
+                    style={({ pressed }) => [
                         styles.btnContainer,
                         {
                             position: 'absolute',
                             bottom: keyboardVisible ? 10 : insets.bottom + 20,
                             left: 20,
-                            right: 20
+                            right: 20,
+                            opacity: (isLoggingIn || pressed) ? 0.9 : 1
                         }
                     ]}
                     onPress={handleLogin}
+                    disabled={isLoggingIn}
                 >
                     {!isLoggingIn ?
                         <Text style={[styles.textInfoSubTitle, { color: "white" }]}>เข้าสู่ระบบ</Text> :
@@ -199,6 +342,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+    inputWrapperError: {
+        marginBottom: 6, // ลด margin เมื่อมี error text อยู่ด้านล่าง
+    },
     inputIcon: {
         position: 'absolute',
         left: 15,
@@ -209,6 +355,21 @@ const styles = StyleSheet.create({
         right: 15,
         zIndex: 1,
     },
+    inputTypeIndicator: {
+        position: 'absolute',
+        right: 15,
+        top: 10,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+    },
+    inputTypeText: {
+        fontFamily: 'Chirp_Regular',
+        fontSize: 10,
+        color: '#6b7280',
+        lineHeight: 10 * 1.4
+    },
     textInfoSubTitle: {
         fontFamily: 'Chirp_Bold',
         fontSize: 14,
@@ -217,8 +378,8 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         paddingLeft: 45,
+        paddingRight: 15,
         textAlignVertical: 'center',
-        backgroundColor: "rgba(229, 231, 235, 0.5)",
         fontFamily: 'Chirp_Regular',
         borderRadius: 16,
         height: 50,
@@ -230,14 +391,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 16,
-        shadowColor: "#4f46e5",
-        shadowOffset: {
-            width: 0,
-            height: 10,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        elevation: 10,
     },
     spacer: {
         flex: 1,
@@ -253,5 +406,22 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 16,
         lineHeight: 12 * 1.4
+    },
+    errorText: {
+        color: '#ef4444',
+        fontSize: 12,
+        marginTop: -4,
+        marginBottom: 8,
+        alignSelf: 'flex-start',
+        paddingLeft: 4,
+        fontFamily: 'Chirp_Regular',
+        lineHeight: 12 * 1.4
+    },
+    generalError: {
+        marginTop: 4,
+        marginBottom: 16, 
+        textAlign: 'center',
+        alignSelf: 'center',
+        paddingLeft: 0,
     },
 })
