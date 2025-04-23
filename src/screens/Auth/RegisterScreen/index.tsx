@@ -13,6 +13,7 @@ import { PasswordInput } from './components/PasswordInput'
 import { useAvailabilityCheck } from 'src/hooks/useAvailabilityCheck'
 import { RegisterFormValues, validateForm, validateSingleField } from './validation'
 import styles from './style'
+import { Ionicons } from '@expo/vector-icons'
 
 export type RegisterNavigationProp = StackNavigationProp<RootStackParamList, "register_screen">;
 
@@ -222,9 +223,16 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.innerContainer}>
                             <StatusBar style="auto" />
-
-                            <View style={styles.logoContainer}>
+                            <View style={[styles.logoContainer, { marginTop: insets.top + 15 }]}>
+                                <Pressable
+                                    onPress={() => navigation.goBack()}
+                                    style={{ padding: 6, backgroundColor: 'rgba(177, 177, 177, 0.1)', borderRadius: 10 }}>
+                                    <Ionicons name='arrow-back' size={24} />
+                                </Pressable>
                                 <Text style={styles.subtitleText}>สร้างบัญชีของคุณ</Text>
+                            </View>
+                            <View style={styles.accountContainer}>
+                                <Text style={styles.titleText}>บัญชี</Text>
                             </View>
 
                             <View style={styles.formContainer}>

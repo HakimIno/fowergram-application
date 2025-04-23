@@ -2,7 +2,7 @@ import { Dimensions, Keyboard, KeyboardAvoidingView, Platform, Pressable, Scroll
 import React, { useRef, useState, useEffect, useContext } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, Ionicons } from '@expo/vector-icons'
 import { RootStackParamList } from 'src/navigation/types'
 import { StackNavigationProp } from '@react-navigation/stack'
 import FlowergramLogo from 'src/components/FlowergramLogo'
@@ -265,12 +265,12 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
         // Check for minimum age (e.g., 13 years)
         const birthYear = parseInt(year);
         const currentYear = new Date().getFullYear();
-        
+
         if (currentYear - birthYear < 13) {
             setDateError('คุณต้องมีอายุอย่างน้อย 13 ปีเพื่อลงทะเบียน');
             return false;
         }
-        
+
         setDateError('');
         return true;
     };
@@ -286,7 +286,7 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
 
         // Format date in the required format (YYYY-MM-DD)
         const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        
+
         // Call the register function from AuthContext
         const registerData: RegisterData = {
             username,
@@ -294,7 +294,7 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
             birth_date: formattedDate,
             email
         };
-        
+
         // ส่ง callback เพื่อนำทางไปยังหน้า login หลังลงทะเบียนสำเร็จ
         onRegister(registerData, () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -330,13 +330,14 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
 
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.innerContainer}>
-                        <Animated.View
-                            style={[
-                                styles.logoContainer,
-                            ]}
-                        >
-                           
-                        </Animated.View>
+                        <View style={[styles.logoContainer, { marginTop: insets.top + 15 }]}>
+                            <Pressable
+                                onPress={() => navigation.goBack()}
+                                style={{ padding: 6, backgroundColor: 'rgba(177, 177, 177, 0.1)', borderRadius: 10 }}>
+                                <Ionicons name='arrow-back' size={24} />
+                            </Pressable>
+                            <Text style={styles.subtitleText}>เลือกวันเกิดของคุณ</Text>
+                        </View>
 
                         <Animated.View
                             style={[
@@ -344,8 +345,6 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
 
                             ]}
                         >
-                            <Text style={styles.formLabel}>วันเกิดของคุณ</Text>
-
                             <View style={styles.cardContainer}>
                                 <View style={styles.birthdayContainer}>
                                     {/* Day picker */}
@@ -435,19 +434,32 @@ const styles = StyleSheet.create({
     },
     innerContainer: {
         flex: 1,
-        paddingHorizontal: 20,
+       
     },
     logoContainer: {
-        marginTop: height * 0.08,
+        marginTop: height * 0.06,
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginHorizontal: 20,
+        gap: 20
+    },
+    accountContainer: {
+        marginTop: height * 0.02,
         alignItems: 'flex-start',
-        justifyContent: 'center',
         width: '100%',
         marginHorizontal: 25
     },
     subtitleText: {
         fontFamily: 'Chirp_Bold',
         color: '#000',
-        fontSize: 14,
+        fontSize: 20,
+        lineHeight: 20 * 1.4
+    },
+    titleText: {
+        fontFamily: 'Chirp_Bold',
+        color: '#4b5563',
+        fontSize: 13,
         marginTop: 8,
         lineHeight: 13 * 1.4
     },
@@ -456,6 +468,7 @@ const styles = StyleSheet.create({
         width: "100%",
         alignSelf: 'center',
         marginTop: 20,
+        paddingHorizontal: 20,
     },
     formLabel: {
         fontFamily: 'Chirp_Bold',
@@ -469,7 +482,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 20,
         padding: 16,
-       
+
     },
     birthdayContainer: {
         flexDirection: 'row',
@@ -560,9 +573,10 @@ const styles = StyleSheet.create({
     },
     helperText: {
         fontFamily: 'Chirp_Regular',
-        fontSize: 13,
+        fontSize: 12,
         color: COLORS.textSecondary,
         flex: 1,
+        lineHeight: 12 * 1.4
     },
     birthDatePreview: {
         fontFamily: 'Chirp_Medium',
@@ -576,7 +590,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 16,
-       
+
     },
     buttonGradient: {
         flex: 1,

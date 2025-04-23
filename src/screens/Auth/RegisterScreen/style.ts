@@ -15,16 +15,29 @@ export const styles = StyleSheet.create({
         flex: 1,
     },
     logoContainer: {
-        marginTop: height * 0.08,
+        marginTop: height * 0.06,
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginHorizontal: 20,
+        gap: 20
+    },
+    accountContainer: {
+        marginTop: height * 0.02,
         alignItems: 'flex-start',
-        justifyContent: 'center',
         width: '100%',
         marginHorizontal: 25
     },
     subtitleText: {
         fontFamily: 'Chirp_Bold',
         color: '#000',
-        fontSize: 14,
+        fontSize: 20,
+        lineHeight: 20 * 1.4
+    },
+    titleText: {
+        fontFamily: 'Chirp_Bold',
+        color: '#4b5563',
+        fontSize: 13,
         marginTop: 8,
         lineHeight: 13 * 1.4
     },
