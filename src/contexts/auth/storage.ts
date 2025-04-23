@@ -106,18 +106,36 @@ export const storeCredentials = (credentials: Credentials): void => {
  */
 export const removeAccountFromStorage = (accountId: number): boolean => {
   try {
+    // Get current active account
+    const activeAccountId = getActiveAccountId();
+    
     // Remove from accounts list
     const accountsListJson = storage.getString(STORAGE_KEYS.ACCOUNTS_LIST);
-    if (accountsListJson) {
-      let accountsList: number[] = JSON.parse(accountsListJson);
-      accountsList = accountsList.filter(id => id !== accountId);
-      storage.set(STORAGE_KEYS.ACCOUNTS_LIST, JSON.stringify(accountsList));
+    if (!accountsListJson) {
+      console.warn('No accounts list found in storage');
+      return false;
     }
+    
+    let accountsList: number[] = JSON.parse(accountsListJson);
+    if (!accountsList.includes(accountId)) {
+      console.warn(`Account ${accountId} not found in accounts list`);
+      return false;
+    }
+    
+    // Update accounts list
+    accountsList = accountsList.filter(id => id !== accountId);
+    storage.set(STORAGE_KEYS.ACCOUNTS_LIST, JSON.stringify(accountsList));
     
     // Remove account storage
     const accountKey = `${STORAGE_KEYS.ACCOUNT_PREFIX}${accountId}`;
     storage.delete(accountKey);
     
+    // If this was the active account, clear active account
+    if (activeAccountId === accountId) {
+      clearActiveAccount();
+    }
+    
+    console.log(`Account ${accountId} successfully removed from storage`);
     return true;
   } catch (error) {
     console.error('Failed to remove account:', error);

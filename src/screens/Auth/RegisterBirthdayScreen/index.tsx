@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { RouteProp } from '@react-navigation/native'
 import * as Haptics from 'expo-haptics'
 import { RegisterData } from 'src/api/Auth'
-import { useAuth } from 'src/contexts/auth'
+import { useAuthStore } from 'src/store/auth'
 
 const { width, height } = Dimensions.get("window")
 
@@ -156,7 +156,7 @@ const WheelPicker = ({
 
 const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenProps) => {
     const { username, email, password } = route.params;
-    const { onRegister, isRegistering, registerError } = useAuth();
+    const { register, isRegistering, registerError } = useAuthStore();
     const insets = useSafeAreaInsets();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(50)).current;
@@ -278,28 +278,27 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
     const handleCreateAccount = () => {
         Keyboard.dismiss();
 
-        // Validate birth date
-        if (!validateBirthDate()) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            return;
-        }
-
-        // Format date in the required format (YYYY-MM-DD)
-        const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-
-        // Call the register function from AuthContext
-        const registerData: RegisterData = {
-            username,
-            password,
-            birth_date: formattedDate,
-            email
-        };
-
-        // ส่ง callback เพื่อนำทางไปยังหน้า login หลังลงทะเบียนสำเร็จ
-        onRegister(registerData, () => {
+        if (validateBirthDate()) {
+            const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            
+            const registerData: RegisterData = {
+                username,
+                email,
+                password,
+                birth_date: formattedDate
+            };
+            
+            // Add haptic feedback for form submission
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            navigation.navigate('login_screen');
-        });
+            
+            // Call the register function from our store
+            register(registerData, () => {
+                // Success callback - will be called when registration is successful
+                navigation.navigate('login_screen');
+            });
+        } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
     };
 
     const handleMonthChange = (value: string) => {

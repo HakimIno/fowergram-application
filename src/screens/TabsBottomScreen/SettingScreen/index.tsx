@@ -10,7 +10,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { BottomBarParamList } from 'src/navigation/types';
-import { useAuth } from 'src/contexts/auth';
+import { useAuthStore } from 'src/store/auth';
 
 
 const isCheckPlatform = Platform.OS === 'ios';
@@ -150,22 +150,11 @@ const SettingScreen = () => {
         ],
     }
 
-    const [isLoading, setIsLoading] = useState(false)
-
-    useFocusEffect(
-        useCallback(() => {
-            setIsLoading(true);
-            setTimeout(() => {
-                setIsLoading(false);
-            }, 2000);
-        }, [])
-    );
-
-    const { onLogout } = useAuth();
+    const { logout } = useAuthStore();
 
     const onPressNavigation = (route: Route) => {
         if (route.screen === "logout") {
-            onLogout()
+            logout();
         } else {
             navigation.navigate(route.screen as any);
         }
@@ -303,12 +292,17 @@ const SettingScreen = () => {
                             ]}
                         >
 
-                            <Animated.Image
-                                source={{
-                                    uri: PROFILE_PICTURE_URI,
-                                }}
-                                style={imageStyle}
-                            />
+                            <TouchableOpacity 
+                                activeOpacity={0.9}
+                                onPress={() => onPressNavigation({ screen: "profile_screen" })}
+                            >
+                                <Animated.Image
+                                    source={{
+                                        uri: PROFILE_PICTURE_URI,
+                                    }}
+                                    style={imageStyle}
+                                />
+                            </TouchableOpacity>
                             <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between', }}>
                                 <Text
                                     numberOfLines={1}

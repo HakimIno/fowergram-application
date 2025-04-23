@@ -19,10 +19,21 @@ export interface LoginUser {
     password: string;
 }
 
+// API response format that may contain token in different places
 export interface Jwt {
-    token: string;
+    code?: string;
+    status?: string;
+    message?: string;
+    data?: {
+        token: string;
+        user: UserDetails;
+        device_info?: any;
+    };
+    token?: string; // For backward compatibility
 }
 
-export interface Credentials extends Jwt {
+// Credentials that are actually stored must have token as a required string
+export interface Credentials {
+    token: string;
     user: UserDetails;
 }

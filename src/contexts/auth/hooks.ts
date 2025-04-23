@@ -53,8 +53,6 @@ export const useLoginMutation = (
         return;
       }
       
-      console.log('Parsed credentials:', JSON.stringify(credentials, null, 2));
-      
       // Store credentials securely
       storeCredentials(credentials);
       onSuccess(credentials);

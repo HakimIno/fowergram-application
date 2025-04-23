@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from 'src/navigation/types'
 import { StackNavigationProp } from '@react-navigation/stack'
-import { useAuth } from 'src/contexts/auth'
+import { useAuthStore } from 'src/store/auth'
 import FlowergramLogo from 'src/components/FlowergramLogo'
 import { useTheme } from 'src/context/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons'
 export type LoginNavigationProp = StackNavigationProp<RootStackParamList, "login_screen">;
 
 const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
-    const { isLoggingIn, onLogin, loginError } = useAuth();
+    const { isLoggingIn, login, loginError } = useAuthStore();
     const insets = useSafeAreaInsets();
     const { theme } = useTheme();
 
@@ -78,7 +78,7 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
 
         const isValid = await validateFormBeforeSubmit();
         if (isValid) {
-            onLogin(formState);
+            login(formState.identifier, formState.password);
         }
     };
 

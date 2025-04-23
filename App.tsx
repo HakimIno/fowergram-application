@@ -7,10 +7,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Knewave_400Regular } from '@expo-google-fonts/knewave';
 import { PottaOne_400Regular } from '@expo-google-fonts/potta-one'
-import { AuthProvider } from './src/contexts/auth'
 import store from './src/redux-store';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { Host } from 'react-native-portalize';
+import { AuthInitProvider } from './src/providers/AuthInitProvider';
 
 import {
   QueryClient,
@@ -50,13 +50,13 @@ export default function App() {
       <GestureHandlerRootView style={{ flex: 1, width: '100%', height: '100%' }}>
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
-            <AuthProvider>
+            <AuthInitProvider>
               <SafeAreaProvider>
                 <Host>
                   <Navigation />
                 </Host>
               </SafeAreaProvider>
-            </AuthProvider>
+            </AuthInitProvider>
           </QueryClientProvider>
         </Provider>
       </GestureHandlerRootView>

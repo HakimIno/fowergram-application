@@ -26,7 +26,7 @@ const WelcomeScreen = ({ navigation }: { navigation: WelcomeNavigationProp }) =>
 
     // Debug only
     useEffect(() => {
-        console.log('WelcomeScreen - localAccounts count:', localAccounts.length);
+        // console.log('WelcomeScreen - localAccounts count:', localAccounts.length);
     }, [localAccounts]);
 
     return (
@@ -48,11 +48,9 @@ const WelcomeScreen = ({ navigation }: { navigation: WelcomeNavigationProp }) =>
                         onAccountLongPress={handleAccountLongPress}
                     />
 
-
-
                 </ScrollView>
 
-                <Footer bottomPadding={insets.bottom } />
+                <Footer bottomPadding={insets.bottom} />
                 <ButtonSection
                     hasAccounts={localAccounts.length > 0}
                     onLoginPress={handleLoginPress}
