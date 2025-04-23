@@ -35,7 +35,7 @@ const AppNavigation = () => {
     };
     return (
         <AppStack.Navigator screenOptions={{ headerShown: false }}>
-            {false ? (
+            {isLoggedIn ? (
                 <>
                     <AppStack.Screen name="bottom_bar" component={BottomBarTab} />
 
@@ -159,7 +159,7 @@ const AppNavigation = () => {
                         component={LoginScreen}
                         options={{
                             headerShown: false,
-                  
+
                         }}
                     />
                     <AppStack.Screen
@@ -167,7 +167,7 @@ const AppNavigation = () => {
                         component={RegisterScreen}
                         options={{
                             headerShown: false,
-                        
+
                         }}
                     />
                     <AppStack.Screen

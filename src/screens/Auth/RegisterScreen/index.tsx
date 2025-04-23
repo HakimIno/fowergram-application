@@ -60,7 +60,7 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
             keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
             <LinearGradient
-                colors={["#fff", '#fff', '#fff', "#ffe4e6"]}
+                colors={["#fff", '#fff', '#fff', "#fff"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={StyleSheet.absoluteFill}
@@ -79,7 +79,7 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
                                     width={200}
                                     height={70}
                                     fontSize={40}
-                                    theme={{ textColor: "#f43f5e" }}
+                                    theme={{ textColor: "#000" }}
                                 />
                                 <Text style={styles.subtitleText}>สร้างบัญชีของคุณ</Text>
                             </View>

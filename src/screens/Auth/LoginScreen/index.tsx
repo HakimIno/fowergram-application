@@ -58,7 +58,7 @@ const LoginScreen = ({ navigation }: { navigation: LoginNavigationProp }) => {
             keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
             <LinearGradient
-                colors={["#fff", '#fff', '#fff', "#fff"]}
+                colors={["#fff", '#fff', '#fff', "#eef2ff"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={StyleSheet.absoluteFill}
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     helpLinkText: {
         fontFamily: 'Chirp_Medium',
         fontSize: 12,
-        marginTop: 32,
+        marginTop: 16,
         lineHeight: 12 * 1.4
     },
 })

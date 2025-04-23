@@ -89,7 +89,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const loginHandler = (loginUser: LoginUser) => {
         setIsLoggingIn(true);
-        loginMutation.mutate(loginUser);
+        setIsLoggedIn(true)
+        // loginMutation.mutate(loginUser);
     };
 
     const logoutHandler = async () => {
