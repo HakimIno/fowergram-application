@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
     },
     scrollViewContent: {
         flexGrow: 1,
-        paddingBottom: 100, // ให้มีพื้นที่ว่างด้านล่างเพื่อไม่ให้ปุ่มบัง
+        paddingBottom: 100,
     },
     innerContainer: {
         flex: 1,
@@ -43,22 +43,32 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     inputWrapperError: {
-        marginBottom: 6, // ลด margin เมื่อมี error text อยู่ด้านล่าง
+        marginBottom: 6,
     },
     inputIcon: {
         position: 'absolute',
         left: 15,
         zIndex: 1,
     },
-    inputStatusIcon: {
-        position: 'absolute',
-        right: 15,
-        zIndex: 1,
-    },
     passwordToggle: {
         position: 'absolute',
         right: 15,
         zIndex: 1,
+    },
+    inputTypeIndicator: {
+        position: 'absolute',
+        right: 15,
+        top: 10,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+    },
+    inputTypeText: {
+        fontFamily: 'Chirp_Regular',
+        fontSize: 10,
+        color: '#6b7280',
+        lineHeight: 10 * 1.4
     },
     textInfoSubTitle: {
         fontFamily: 'Chirp_Bold',
@@ -68,10 +78,12 @@ export const styles = StyleSheet.create({
     input: {
         flex: 1,
         paddingLeft: 45,
+        paddingRight: 15,
         textAlignVertical: 'center',
         fontFamily: 'Chirp_Regular',
         borderRadius: 16,
         height: 50,
+        fontSize: 16,
     },
     btnContainer: {
         backgroundColor: '#000',
@@ -105,6 +117,13 @@ export const styles = StyleSheet.create({
         fontFamily: 'Chirp_Regular',
         lineHeight: 12 * 1.4
     },
+    generalError: {
+        marginTop: 4,
+        marginBottom: 16, 
+        textAlign: 'center',
+        alignSelf: 'center',
+        paddingLeft: 0,
+    },
 });
 
-export default styles;
+export default styles; 

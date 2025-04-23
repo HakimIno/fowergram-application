@@ -1,44 +1,30 @@
-import { ActivityIndicator, Dimensions, GestureResponderEvent, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native'
-import React, { useContext, useRef, useState, useEffect } from 'react'
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Fontisto, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { RootStackParamList } from 'src/navigation/types'
 import { StackNavigationProp } from '@react-navigation/stack'
-import { AuthContext } from 'src/contexts/auth.context'
 import FlowergramLogo from 'src/components/FlowergramLogo'
 import { useTheme } from 'src/context/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Haptics from 'expo-haptics'
-import * as yup from 'yup'
-
-const { width, height } = Dimensions.get("window")
+import { FormInput } from './components/FormInput'
+import { PasswordInput } from './components/PasswordInput'
+import { useAvailabilityCheck } from 'src/hooks/useAvailabilityCheck'
+import { RegisterFormValues, validateForm, validateSingleField } from './validation'
+import styles from './style'
 
 export type RegisterNavigationProp = StackNavigationProp<RootStackParamList, "register_screen">;
 
-// สร้าง validation schema ด้วย Yup
-const registerSchema = yup.object().shape({
-    username: yup
-        .string()
-        .required('กรุณากรอกชื่อผู้ใช้')
-        .min(3, 'ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร')
-        .matches(/^[a-zA-Z0-9_]+$/, 'ชื่อผู้ใช้ต้องประกอบด้วยตัวอักษร ตัวเลข หรือ _ เท่านั้น'),
-    email: yup
-        .string()
-        .required('กรุณากรอกอีเมล')
-        .email('รูปแบบอีเมลไม่ถูกต้อง'),
-    password: yup
-        .string()
-        .required('กรุณากรอกรหัสผ่าน')
-        .min(6, 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
-});
-
+/**
+ * RegisterScreen component for user registration
+ */
 const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) => {
     const insets = useSafeAreaInsets();
     const { theme } = useTheme();
 
     // State สำหรับเก็บค่า form
-    const [formState, setFormState] = useState({
+    const [formState, setFormState] = useState<RegisterFormValues>({
         username: '',
         email: '',
         password: '',
@@ -52,9 +38,19 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
         form?: string;
     }>({});
 
-    const [showPassword, setShowPassword] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    
+    // ใช้ custom hook สำหรับตรวจสอบความพร้อมใช้งานของชื่อผู้ใช้และอีเมลแบบ real-time
+    const {
+        usernameAvailable,
+        usernameLoading,
+        usernameError,
+        emailAvailable,
+        emailLoading,
+        emailError
+    } = useAvailabilityCheck(formState.username, formState.email);
 
+    // Keyboard listeners
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
@@ -70,9 +66,41 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
             keyboardDidHideListener.remove();
         };
     }, []);
+    
+    // Effect for real-time username availability checking
+    useEffect(() => {
+        if (formState.username.length >= 3) {
+            if (usernameAvailable === false) {
+                setErrors(prev => ({ ...prev, username: 'ชื่อผู้ใช้นี้ถูกใช้งานไปแล้ว' }));
+                // ให้ haptic feedback เพื่อแจ้งเตือนว่ามีข้อผิดพลาด
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            } else if (usernameAvailable === true) {
+                // ถ้ามี error เกี่ยวกับ availability ให้ล้างออก
+                if (errors.username === 'ชื่อผู้ใช้นี้ถูกใช้งานไปแล้ว') {
+                    setErrors(prev => ({ ...prev, username: undefined }));
+                }
+            }
+        }
+    }, [usernameAvailable, formState.username, errors.username]);
+
+    // Effect for real-time email availability checking
+    useEffect(() => {
+        if (formState.email.includes('@')) {
+            if (emailAvailable === false) {
+                setErrors(prev => ({ ...prev, email: 'อีเมลนี้ถูกใช้งานไปแล้ว' }));
+                // ให้ haptic feedback เพื่อแจ้งเตือนว่ามีข้อผิดพลาด
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            } else if (emailAvailable === true) {
+                // ถ้ามี error เกี่ยวกับ availability ให้ล้างออก
+                if (errors.email === 'อีเมลนี้ถูกใช้งานไปแล้ว') {
+                    setErrors(prev => ({ ...prev, email: undefined }));
+                }
+            }
+        }
+    }, [emailAvailable, formState.email, errors.email]);
 
     // ฟังก์ชันเปลี่ยนแปลงค่าใน input
-    const handleChange = (field: keyof typeof formState) => (text: string) => {
+    const handleChange = (field: keyof RegisterFormValues) => (text: string) => {
         setFormState(prev => ({ ...prev, [field]: text }));
 
         // ล้าง error เมื่อมีการพิมพ์ใหม่
@@ -82,55 +110,80 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
     };
 
     // ตรวจสอบ field เดียวเมื่อ blur
-    const validateField = (field: keyof typeof formState) => async () => {
+    const handleBlur = (field: keyof RegisterFormValues) => () => {
         try {
-            // สร้าง schema สำหรับ field เดียว
-            const fieldSchema = yup.object().shape({
-                [field]: registerSchema.fields[field]
-            });
-
-            await fieldSchema.validate({ [field]: formState[field] }, { abortEarly: false });
-            setErrors(prev => ({ ...prev, [field]: undefined }));
-        } catch (error) {
-            if (error instanceof yup.ValidationError) {
-                // แสดง error แรกของ field นั้น
-                const fieldError = error.inner.find(err => err.path === field);
+            // ใช้ฟังก์ชันที่แยกออกมาจากไฟล์ validation
+            const result = validateSingleField(field, formState);
+            
+            if (!result.success) {
+                // หา error ที่ตรงกับ field นี้
+                const fieldError = result.error.errors.find(err => err.path[0] === field);
                 if (fieldError) {
                     setErrors(prev => ({ ...prev, [field]: fieldError.message }));
                     // สั่นเบาๆ เมื่อ validation ไม่ผ่าน
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    return;
                 }
             }
+            
+            // ตรวจสอบผลจาก API
+            if (field === 'username' && usernameAvailable === false) {
+                setErrors(prev => ({ ...prev, username: 'ชื่อผู้ใช้นี้ถูกใช้งานไปแล้ว' }));
+                return;
+            }
+            
+            if (field === 'email' && emailAvailable === false) {
+                setErrors(prev => ({ ...prev, email: 'อีเมลนี้ถูกใช้งานไปแล้ว' }));
+                return;
+            }
+            
+            // ถ้าผ่านทุกการตรวจสอบให้ล้าง error
+            setErrors(prev => ({ ...prev, [field]: undefined }));
+        } catch (error) {
+            console.error('Validation error:', error);
         }
     };
 
     // ตรวจสอบทั้ง form เมื่อกดปุ่มถัดไป
-    const validateForm = async (): Promise<boolean> => {
-        try {
-            await registerSchema.validate(formState, { abortEarly: false });
-            return true;
-        } catch (error) {
-            if (error instanceof yup.ValidationError) {
-                // รวบรวม error ทั้งหมด
-                const validationErrors: { [key: string]: string } = {};
-                error.inner.forEach(err => {
-                    if (err.path) {
-                        validationErrors[err.path] = err.message;
-                    }
-                });
+    const validateFormBeforeSubmit = async (): Promise<boolean> => {
+        // ใช้ฟังก์ชันที่แยกออกมาจากไฟล์ validation
+        const result = validateForm(formState);
+        
+        if (!result.success) {
+            // รวบรวม error ทั้งหมด
+            const validationErrors: { [key: string]: string } = {};
+            result.error.errors.forEach(err => {
+                const path = err.path[0] as string;
+                validationErrors[path] = err.message;
+            });
 
-                setErrors(validationErrors);
-                // สั่นแรงเมื่อ form validation ไม่ผ่าน
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            }
+            setErrors(validationErrors);
+            // สั่นแรงเมื่อ form validation ไม่ผ่าน
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             return false;
         }
+        
+        // ตรวจสอบ availability จาก API
+        if (usernameAvailable === false) {
+            setErrors(prev => ({ ...prev, username: 'ชื่อผู้ใช้นี้ถูกใช้งานไปแล้ว' }));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return false;
+        }
+        
+        if (emailAvailable === false) {
+            setErrors(prev => ({ ...prev, email: 'อีเมลนี้ถูกใช้งานไปแล้ว' }));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return false;
+        }
+        
+        return true;
     };
 
+    // จัดการปุ่มถัดไป
     const handleNext = async () => {
         Keyboard.dismiss();
 
-        const isValid = await validateForm();
+        const isValid = await validateFormBeforeSubmit();
         if (isValid) {
             // Provide haptic feedback on successful validation
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -144,6 +197,7 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
         }
     };
 
+    // นำไปหน้าเข้าสู่ระบบ
     const handleLoginRedirect = () => {
         navigation.navigate('login_screen');
     };
@@ -181,92 +235,42 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
 
                             <View style={styles.formContainer}>
                                 {/* Username Input */}
-                                <View style={[
-                                    styles.inputWrapper,
-                                    errors.username ? styles.inputWrapperError : null
-                                ]}>
-                                    <MaterialCommunityIcons
-                                        name="account-outline"
-                                        size={20}
-                                        color={errors.username ? "#ef4444" : "#6b7280"}
-                                        style={styles.inputIcon}
-                                    />
-                                    <TextInput
-                                        style={[styles.input, { backgroundColor: errors.username ? "rgba(255, 209, 209, 0.5)" : "rgba(229, 231, 235, 0.5)" }]}
-                                        placeholder='ชื่อผู้ใช้'
-                                        autoComplete="username"
-                                        placeholderTextColor={'#a1a1aa'}
-                                        value={formState.username}
-                                        onChangeText={handleChange('username')}
-                                        onBlur={validateField('username')}
-                                        autoCapitalize="none"
-                                    />
-                                </View>
-                                {errors.username ? (
-                                    <Text style={styles.errorText}>{errors.username}</Text>
-                                ) : null}
+                                <FormInput
+                                    iconName="account-outline"
+                                    placeholder="ชื่อผู้ใช้"
+                                    autoComplete="username"
+                                    value={formState.username}
+                                    onChangeText={handleChange('username')}
+                                    onBlur={handleBlur('username')}
+                                    error={errors.username}
+                                    loading={usernameLoading && formState.username.length >= 3}
+                                    isValid={usernameAvailable === true && formState.username.length >= 3}
+                                    showValidIcon={true}
+                                />
 
                                 {/* Email Input */}
-                                <View style={[
-                                    styles.inputWrapper,
-                                    errors.email ? styles.inputWrapperError : null
-                                ]}>
-                                    <MaterialCommunityIcons
-                                        name="email-outline"
-                                        size={20}
-                                        color={errors.email ? "#ef4444" : "#6b7280"}
-                                        style={styles.inputIcon}
-                                    />
-                                    <TextInput
-                                        style={[styles.input, { backgroundColor: errors.email ? "rgba(255, 209, 209, 0.5)" : "rgba(229, 231, 235, 0.5)" }]}
-                                        placeholder='อีเมล'
-                                        autoComplete="email"
-                                        placeholderTextColor={'#a1a1aa'}
-                                        value={formState.email}
-                                        onChangeText={handleChange('email')}
-                                        onBlur={validateField('email')}
-                                        keyboardType="email-address"
-                                        autoCapitalize="none"
-                                    />
-                                </View>
-                                {errors.email ? (
-                                    <Text style={styles.errorText}>{errors.email}</Text>
-                                ) : null}
+                                <FormInput
+                                    iconName="email-outline"
+                                    placeholder="อีเมล"
+                                    autoComplete="email"
+                                    value={formState.email}
+                                    onChangeText={handleChange('email')}
+                                    onBlur={handleBlur('email')}
+                                    error={errors.email}
+                                    loading={emailLoading && formState.email.includes('@')}
+                                    isValid={emailAvailable === true && formState.email.includes('@')}
+                                    showValidIcon={true}
+                                    keyboardType="email-address"
+                                />
 
                                 {/* Password Input */}
-                                <View style={[
-                                    styles.inputWrapper,
-                                    errors.password ? styles.inputWrapperError : null
-                                ]}>
-                                    <MaterialCommunityIcons
-                                        name="lock-outline"
-                                        size={20}
-                                        color={errors.password ? "#ef4444" : "#6b7280"}
-                                        style={styles.inputIcon}
-                                    />
-                                    <TextInput
-                                        style={[styles.input, { paddingLeft: 45, backgroundColor: errors.password ? "rgba(255, 209, 209, 0.5)" : "rgba(229, 231, 235, 0.5)" }]}
-                                        placeholder='รหัสผ่าน'
-                                        secureTextEntry={!showPassword}
-                                        placeholderTextColor={'#a1a1aa'}
-                                        value={formState.password}
-                                        onChangeText={handleChange('password')}
-                                        onBlur={validateField('password')}
-                                    />
-                                    <Pressable
-                                        style={styles.passwordToggle}
-                                        onPress={() => setShowPassword(!showPassword)}
-                                    >
-                                        <MaterialCommunityIcons
-                                            name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={22}
-                                            color={errors.password ? "#ef4444" : "#6b7280"}
-                                        />
-                                    </Pressable>
-                                </View>
-                                {errors.password ? (
-                                    <Text style={styles.errorText}>{errors.password}</Text>
-                                ) : null}
+                                <PasswordInput
+                                    value={formState.password}
+                                    onChangeText={handleChange('password')}
+                                    onBlur={handleBlur('password')}
+                                    error={errors.password}
+                                    placeholder="รหัสผ่าน"
+                                />
                             </View>
                             <View style={styles.helpLinksContainer}>
                                 <Pressable onPress={handleLoginRedirect}>
@@ -300,104 +304,3 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
 }
 
 export default RegisterScreen
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: 'white',
-    },
-    scrollViewContent: {
-        flexGrow: 1,
-        paddingBottom: 100, // ให้มีพื้นที่ว่างด้านล่างเพื่อไม่ให้ปุ่มบัง
-    },
-    innerContainer: {
-        flex: 1,
-    },
-    logoContainer: {
-        height: height * 0.25,
-        marginTop: height * 0.08,
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%'
-    },
-    subtitleText: {
-        fontFamily: 'Chirp_Regular',
-        color: '#6b7280',
-        fontSize: 13,
-        marginTop: 8,
-        lineHeight: 13 * 1.4
-    },
-    formContainer: {
-        alignItems: 'center',
-        width: "100%",
-        alignSelf: 'center',
-        marginTop: 20,
-        paddingHorizontal: 20
-    },
-    inputWrapper: {
-        width: "100%",
-        marginBottom: 16,
-        position: 'relative',
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    inputWrapperError: {
-        marginBottom: 6, // ลด margin เมื่อมี error text อยู่ด้านล่าง
-    },
-    inputIcon: {
-        position: 'absolute',
-        left: 15,
-        zIndex: 1,
-    },
-    passwordToggle: {
-        position: 'absolute',
-        right: 15,
-        zIndex: 1,
-    },
-    textInfoSubTitle: {
-        fontFamily: 'Chirp_Bold',
-        fontSize: 14,
-        lineHeight: 14 * 1.4
-    },
-    input: {
-        flex: 1,
-        paddingLeft: 45,
-        textAlignVertical: 'center',
-        fontFamily: 'Chirp_Regular',
-        borderRadius: 16,
-        height: 50,
-    },
-    btnContainer: {
-        backgroundColor: '#000',
-        height: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 16,
-       
-    },
-    spacer: {
-        flex: 1,
-    },
-    helpLinksContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginHorizontal: 30
-    },
-    helpLinkText: {
-        fontFamily: 'Chirp_Medium',
-        fontSize: 12,
-        marginTop: 16,
-        lineHeight: 12 * 1.4
-    },
-    errorText: {
-        color: '#ef4444',
-        fontSize: 12,
-        marginTop: -4,
-        marginBottom: 8,
-        alignSelf: 'flex-start',
-        paddingLeft: 4,
-        fontFamily: 'Chirp_Regular',
-        lineHeight: 12 * 1.4
-    },
-})
