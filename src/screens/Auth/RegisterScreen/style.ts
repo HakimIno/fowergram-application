@@ -15,16 +15,16 @@ export const styles = StyleSheet.create({
         flex: 1,
     },
     logoContainer: {
-        height: height * 0.25,
         marginTop: height * 0.08,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        width: '100%'
+        width: '100%',
+        marginHorizontal: 25
     },
     subtitleText: {
-        fontFamily: 'Chirp_Regular',
-        color: '#6b7280',
-        fontSize: 13,
+        fontFamily: 'Chirp_Bold',
+        color: '#000',
+        fontSize: 14,
         marginTop: 8,
         lineHeight: 13 * 1.4
     },

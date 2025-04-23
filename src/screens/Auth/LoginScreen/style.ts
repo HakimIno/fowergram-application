@@ -15,15 +15,28 @@ export const styles = StyleSheet.create({
         flex: 1,
     },
     logoContainer: {
-        height: height * 0.25,
-        marginTop: height * 0.08,
+        marginTop: height * 0.06,
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%'
+        width: '100%',
+        marginHorizontal: 20,
+        gap: 20
+    },
+    accountContainer: {
+        marginTop: height * 0.02,
+        alignItems: 'flex-start',
+        width: '100%',
+        marginHorizontal: 25
     },
     subtitleText: {
-        fontFamily: 'Chirp_Regular',
-        color: '#6b7280',
+        fontFamily: 'Chirp_Bold',
+        color: '#000',
+        fontSize: 20,
+        lineHeight: 20 * 1.4
+    },
+    titleText: {
+        fontFamily: 'Chirp_Bold',
+        color: '#4b5563',
         fontSize: 13,
         marginTop: 8,
         lineHeight: 13 * 1.4
@@ -32,7 +45,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         width: "100%",
         alignSelf: 'center',
-        marginTop: 20,
+        marginTop: 10,
         paddingHorizontal: 20
     },
     inputWrapper: {
@@ -52,8 +65,11 @@ export const styles = StyleSheet.create({
     },
     passwordToggle: {
         position: 'absolute',
-        right: 15,
+       
         zIndex: 1,
+        backgroundColor: 'rgba(177, 177, 177, 0.1)',
+        borderRadius: 8,
+        padding: 6
     },
     inputTypeIndicator: {
         position: 'absolute',
@@ -119,7 +135,7 @@ export const styles = StyleSheet.create({
     },
     generalError: {
         marginTop: 4,
-        marginBottom: 16, 
+        marginBottom: 16,
         textAlign: 'center',
         alignSelf: 'center',
         paddingLeft: 0,

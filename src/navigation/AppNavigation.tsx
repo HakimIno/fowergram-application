@@ -13,6 +13,7 @@ import EditScreen from 'src/screens/TabsBottomScreen/CreateScreen/EditScreen';
 import StoryScreen from 'src/screens/StoryScreen';
 import RegisterScreen from 'src/screens/Auth/RegisterScreen';
 import RegisterBirthdayScreen from 'src/screens/Auth/RegisterBirthdayScreen';
+import WelcomeScreen from 'src/screens/Auth/WelcomeScreen';
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -155,11 +156,17 @@ const AppNavigation = () => {
             ) : (
                 <>
                     <AppStack.Screen
+                        name="welcome_screen"
+                        component={WelcomeScreen}
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
+                    <AppStack.Screen
                         name="login_screen"
                         component={LoginScreen}
                         options={{
                             headerShown: false,
-
                         }}
                     />
                     <AppStack.Screen
@@ -167,7 +174,6 @@ const AppNavigation = () => {
                         component={RegisterScreen}
                         options={{
                             headerShown: false,
-
                         }}
                     />
                     <AppStack.Screen

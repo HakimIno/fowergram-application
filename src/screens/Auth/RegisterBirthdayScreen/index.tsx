@@ -335,13 +335,7 @@ const RegisterBirthdayScreen = ({ navigation, route }: RegisterBirthdayScreenPro
                                 styles.logoContainer,
                             ]}
                         >
-                            <FlowergramLogo
-                                width={200}
-                                height={70}
-                                fontSize={40}
-                                theme={{ textColor: "#000" }}
-                            />
-                            <Text style={styles.subtitleText}>กรอกวันเกิดของคุณ</Text>
+                           
                         </Animated.View>
 
                         <Animated.View
@@ -444,18 +438,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     logoContainer: {
-        height: height * 0.22,
         marginTop: height * 0.08,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        width: '100%'
+        width: '100%',
+        marginHorizontal: 25
     },
     subtitleText: {
-        fontFamily: 'Chirp_Regular',
-        color: COLORS.textSecondary,
+        fontFamily: 'Chirp_Bold',
+        color: '#000',
         fontSize: 14,
         marginTop: 8,
-        lineHeight: 14 * 1.4
+        lineHeight: 13 * 1.4
     },
     formContainer: {
         alignItems: 'flex-start',

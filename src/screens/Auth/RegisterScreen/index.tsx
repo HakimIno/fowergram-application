@@ -39,7 +39,7 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
     }>({});
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-    
+
     // ใช้ custom hook สำหรับตรวจสอบความพร้อมใช้งานของชื่อผู้ใช้และอีเมลแบบ real-time
     const {
         usernameAvailable,
@@ -66,7 +66,7 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
             keyboardDidHideListener.remove();
         };
     }, []);
-    
+
     // Effect for real-time username availability checking
     useEffect(() => {
         if (formState.username.length >= 3) {
@@ -114,7 +114,7 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
         try {
             // ใช้ฟังก์ชันที่แยกออกมาจากไฟล์ validation
             const result = validateSingleField(field, formState);
-            
+
             if (!result.success) {
                 // หา error ที่ตรงกับ field นี้
                 const fieldError = result.error.errors.find(err => err.path[0] === field);
@@ -125,18 +125,18 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
                     return;
                 }
             }
-            
+
             // ตรวจสอบผลจาก API
             if (field === 'username' && usernameAvailable === false) {
                 setErrors(prev => ({ ...prev, username: 'ชื่อผู้ใช้นี้ถูกใช้งานไปแล้ว' }));
                 return;
             }
-            
+
             if (field === 'email' && emailAvailable === false) {
                 setErrors(prev => ({ ...prev, email: 'อีเมลนี้ถูกใช้งานไปแล้ว' }));
                 return;
             }
-            
+
             // ถ้าผ่านทุกการตรวจสอบให้ล้าง error
             setErrors(prev => ({ ...prev, [field]: undefined }));
         } catch (error) {
@@ -148,7 +148,7 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
     const validateFormBeforeSubmit = async (): Promise<boolean> => {
         // ใช้ฟังก์ชันที่แยกออกมาจากไฟล์ validation
         const result = validateForm(formState);
-        
+
         if (!result.success) {
             // รวบรวม error ทั้งหมด
             const validationErrors: { [key: string]: string } = {};
@@ -162,20 +162,20 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             return false;
         }
-        
+
         // ตรวจสอบ availability จาก API
         if (usernameAvailable === false) {
             setErrors(prev => ({ ...prev, username: 'ชื่อผู้ใช้นี้ถูกใช้งานไปแล้ว' }));
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             return false;
         }
-        
+
         if (emailAvailable === false) {
             setErrors(prev => ({ ...prev, email: 'อีเมลนี้ถูกใช้งานไปแล้ว' }));
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             return false;
         }
-        
+
         return true;
     };
 
@@ -224,12 +224,6 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
                             <StatusBar style="auto" />
 
                             <View style={styles.logoContainer}>
-                                <FlowergramLogo
-                                    width={200}
-                                    height={70}
-                                    fontSize={40}
-                                    theme={{ textColor: "#000" }}
-                                />
                                 <Text style={styles.subtitleText}>สร้างบัญชีของคุณ</Text>
                             </View>
 
@@ -271,11 +265,6 @@ const RegisterScreen = ({ navigation }: { navigation: RegisterNavigationProp }) 
                                     error={errors.password}
                                     placeholder="รหัสผ่าน"
                                 />
-                            </View>
-                            <View style={styles.helpLinksContainer}>
-                                <Pressable onPress={handleLoginRedirect}>
-                                    <Text style={styles.helpLinkText}>มีบัญชีอยู่แล้วใช่ไหม?</Text>
-                                </Pressable>
                             </View>
                             <View style={styles.spacer} />
                         </View>

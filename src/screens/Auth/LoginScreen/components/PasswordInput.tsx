@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FormInput } from './FormInput';
 import styles from '../style';
@@ -20,11 +20,11 @@ export const PasswordInput = ({
     placeholder = 'รหัสผ่าน'
 }: PasswordInputProps) => {
     const [showPassword, setShowPassword] = useState(false);
-    
+
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
-    
+
     return (
         <FormInput
             iconName="lock-outline"
@@ -35,16 +35,24 @@ export const PasswordInput = ({
             placeholder={placeholder}
             secureTextEntry={!showPassword}
             rightComponent={
-                <Pressable
-                    style={styles.passwordToggle}
-                    onPress={togglePasswordVisibility}
-                >
-                    <MaterialCommunityIcons
-                        name={showPassword ? "eye-off-outline" : "eye-outline"}
-                        size={22}
-                        color={error ? "#ef4444" : "#6b7280"}
-                    />
-                </Pressable>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Pressable
+                        style={[styles.passwordToggle, { right: 50 }]}
+                        onPress={togglePasswordVisibility}
+                    >
+                        <MaterialCommunityIcons
+                            name={showPassword ? "eye-off-outline" : "eye-outline"}
+                            size={22}
+                            color={error ? "#ef4444" : "#1a1a1a"}
+                        />
+                    </Pressable>
+                    <Pressable
+                        style={[styles.passwordToggle, { right: 10 }]}
+                        onPress={() => {}}
+                    >
+                        <MaterialCommunityIcons name="lock-question" size={24} color="#1a1a1a" />
+                    </Pressable>
+                </View>
             }
         />
     );

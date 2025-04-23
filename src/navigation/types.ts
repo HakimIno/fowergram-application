@@ -49,6 +49,7 @@ export type RootStackParamList = {
         };
         type: 'voice' | 'video';
     };
+    welcome_screen: undefined;
     login_screen: undefined;
     register_screen: undefined;
     register_birthday_screen: {

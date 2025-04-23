@@ -10,6 +10,7 @@ import PreviewScreen from "./TabsBottomScreen/CreateScreen/PreviewScreen";
 import LoginScreen from "./Auth/LoginScreen";
 import RegisterScreen from "./Auth/RegisterScreen";
 import RegisterBirthdayScreen from "./Auth/RegisterBirthdayScreen";
+import WelcomeScreen from "./Auth/WelcomeScreen";
 import EditScreen from "./TabsBottomScreen/CreateScreen/EditScreen";
 
 export {
@@ -24,6 +25,7 @@ export {
     LoginScreen,
     RegisterScreen,
     RegisterBirthdayScreen,
+    WelcomeScreen,
     PreviewScreen,
     EditScreen,
 }
