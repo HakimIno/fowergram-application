@@ -29,7 +29,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const initials = getUserInitials(user);
 
   const activeColor = isDarkMode ? '#FFFFFF' : '#000000';
-  const inactiveColor = isDarkMode ? '#FFFFFF' : '#000000';
+  const inactiveColor = isDarkMode ? '#374151' : '#d1d5db';
 
   const handleTap = () => {
     const now = Date.now();
@@ -53,7 +53,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
               height: size,
               borderRadius: size / 2,
               borderColor: focused ? activeColor : inactiveColor,
-              borderWidth: 1
+              borderWidth: focused ? 1.5 : 1
             },
             style
           ]}
@@ -76,7 +76,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
             height: size,
             borderRadius: size / 2,
             borderWidth: focused ? 1.5 : 1,
-            borderColor: focused ? isDarkMode ? "#fff" : "#000" : isDarkMode ? "#374151" : "#d1d5db"
+            borderColor: focused ? activeColor : inactiveColor
           },
           style
         ]}
@@ -88,7 +88,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
               width: size - 2,
               height: size - 2,
               borderRadius: (size - 2) / 2,
-              backgroundColor: focused ? isDarkMode ? "rgba(225, 225, 225, 0.1)" : " rgba(28, 27, 27, 0.1)" : 'transparent'
+              backgroundColor: focused ? isDarkMode ? "rgba(225, 225, 225, 0.1)" : "rgba(28, 27, 27, 0.1)" : 'transparent'
             }
           ]}
         >
