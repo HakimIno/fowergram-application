@@ -1,4 +1,4 @@
-import { StyleSheet, View, Platform } from 'react-native'
+import { StyleSheet, View, Platform, Image } from 'react-native'
 import React from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { BottomBarParamList } from './types'
@@ -6,6 +6,8 @@ import { HomeScreen, SettingScreen, ChatScreen, SearchScreen } from '../screens/
 import { SvgIcon, SvgElement, Linecap, Linejoin } from 'src/components/SvgIcon'
 import { useTheme } from 'src/context/ThemeContext'
 import { BlurView } from 'expo-blur'
+import { useAuthStore } from 'src/store/auth'
+import UserAvatar from 'src/components/UserAvatar'
 
 const BottomBar = createBottomTabNavigator<BottomBarParamList>()
 
@@ -122,6 +124,7 @@ const BottomBarTab = () => {
     const activeColor = isDarkMode ? '#FFFFFF' : '#000000'
     const inactiveColor = isDarkMode ? '#FFFFFF' : '#000000'
     const backgroundColor = isDarkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const { userDetails, isLoggedIn } = useAuthStore();
 
     const tabBarStyle = {
         backgroundColor,
@@ -141,6 +144,13 @@ const BottomBarTab = () => {
             stroke={0}
         />
     )
+
+    const renderAccountIcon = (focused: boolean) => {
+        if (isLoggedIn) {
+            return <UserAvatar user={userDetails} focused={focused} />;
+        }
+        return renderTabIcon('account', focused);
+    };
 
     return (
         <BottomBar.Navigator
@@ -221,7 +231,7 @@ const BottomBarTab = () => {
             <BottomBar.Screen
                 name="bottom_bar_account"
                 component={SettingScreen}
-                options={{ tabBarIcon: ({ focused }) => renderTabIcon('account', focused) }}
+                options={{ tabBarIcon: ({ focused }) => renderAccountIcon(focused) }}
             />
         </BottomBar.Navigator>
     )
@@ -233,5 +243,21 @@ const styles = StyleSheet.create({
     icon: {
         height: 30,
         width: 30,
+    },
+    profileIcon: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        borderWidth: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden'
+    },
+    profileInitial: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center'
     }
 })

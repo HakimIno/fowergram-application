@@ -60,6 +60,7 @@
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "~14.0.2",
     "expo-media-library": "^17.0.6",
+    "expo-splash-screen": "^0.29.24",
     "expo-status-bar": "~2.0.1",
     "expo-system-ui": "~4.0.9",
     "expo-video": "~2.0.6",

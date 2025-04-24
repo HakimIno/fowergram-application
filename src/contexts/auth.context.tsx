@@ -1,7 +1,6 @@
 /**
- * @deprecated This file is being replaced by the modular auth implementation in src/contexts/auth
- * Please use import from 'src/contexts/auth' instead
+ * @deprecated This file is deprecated.
+ * Please use import from 'src/utils/auth' instead.
  */
 
-// Re-export everything from the new location
-export * from './auth';
+console.warn('Warning: auth.context.tsx is deprecated. Please use src/utils/auth instead.');

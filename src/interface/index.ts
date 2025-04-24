@@ -5,6 +5,7 @@ export interface UserDetails {
     created_at?: string;
     firstName?: string;
     lastName?: string;
+    profile_picture?: string;
 }
 
 export interface NewUser {
@@ -26,14 +27,17 @@ export interface Jwt {
     message?: string;
     data?: {
         token: string;
+        refresh_token?: string;
         user: UserDetails;
         device_info?: any;
     };
     token?: string; // For backward compatibility
+    refresh_token?: string; // For backward compatibility
 }
 
 // Credentials that are actually stored must have token as a required string
 export interface Credentials {
     token: string;
+    refresh_token?: string;
     user: UserDetails;
 }

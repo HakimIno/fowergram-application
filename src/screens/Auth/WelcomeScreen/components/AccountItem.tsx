@@ -5,8 +5,8 @@ import {
 } from 'react-native'
 import React from 'react'
 import { Ionicons } from '@expo/vector-icons'
-import { StoredAccount } from 'src/contexts/auth'
-import styles from './style'
+import { StoredAccount } from 'src/utils/auth'
+import styles from '../style'
 
 type AccountItemProps = { 
     account: StoredAccount

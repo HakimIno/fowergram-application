@@ -1,8 +1,8 @@
-import { View, Text } from 'react-native';
 import React from 'react';
-import { StoredAccount } from 'src/contexts/auth';
+import { FlatList, View, Text } from 'react-native';
+import { StoredAccount } from 'src/utils/auth';
 import styles from '../style';
-import AccountItem from '../AccountItem';
+import AccountItem from './AccountItem';
 
 type AccountsListProps = {
   accounts: StoredAccount[];

@@ -19,7 +19,7 @@ const AppStack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigation = () => {
     const { isLoggedIn } = useAuthStore();
-    const [isTest] = useState(true)
+    
     const AppStackOptions = (title: string): StackNavigationOptions => {
         return {
             headerShown: false,
@@ -34,9 +34,11 @@ const AppNavigation = () => {
             },
         };
     };
+    
     return (
         <AppStack.Navigator screenOptions={{ headerShown: false }}>
             {isLoggedIn ? (
+                // Authenticated routes
                 <>
                     <AppStack.Screen name="bottom_bar" component={BottomBarTab} />
 
@@ -154,6 +156,7 @@ const AppNavigation = () => {
                     />
                 </>
             ) : (
+                // Non-authenticated routes
                 <>
                     <AppStack.Screen
                         name="welcome_screen"

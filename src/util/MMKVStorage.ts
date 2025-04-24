@@ -65,6 +65,12 @@ export const FeedStorageService = {
       }
     } catch (error) {
       console.error('Error initializing feed storage:', error);
+      // Try to recover by clearing cache
+      try {
+        FeedStorageService.clearAll();
+      } catch (clearError) {
+        console.error('Failed to clear cache after initialization error:', clearError);
+      }
     }
   },
 
@@ -297,18 +303,24 @@ export const FeedStorageService = {
       memoryCache.currentPage = 1;
       memoryCache.lastUpdated = 0;
       
-      // Clear MMKV storage but keep version
-      const currentVersion = feedStorage.getString(DATA_VERSION_KEY);
-      feedStorage.clearAll();
+      // Clear MMKV storage for feed data
+      console.log('Clearing all feed cache data');
+      feedStorage.delete(FEED_DATA_KEY);
+      feedStorage.delete(STORIES_DATA_KEY);
+      feedStorage.delete(FEED_LAST_UPDATED_KEY);
+      feedStorage.delete(FEED_PAGE_KEY);
+      feedStorage.delete(FEED_VISIBLE_ITEMS_KEY);
       
-      // Restore version
-      if (currentVersion) {
-        feedStorage.set(DATA_VERSION_KEY, currentVersion);
-      } else {
-        feedStorage.set(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
-      }
+      // Don't delete the version key
+      feedStorage.set(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
     } catch (error) {
       console.error('Error clearing feed storage:', error);
+      // If clearAll fails, try resetting the MMKV instance as last resort
+      try {
+        feedStorage.clearAll();
+      } catch (clearError) {
+        console.error('Failed to reset MMKV storage:', clearError);
+      }
     }
   }
 }; 

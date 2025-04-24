@@ -1,4 +1,4 @@
-import { StoredAccount } from 'src/contexts/auth';
+import { StoredAccount } from 'src/utils/auth';
 
 export const getDisplayName = (account: StoredAccount): string => {
     if (account.firstName && account.lastName) {

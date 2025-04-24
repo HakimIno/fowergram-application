@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react';
 import Navigation from './src/navigation';
 import { useFonts } from 'expo-font';
 import { FORNTS } from "./src/constants/fonts"
@@ -11,6 +11,7 @@ import store from './src/redux-store';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { Host } from 'react-native-portalize';
 import { AuthInitProvider } from './src/providers/AuthInitProvider';
+import { StatusBar } from 'expo-status-bar';
 
 import {
   QueryClient,
@@ -38,7 +39,7 @@ export default function App() {
     "Chirp_Heavy": FORNTS.Chirp_Heavy,
     "Chirp_Medium": FORNTS.Chirp_Medium,
     "Chirp_Regular": FORNTS.Chirp_Regular
-    
+
   });
 
   if (!fontsLoaded) {
@@ -55,6 +56,7 @@ export default function App() {
                 <Host>
                   <Navigation />
                 </Host>
+                <StatusBar style="auto" />
               </SafeAreaProvider>
             </AuthInitProvider>
           </QueryClientProvider>

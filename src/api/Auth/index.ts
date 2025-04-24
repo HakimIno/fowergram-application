@@ -1,8 +1,14 @@
 // api.js
 import axios from 'axios';
-import { Jwt, LoginUser } from 'src/interface';
+import { Jwt, LoginUser, Credentials } from 'src/interface';
 import { httpEndpoint } from 'src/util/http';
+export * from './accountApi';
 
+/**
+ * Authenticate user with provided credentials
+ * @param credentials User login credentials
+ * @returns JWT authentication data
+ */
 export const login = async (credentials: LoginUser): Promise<Jwt> => {
     try {
         const payload = {
@@ -10,11 +16,15 @@ export const login = async (credentials: LoginUser): Promise<Jwt> => {
             password: credentials.password
         };
         
+        // Mock API for development environments
         if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_MOCK_API === 'true') {
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
                     if (credentials.identifier === 'test' && credentials.password === 'password') {
-                        resolve({ token: 'mock-token-12345' });
+                        resolve({ 
+                            token: 'mock-token-12345',
+                            refresh_token: 'mock-refresh-token-12345'
+                        });
                     } else {
                         reject({ 
                             response: { 
@@ -27,10 +37,41 @@ export const login = async (credentials: LoginUser): Promise<Jwt> => {
             });
         }
         
-        // ส่งข้อมูลไปยัง backend ในรูปแบบที่ถูกต้อง
+        // Send credentials to backend
         const response = await httpEndpoint.post('/api/v1/auth/login', payload);
-        return response.data;
+        
+        // Add safety checks for API response format
+        if (!response || !response.data) {
+            throw new Error('ได้รับข้อมูลไม่ถูกต้องจากเซิร์ฟเวอร์');
+        }
+        
+        // If the response is not in the expected format, try to normalize it
+        const data = response.data;
+        
+        // Handle format from the curl example: 
+        // {"status":"success","code":"LOGIN_SUCCESS","message":"Login successful","data":{"token":"xxx","refresh_token":"xxx","user":{...}}}
+        if (data.status === 'success' && data.data) {
+            return data;
+        }
+        
+        // New API format with data.token and data.user
+        if (data.data && data.data.token) {
+            return data;
+        }
+        
+        // Legacy API format with direct token
+        if (typeof data.token === 'string') {
+            return {
+                token: data.token,
+                refresh_token: data.refresh_token
+            };
+        }
+        
+        // Unknown format - log for debugging and throw error
+        console.error('Unexpected login response format:', JSON.stringify(data));
+        throw new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง');
     } catch (error) {
+        console.error('Login error:', error);
         throw error;
     }
 };
@@ -42,6 +83,11 @@ export interface RegisterData {
     email: string;
 }
 
+/**
+ * Register a new user
+ * @param userData User registration data
+ * @returns JWT authentication data for the new user
+ */
 export const register = async (userData: RegisterData): Promise<Jwt> => {
     try {
         const dataToSend = {
@@ -49,32 +95,104 @@ export const register = async (userData: RegisterData): Promise<Jwt> => {
         };
         
         const response = await httpEndpoint.post('/api/v1/auth/register', dataToSend);
+        
+        // Add safety checks for API response format
+        if (!response || !response.data) {
+            throw new Error('ได้รับข้อมูลไม่ถูกต้องจากเซิร์ฟเวอร์');
+        }
+        
+        const data = response.data;
+        console.log('Register API response:', JSON.stringify(data));
+        
+        // Server returned successful registration with user data but no token 
+        // (Found in logs: user object but no token)
+        if (data.status === 'success' && data.data && data.data.user && !data.data.token) {
+            console.log('Registration successful with user data but no token - proceed to login');
+            return {
+                status: 'success',
+                message: 'ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ',
+                code: 'REGISTER_SUCCESS_NO_TOKEN'
+                // Don't include data to avoid type errors
+            };
+        }
+        
+        // Server sent success status but no token (common for 201 responses)
+        if ((response.status === 201 || data.status === 'success') && !data.data && !data.token) {
+            console.log('Registration successful but no token returned - proceed to login');
+            return {
+                status: 'success',
+                message: 'ลงทะเบียนสำเร็จ กรุณาเข้าสู่ระบบ',
+                code: 'REGISTER_SUCCESS_NO_TOKEN'
+            };
+        }
+        
+        // Handle success format with data property
+        if (data.status === 'success' && data.data) {
+            return data;
+        }
+        
+        // Handle direct data format
+        if (data.data && data.data.token) {
+            return data;
+        }
+        
+        // Legacy format with direct token
+        if (typeof data.token === 'string') {
+            return {
+                token: data.token
+            };
+        }
+        
         return response.data;
     } catch (error) {
+        console.error('Registration error:', error);
         throw error;
     }
 };
 
 /**
- * ดึงข้อมูลผู้ใช้โดยใช้ token
- * @param token JWT token สำหรับการรับรองตัวตน
- * @returns ข้อมูลผู้ใช้งาน
+ * Refresh access token using refresh token
+ * @param refreshToken The refresh token to use
+ * @returns New tokens (access and refresh)
  */
-export const getProfile = async (token: string): Promise<any> => {
+export const refreshToken = async (refreshToken: string): Promise<Credentials> => {
     try {
-        // เพิ่ม authorization header พร้อม token
-        const headers = {
-            Authorization: `Bearer ${token}`
-        };
+        console.log('Calling refresh token API with token length:', refreshToken?.length || 0);
         
-        const response = await httpEndpoint.get('/api/v1/users/me', { headers });
+        const response = await httpEndpoint.post('/api/v1/auth/refresh-token', {
+            refresh_token: refreshToken
+        });
         
-        // แสดงข้อมูลที่ได้รับเพื่อการดีบัก
-        console.log('Profile API response:', JSON.stringify(response.data, null, 2));
+        if (!response || !response.data) {
+            throw new Error('ได้รับข้อมูลไม่ถูกต้องจากเซิร์ฟเวอร์');
+        }
         
-        return response.data;
+        console.log('Refresh token response keys:', Object.keys(response.data));
+        const data = response.data;
+        
+        // Handle data in different formats
+        if (data.data && data.data.token && data.data.refresh_token) {
+            console.log('Found valid data in data.data format');
+            return {
+                token: data.data.token,
+                refresh_token: data.data.refresh_token,
+                user: data.data.user
+            };
+        }
+        
+        if (data.token && data.refresh_token && data.user) {
+            console.log('Found valid data in direct format');
+            return {
+                token: data.token,
+                refresh_token: data.refresh_token,
+                user: data.user
+            };
+        }
+        
+        console.error('Unexpected refresh token response format:', JSON.stringify(data));
+        throw new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง');
     } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        console.error('Refresh token error:', error);
         throw error;
     }
 };
