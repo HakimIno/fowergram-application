@@ -50,10 +50,12 @@ export const switchAccount = async (
     
     // ถ้า request มี refresh token (กรณี token-based switching)
     if ('refresh_token' in request && request.refresh_token) {
+      console.log('Refresh token available, adding to headers:', !!request.refresh_token);
       headers['X-Refresh-Token'] = request.refresh_token;
+    } else {
+      console.log('No refresh token available, rejecting request');
     }
     
-    console.log('Sending request with headers:', headers);
     const response = await httpEndpoint.post('/api/v1/auth/switch-account', request, { headers });
     
     // ตรวจสอบรูปแบบข้อมูลที่ได้รับ

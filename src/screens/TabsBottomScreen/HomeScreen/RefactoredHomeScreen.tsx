@@ -18,6 +18,7 @@ import type { FeedInfo, HomeNavigationProp } from './types'
 import type { StoryItem } from './components/Story'
 import { preloadFeedImages } from './components/Card/OptimizedCardImage'
 import { FeedStorageService, convertFeedItemToFeedInfo } from 'src/util/MMKVStorage'
+import { EventEmitter } from 'src/utils/EventEmitter'
 
 // Number of items to load per page
 const PAGE_SIZE = 20
@@ -42,7 +43,7 @@ interface ViewableItemsChangedInfo {
 const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; route?: any }) => {
     const insets = useSafeAreaInsets();
     const { isDarkMode, toggleTheme, theme, animatedValue } = useTheme();
-    
+
     // State management
     const [feed, setFeed] = useState<FeedInfo[]>([]);
     const [stories, setStories] = useState<StoryItem[]>([]);
@@ -62,17 +63,35 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
     const isScrollingUp = useSharedValue(false);
     const lastRefreshTimestamp = useRef<number>(0);
     const nextPagePreloaded = useRef<boolean>(false);
-    
+
     // Initialize storage system
     useEffect(() => {
         FeedStorageService.initialize();
     }, []);
-    
+
+    // เพิ่ม event listener สำหรับการเลื่อนกลับขึ้นด้านบนโดยไม่ต้อง refresh
+    useEffect(() => {
+        // ฟังก์ชันสำหรับการเลื่อนขึ้นด้านบน
+        const scrollToTop = () => {
+            if (listRef.current) {
+                listRef.current.scrollToOffset({ offset: 0, animated: true });
+            }
+        };
+
+        // ใช้ EventEmitter แทน document event
+        const unsubscribe = EventEmitter.on('scrollHomeToTop', scrollToTop);
+        
+        // Cleanup
+        return () => {
+            unsubscribe();
+        };
+    }, []);
+
     // Initial quick renderer for immediate display
     const renderInitialItems = useCallback(async () => {
         // Try to get visible items from cache for immediate display
         const visibleItems = FeedStorageService.getVisibleItems();
-        
+
         if (visibleItems && visibleItems.length > 0) {
             // Show the cached visible items immediately while loading full data
             setFeed(visibleItems);
@@ -82,7 +101,7 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
     // Track currently visible items and save them for next launch
     const saveVisibleItems = useCallback((indices: number[]) => {
         if (!feed || feed.length === 0 || !indices || indices.length === 0) return;
-        
+
         const visibleItems = indices.map(index => feed[index]).filter(Boolean);
         if (visibleItems.length > 0) {
             FeedStorageService.saveVisibleItems(visibleItems);
@@ -92,19 +111,19 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
     // Memoize visible indices to prevent unnecessary updates
     const onViewableItemsChanged = useCallback(({ viewableItems }: ViewableItemsChangedInfo) => {
         if (!viewableItems || viewableItems.length === 0) return;
-        
+
         const indices = viewableItems.map((item: ViewToken) => item.index).filter((index: number | null | undefined) => index !== null && index !== undefined) as number[];
         setVisibleIndices(indices);
-        
+
         // Save visible items but defer to prevent frame drops
         InteractionManager.runAfterInteractions(() => {
             saveVisibleItems(indices);
         });
-        
+
         // Preload next page when nearing end of current data
         const highestIndex = Math.max(...indices);
         const preloadThreshold = feed.length * PRELOAD_THRESHOLD;
-        
+
         if (highestIndex > preloadThreshold && !isLoadingMore && hasMoreData && !nextPagePreloaded.current) {
             nextPagePreloaded.current = true;
             // Defer loading to prevent frame drops
@@ -113,7 +132,7 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
             });
         }
     }, [feed.length, isLoadingMore, hasMoreData, saveVisibleItems]);
-    
+
     const viewabilityConfig = useMemo(() => ({
         itemVisiblePercentThreshold: 20,
         minimumViewTime: 300,
@@ -132,53 +151,71 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
         nextPagePreloaded.current = false;
 
         try {
-            // เมื่อ manual refresh ให้ล้างข้อมูลเก่าเพื่อโหลดข้อมูลใหม่เสมอ
-            // ลบข้อความด้านล่างและแทนที่ด้วยโค้ดใหม่
-            // Check for cached data if not a forced refresh
-            // const cachedData = FeedStorageService.getFeedData();
-            // const cachedStories = FeedStorageService.getStoriesData();
-            // const isDataExpired = FeedStorageService.isFeedDataExpired();
-
-            // // Use cached data if available and not expired
-            // if (cachedData && cachedStories && !isDataExpired) {
-            //     setFeed(cachedData);
-            //     setStories(cachedStories);
-            //     FeedStorageService.saveCurrentPage(1);
-                
-            //     // UX delay for loading indicator - shorter with cached data
-            //     await new Promise(resolve => setTimeout(resolve, 200));
-            //     setIsRefreshing(false);
-            //     return;
-            // }
-            
             // ถ้าเป็น force refresh ให้เคลียร์แคชทั้งหมด
             if (forceRefresh) {
                 console.log('Force refreshing feed data...');
                 FeedStorageService.clearAll();
                 setForceRefresh(false);
             } else {
-                // มาร์คข้อมูลเป็นหมดอายุ เพื่อให้โหลดใหม่ครั้งต่อไป
-                FeedStorageService.markDataAsExpired();
+                // ลองใช้ข้อมูลจากแคชก่อนเพื่อแสดงผลเร็วๆ
+                const cachedData = FeedStorageService.getFeedData();
+                const cachedStories = FeedStorageService.getStoriesData();
+
+                if (cachedData && cachedStories && cachedData.length > 0 && !FeedStorageService.isFeedDataExpired()) {
+                    // แสดงข้อมูลจากแคชทันที
+                    setFeed(cachedData);
+                    setStories(cachedStories);
+
+                    // รอสักนิดเพื่อให้ UI อัพเดทก่อน
+                    await new Promise(resolve => setTimeout(resolve, 100));
+
+                    // ตั้ง timeout เพื่อทำ background update
+                    setTimeout(() => {
+                        FeedStorageService.markDataAsExpired();
+                        // โหลดข้อมูลใหม่แบบเบื้องหลัง
+                        _loadFreshData(false);
+                    }, 200);
+
+                    setIsRefreshing(false);
+                    return;
+                } else {
+                    // มาร์คข้อมูลเป็นหมดอายุ เพื่อให้โหลดใหม่ครั้งต่อไป
+                    FeedStorageService.markDataAsExpired();
+                }
             }
 
-            // โหลดข้อมูลใหม่จาก API ทุกครั้ง
+            // โหลดข้อมูลใหม่
+            await _loadFreshData(true);
+
+        } catch (error) {
+            console.error('Error refreshing feed:', error);
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, [isRefreshing, forceRefresh]);
+
+    // แยกฟังก์ชันโหลดข้อมูลใหม่ออกมา
+    const _loadFreshData = async (showLoadingIndicator = true) => {
+        try {
+            // โหลดข้อมูลใหม่จาก API
             const mockData = generateMockGridFeed(PAGE_SIZE / 5);
             const mockStoryData = generateMockStories(8);
 
             // Convert mockData to FeedInfo type
             const convertedFeedData = mockData.map(item => convertFeedItemToFeedInfo(item));
 
-            // Preload images before setting feed data
-            // This will load images in parallel while showing loading indicator
-            const imageUrls = convertedFeedData.map(item => item.images);
-            // ระบุรูปที่เห็นได้ในหน้าจอแรก (0-2 items) เป็น high priority
-            const initialVisibleItems = [0, 1, 2]; 
-            await preloadFeedImages(imageUrls, initialVisibleItems);
-            
+            // Preload images before setting feed data if showing loading indicator
+            // (ถ้าโหลดเบื้องหลัง ไม่ต้องรอ preload)
+            if (showLoadingIndicator) {
+                const imageUrls = convertedFeedData.map(item => item.images);
+                const initialVisibleItems = [0, 1, 2];
+                await preloadFeedImages(imageUrls, initialVisibleItems);
+            }
+
             // Use batch update to reduce re-renders
             setFeed(convertedFeedData);
             setStories(mockStoryData);
-            
+
             // Cache the data in MMKV storage
             FeedStorageService.saveFeedData(convertedFeedData);
             FeedStorageService.saveStoriesData(mockStoryData);
@@ -187,14 +224,14 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
             // Reset hasMoreData flag
             setHasMoreData(true);
 
-            // UX delay for loading indicator - ลดลงเพื่อให้แสดงผลเร็วขึ้น
-            await new Promise(resolve => setTimeout(resolve, 300));
+            if (showLoadingIndicator) {
+                // UX delay for loading indicator - ลดลงเพื่อให้แสดงผลเร็วขึ้น
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
         } catch (error) {
-            console.error('Error refreshing feed:', error);
-        } finally {
-            setIsRefreshing(false);
+            console.error('Error loading fresh data:', error);
         }
-    }, [isRefreshing, forceRefresh]);
+    };
 
     // เพิ่มฟังก์ชันสำหรับบังคับรีเฟรช
     const triggerForceRefresh = useCallback(() => {
@@ -211,10 +248,10 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
         try {
             // Try to get cached data for next page
             const cachedData = FeedStorageService.getFeedData();
-            
+
             // Calculate how many more items we need
             const totalItemsNeeded = nextPage * PAGE_SIZE;
-            
+
             // If we already have enough cached items, just update the page
             if (cachedData && cachedData.length >= totalItemsNeeded) {
                 const newPageData = cachedData.slice(0, totalItemsNeeded);
@@ -227,7 +264,7 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
 
             // Fetch new data from the mock API
             const newData = generateMockGridFeed(PAGE_SIZE / 5);
-            
+
             if (newData.length === 0) {
                 setHasMoreData(false);
                 setIsLoadingMore(false);
@@ -240,25 +277,25 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
             // Prepare for image preloading - prioritize first couple items
             const imageUrls = convertedNewData.map(item => item.images);
             const priorityIndices = [0, 1];
-            
+
             // Preload in parallel with state updates for better performance
             const preloadPromise = preloadFeedImages(imageUrls, priorityIndices);
-            
+
             // Use functional update to avoid race conditions and ensure we're working with latest state
             setFeed(prevFeed => {
                 const updatedFeed = [...prevFeed, ...convertedNewData];
-                
+
                 // Update cache with all data (off the critical path)
                 setTimeout(() => {
                     FeedStorageService.saveFeedData(updatedFeed);
                 }, 0);
-                
+
                 return updatedFeed;
             });
-            
+
             setCurrentPage(nextPage);
             FeedStorageService.saveCurrentPage(nextPage);
-            
+
             // Wait for preload to complete
             await preloadPromise;
         } catch (error) {
@@ -359,7 +396,6 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
         }
     }, [handleRefresh, isInitialRenderComplete]);
 
-    // Handle tab press refresh
     useEffect(() => {
         if (route?.params?.refresh) {
             const currentRefresh = route.params.refresh as number;
@@ -367,27 +403,36 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
             if (currentRefresh > lastRefreshTimestamp.current) {
                 lastRefreshTimestamp.current = currentRefresh;
 
-                // Reset scroll position
                 scrollY.value = 0;
                 lastScrollY.value = 0;
                 headerTranslateY.value = 0;
 
-                // Scroll to top and refresh
                 if (listRef.current) {
                     listRef.current.scrollToOffset({ offset: 0, animated: true });
                 }
 
-                // Delay refresh to allow scrolling animation to complete
-                setTimeout(() => {
-                    // เมื่อกดแท็บซ้ำ ให้บังคับเคลียร์แคชเพื่อโหลดข้อมูลใหม่
-                    FeedStorageService.clearAll();
-                    // บังคับให้รีเฟรชข้อมูลใหม่
+                const cachedData = FeedStorageService.getFeedData();
+                const cachedStories = FeedStorageService.getStoriesData();
+
+                if (cachedData && cachedData.length > 0 && cachedStories && cachedStories.length > 0) {
+                    setFeed(cachedData);
+                    setStories(cachedStories);
+
+                    setTimeout(() => {
+                        if (!isRefreshing) {
+                            setIsRefreshing(true);
+                            handleRefresh().finally(() => {
+                                setIsRefreshing(false);
+                            });
+                        }
+                    }, 300);
+                } else {
                     setForceRefresh(true);
                     handleRefresh();
-                }, 100);
+                }
             }
         }
-    }, [route?.params?.refresh, handleRefresh]);
+    }, [route?.params?.refresh, handleRefresh, isRefreshing]);
 
     // Track device motion for optimistic scrolling
     const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -404,11 +449,46 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
         scrollY.value = currentY;
         lastScrollY.value = currentY;
         
+        // ตรวจจับว่าเลื่อนถึงบนสุดหรือยัง (เพื่อใช้กับการกด tab ซ้ำ)
+        if (currentY <= 5 && navigation && route) {
+            // เมื่อเลื่อนถึงบนสุด (scroll position <= 5) ให้อัปเดต route param
+            runOnJS(() => {
+                const params = navigation.getState().routes.find(
+                    r => r.name === 'bottom_bar_home'
+                )?.params || {};
+                
+                // อัปเดต params เฉพาะเมื่อค่าเปลี่ยน
+                const isCurrentlyAtTop = (params as any)?.isScrolledToTop || false;
+                if (!isCurrentlyAtTop) {
+                    navigation.setParams({ 
+                        ...params,
+                        isScrolledToTop: true 
+                    } as any);
+                }
+            })();
+        } else if (currentY > 10 && navigation && route) {
+            // เมื่อเลื่อนลงมาแล้ว (scroll position > 10) ให้รีเซ็ต isScrolledToTop
+            runOnJS(() => {
+                const params = navigation.getState().routes.find(
+                    r => r.name === 'bottom_bar_home'
+                )?.params || {};
+                
+                // อัปเดต params เฉพาะเมื่อค่าเปลี่ยน
+                const isCurrentlyAtTop = (params as any)?.isScrolledToTop || false;
+                if (isCurrentlyAtTop) {
+                    navigation.setParams({ 
+                        ...params,
+                        isScrolledToTop: false 
+                    } as any);
+                }
+            })();
+        }
+        
         // Capture visible items when scrolling stops
         if (scrollVelocity < 0.5) {
             runOnJS(saveVisibleItems)(visibleIndices);
         }
-    }, [visibleIndices, saveVisibleItems]);
+    }, [visibleIndices, saveVisibleItems, navigation, route]);
 
     const handleThemePress = useCallback((x: number, y: number) => {
         toggleTheme(x, y);
@@ -454,15 +534,15 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
-            <StatusBar 
-                barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
-                backgroundColor={theme.backgroundColor} 
+            <StatusBar
+                barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+                backgroundColor={theme.backgroundColor}
             />
 
             <AnimatedHeader
                 style={headerAnimatedStyle}
                 insets={insets}
-                onNotificationPress={() => {}}
+                onNotificationPress={() => { }}
                 isDarkMode={isDarkMode}
                 onThemePress={handleThemePress}
                 themeIconStyle={themeIconStyle}

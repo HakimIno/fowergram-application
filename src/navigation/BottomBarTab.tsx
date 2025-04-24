@@ -1,13 +1,18 @@
-import { StyleSheet, View, Platform, Image } from 'react-native'
-import React from 'react'
+import { StyleSheet, View, Platform, ToastAndroid, Alert } from 'react-native'
+import React, { useRef, useCallback } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { BottomBarParamList } from './types'
 import { HomeScreen, SettingScreen, ChatScreen, SearchScreen } from '../screens/TabsBottomScreen'
-import { SvgIcon, SvgElement, Linecap, Linejoin } from 'src/components/SvgIcon'
+import { SvgIcon } from 'src/components/SvgIcon'
 import { useTheme } from 'src/context/ThemeContext'
 import { BlurView } from 'expo-blur'
 import { useAuthStore } from 'src/store/auth'
 import UserAvatar from 'src/components/UserAvatar'
+import * as Haptics from 'expo-haptics'
+import { useNavigation, NavigationProp, CommonActions } from '@react-navigation/native'
+import { tabIcons } from './tabIcons'
+import { State, TapGestureHandler } from 'react-native-gesture-handler'
+import { EventEmitter } from 'src/utils/EventEmitter'
 
 const BottomBar = createBottomTabNavigator<BottomBarParamList>()
 
@@ -17,114 +22,15 @@ const CreateNewPlaceholder = () => {
 }
 
 
-const tabIcons = {
-    home: {
-        size: 33,
-        filled: "M2.52 7.823C2 8.77 2 9.915 2 12.203v1.522c0 3.9 0 5.851 1.172 7.063S6.229 22 10 22h4c3.771 0 5.657 0 6.828-1.212S22 17.626 22 13.725v-1.521c0-2.289 0-3.433-.52-4.381c-.518-.949-1.467-1.537-3.364-2.715l-2-1.241C14.111 2.622 13.108 2 12 2s-2.11.622-4.116 1.867l-2 1.241C3.987 6.286 3.038 6.874 2.519 7.823M11.25 18a.75.75 0 0 0 1.5 0v-3a.75.75 0 0 0-1.5 0z",
-        outline: [
-            {
-                type: 'g' as const,
-                props: {
-                    children: [
-                        {
-                            type: 'path' as const,
-                            props: {
-                                d: "M2 12.204c0-2.289 0-3.433.52-4.381c.518-.949 1.467-1.537 3.364-2.715l2-1.241C9.889 2.622 10.892 2 12 2s2.11.622 4.116 1.867l2 1.241c1.897 1.178 2.846 1.766 3.365 2.715S22 9.915 22 12.203v1.522c0 3.9 0 5.851-1.172 7.063S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.212S2 17.626 2 13.725z",
-                                stroke: "currentColor",
-                                strokeWidth: 1.5,
-                                fill: "none"
-                            }
-                        },
-                        {
-                            type: 'path' as const,
-                            props: {
-                                d: "M12 15v3",
-                                stroke: "currentColor",
-                                strokeWidth: 1.5,
-                                strokeLinecap: "round" as Linecap
-                            }
-                        }
-                    ]
-                }
-            }
-        ] as SvgElement[]
-    },
-    search: {
-        size: 30,
-        filled: [
-            {
-                type: 'g' as const,
-                props: {
-                    children: [
-                        {
-                            type: 'path' as const,
-                            props: {
-                                d: "M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z",
-                                fill: "currentColor"
-                            }
-                        },
-                        {
-                            type: 'path' as const,
-                            props: {
-                                d: "M10.5 7.5a3 3 0 100 6 3 3 0 000-6z",
-                               fill: "currentColor"
-                            }
-                        }
-                    ]
-                }
-            }
-        ] as SvgElement[],
-        outline: "M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z"
-    },
-    create: {
-        size: 26,
-        filled: "M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z",
-        outline:"M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
-    },
-    message: {
-        size: 30,
-        filled: "M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 00.44 1.223zM8.25 10.875a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25zM10.875 12a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875-1.125a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25z",
-        outline: [
-            {
-                type: 'g' as const,
-                props: {
-                    children: [
-                        {
-                            type: 'path' as const,
-                            props: {
-                                d: "M8 12h.009m3.982 0H12m3.991 0H16",
-                                stroke: "currentColor",
-                                strokeWidth: 2,
-                                strokeLinecap: "round" as Linecap,
-                                strokeLinejoin: "round" as Linejoin
-                            }
-                        },
-                        {
-                            type: 'path' as const,
-                            props: {
-                                d: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12c0 1.6.376 3.112 1.043 4.453c.178.356.237.763.134 1.148l-.595 2.226a1.3 1.3 0 0 0 1.591 1.592l2.226-.596a1.63 1.63 0 0 1 1.149.133A9.96 9.96 0 0 0 12 22Z",
-                                stroke: "currentColor",
-                                strokeWidth: 1.5
-                            }
-                        }
-                    ]
-                }
-            }
-        ] as SvgElement[]
-    },
-    account: {
-        size: 30,
-        filled: "M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z",
-        outline: "M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zm1.5 0a3 3 0 116 0 3 3 0 01-6 0zm-4.749 14.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
-    }
-}
-
 const BottomBarTab = () => {
-    const { isDarkMode, theme } = useTheme()
+    const { isDarkMode } = useTheme()
     const activeColor = isDarkMode ? '#FFFFFF' : '#000000'
     const inactiveColor = isDarkMode ? '#FFFFFF' : '#000000'
-    const backgroundColor = isDarkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const backgroundColor = isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)'
     const { userDetails, isLoggedIn } = useAuthStore();
+    const navigation = useNavigation<NavigationProp<BottomBarParamList>>();
+    const singleTapRef = useRef(null);
+    const doubleTapRef = useRef(null);
 
     const tabBarStyle = {
         backgroundColor,
@@ -147,9 +53,81 @@ const BottomBarTab = () => {
 
     const renderAccountIcon = (focused: boolean) => {
         if (isLoggedIn) {
-            return <UserAvatar user={userDetails} focused={focused} />;
+            return (
+                <UserAvatar
+                    user={userDetails}
+                    focused={focused}
+                />
+            );
         }
         return renderTabIcon('account', focused);
+    };
+
+    const handleAccountDoubleTap = useCallback(() => {
+        if (!isLoggedIn || !userDetails) {
+            return;
+        }
+
+        const { accounts, switchAccount } = useAuthStore.getState();
+
+        if (accounts.length <= 1) {
+            return;
+        }
+
+        // Find next account more efficiently
+        const currentIndex = accounts.findIndex(acc => acc.id === userDetails.id);
+        const nextIndex = (currentIndex + 1) % accounts.length;
+        const nextAccount = accounts[nextIndex];
+
+        if (nextAccount) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+            if (Platform.OS === 'android') {
+                ToastAndroid.show(`สลับบัญชีไปยัง ${nextAccount.username}`, ToastAndroid.SHORT);
+            } else {
+                Alert.alert(
+                    'สลับบัญชี',
+                    `เปลี่ยนบัญชีไปยัง ${nextAccount.username}`,
+                    [{ text: 'ตกลง', style: 'default' }],
+                    { cancelable: true }
+                );
+            }
+
+            switchAccount(nextAccount.id, () => {
+                navigation.dispatch(
+                    CommonActions.navigate({
+                        name: 'bottom_bar',
+                        params: {
+                            screen: 'bottom_bar_home',
+                            params: { refresh: Date.now() }
+
+                        }
+                    })
+                );
+            }).catch(err => {
+                console.error('Error switching account:', err);
+            });
+        }
+    }, [isLoggedIn, userDetails, navigation]);
+
+    const handleSingleTap = (event: any) => {
+        if (event.nativeEvent.state === State.ACTIVE) {
+            navigation.dispatch(
+                CommonActions.navigate({
+                    name: 'bottom_bar',
+                    params: {
+                        screen: 'bottom_bar_account'
+                    }
+                })
+            );
+        }
+    };
+
+    const handleDoubleTap = (event: any) => {
+        if (event.nativeEvent.state === State.ACTIVE) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            handleAccountDoubleTap();
+        }
     };
 
     return (
@@ -161,9 +139,10 @@ const BottomBarTab = () => {
                 tabBarStyle,
                 tabBarBackground: () => (
                     <BlurView
-                        tint={isDarkMode ? 'dark' : 'light'}
-                        intensity={100}
                         style={StyleSheet.absoluteFill}
+                        intensity={80}
+                        experimentalBlurMethod="dimezisBlurView"
+                        tint={isDarkMode ? "dark" : "light"}
                     />
                 ),
             }}
@@ -172,6 +151,7 @@ const BottomBarTab = () => {
                 name="bottom_bar_home"
                 component={HomeScreen}
                 options={{ tabBarIcon: ({ focused }) => renderTabIcon('home', focused) }}
+
                 listeners={({ navigation }) => ({
                     tabPress: (e) => {
                         e.preventDefault();
@@ -180,11 +160,26 @@ const BottomBarTab = () => {
                                 route => route.name === 'bottom_bar_home'
                             )?.params;
 
-                            const lastRefresh = (params as any)?.refresh || 0;
+                            const isScrolledToTop = (params as any)?.isScrolledToTop || false;
                             const currentTime = Date.now();
+                            const lastRefresh = (params as any)?.refresh || 0;
 
-                            if (currentTime - lastRefresh > 300) {
-                                navigation.setParams({ refresh: currentTime } as any);
+                            if (!isScrolledToTop) {
+                                navigation.setParams({
+                                    isScrolledToTop: true,
+                                    lastScrollTime: currentTime
+                                } as any);
+
+                                EventEmitter.emit('scrollHomeToTop');
+                            } else {
+                                const lastScrollTime = (params as any)?.lastScrollTime || 0;
+
+                                if (currentTime - lastScrollTime > 500) {
+                                    navigation.setParams({
+                                        refresh: currentTime,
+                                        isScrolledToTop: false
+                                    } as any);
+                                }
                             }
                         } else {
                             navigation.navigate('bottom_bar_home');
@@ -231,33 +226,34 @@ const BottomBarTab = () => {
             <BottomBar.Screen
                 name="bottom_bar_account"
                 component={SettingScreen}
-                options={{ tabBarIcon: ({ focused }) => renderAccountIcon(focused) }}
+                options={{
+                    tabBarIcon: ({ focused }) => (
+                        <TapGestureHandler
+                            onHandlerStateChange={handleSingleTap}
+                            waitFor={doubleTapRef}
+                            ref={singleTapRef}
+                        >
+                            <TapGestureHandler
+                                ref={doubleTapRef}
+                                onHandlerStateChange={handleDoubleTap}
+                                numberOfTaps={2}
+                            >
+                                <View>
+                                    {renderAccountIcon(focused)}
+                                </View>
+                            </TapGestureHandler>
+                        </TapGestureHandler>
+                    )
+                }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault();
+                        navigation.navigate('bottom_bar_account');
+                    }
+                })}
             />
         </BottomBar.Navigator>
     )
 }
 
 export default BottomBarTab
-
-const styles = StyleSheet.create({
-    icon: {
-        height: 30,
-        width: 30,
-    },
-    profileIcon: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        borderWidth: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden'
-    },
-    profileInitial: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center'
-    }
-})

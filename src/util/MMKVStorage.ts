@@ -304,7 +304,6 @@ export const FeedStorageService = {
       memoryCache.lastUpdated = 0;
       
       // Clear MMKV storage for feed data
-      console.log('Clearing all feed cache data');
       feedStorage.delete(FEED_DATA_KEY);
       feedStorage.delete(STORIES_DATA_KEY);
       feedStorage.delete(FEED_LAST_UPDATED_KEY);

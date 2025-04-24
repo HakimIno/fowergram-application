@@ -19,7 +19,7 @@ const AppStack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigation = () => {
     const { isLoggedIn } = useAuthStore();
-    
+
     const AppStackOptions = (title: string): StackNavigationOptions => {
         return {
             headerShown: false,
@@ -34,13 +34,19 @@ const AppNavigation = () => {
             },
         };
     };
-    
+
     return (
         <AppStack.Navigator screenOptions={{ headerShown: false }}>
             {isLoggedIn ? (
                 // Authenticated routes
                 <>
-                    <AppStack.Screen name="bottom_bar" component={BottomBarTab} />
+                    <AppStack.Screen
+                        name="bottom_bar"
+                        component={BottomBarTab}
+                        options={{
+                            headerShown: false,
+                            animation: "slide_from_right"
+                        }} />
 
                     <AppStack.Screen
                         name="profile_details_screen"
