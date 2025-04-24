@@ -12,6 +12,7 @@ export interface StoredAccount {
   token: string;
   refresh_token?: string;
   lastLogin: number;
+  profile_picture?: string;
 }
 
 // Storage keys

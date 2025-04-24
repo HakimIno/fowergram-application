@@ -123,6 +123,7 @@ export const storeCredentials = (credentials: Credentials): void => {
       token: typeof token === 'string' ? token : '',
       refresh_token: typeof refresh_token === 'string' ? refresh_token : undefined,
       lastLogin: Date.now(),
+      profile_picture: typeof user.profile_picture === 'string' ? user.profile_picture : undefined
     };
 
     if (!storedAccount.token) {

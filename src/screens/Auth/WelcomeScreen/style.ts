@@ -29,12 +29,13 @@ export const styles = StyleSheet.create({
     },
     savedAccountsTitle: {
         fontFamily: 'Chirp_Bold',
-        fontSize: 16,
+        fontSize: 14,
         color: '#1F2937',
         marginBottom: 10,
+        lineHeight: 14 * 1.4
     },
     accountsList: {
-        maxHeight: height * 0.2,
+        maxHeight: height * 0.3,
     },
     accountItem: {
         flexDirection: 'row',
@@ -59,6 +60,7 @@ export const styles = StyleSheet.create({
     },
     accountInfo: {
         flex: 1,
+        marginLeft: 10
     },
     accountName: {
         fontFamily: 'Chirp_Bold',

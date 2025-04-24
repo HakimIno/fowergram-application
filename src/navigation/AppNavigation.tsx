@@ -20,33 +20,15 @@ const AppStack = createNativeStackNavigator<RootStackParamList>();
 const AppNavigation = () => {
     const { isLoggedIn } = useAuthStore();
 
-    const AppStackOptions = (title: string): StackNavigationOptions => {
-        return {
-            headerShown: false,
-            headerTitle: title,
-            headerTitleAlign: 'center',
-            headerTitleStyle: {
-                fontSize: 18,
-                fontFamily: 'SukhumvitSet_Bd',
-            },
-            headerStyle: {
-                backgroundColor: '#f2f2f2',
-            },
-        };
-    };
-
     return (
-        <AppStack.Navigator screenOptions={{ headerShown: false }}>
+        <AppStack.Navigator screenOptions={{ headerShown: false, animation: 'ios_from_right' }}>
             {isLoggedIn ? (
                 // Authenticated routes
-                <>
+                <AppStack.Group navigationKey='Authenticated'>
                     <AppStack.Screen
                         name="bottom_bar"
                         component={BottomBarTab}
-                        options={{
-                            headerShown: false,
-                            animation: "slide_from_right"
-                        }} />
+                    />
 
                     <AppStack.Screen
                         name="profile_details_screen"
@@ -160,10 +142,10 @@ const AppNavigation = () => {
                             animation: "fade"
                         }}
                     />
-                </>
+                </AppStack.Group>
             ) : (
                 // Non-authenticated routes
-                <>
+                <AppStack.Group navigationKey='Non-Authenticated'>
                     <AppStack.Screen
                         name="welcome_screen"
                         component={WelcomeScreen}
@@ -192,7 +174,7 @@ const AppNavigation = () => {
                             headerShown: false,
                         }}
                     />
-                </>
+                </AppStack.Group>
             )}
         </AppStack.Navigator>
     )

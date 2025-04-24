@@ -1,5 +1,5 @@
 import { StyleSheet, View, Platform, ToastAndroid, Alert } from 'react-native'
-import React, { useRef, useCallback } from 'react'
+import React, { useRef, useCallback, useEffect } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { BottomBarParamList } from './types'
 import { HomeScreen, SettingScreen, ChatScreen, SearchScreen } from '../screens/TabsBottomScreen'
@@ -31,6 +31,14 @@ const BottomBarTab = () => {
     const navigation = useNavigation<NavigationProp<BottomBarParamList>>();
     const singleTapRef = useRef(null);
     const doubleTapRef = useRef(null);
+    const lastSwitchedAccountIdRef = useRef<number | null>(null);
+
+    // Reset the last switched account ID when the user details change
+    useEffect(() => {
+        if (userDetails) {
+            lastSwitchedAccountIdRef.current = userDetails.id;
+        }
+    }, [userDetails]);
 
     const tabBarStyle = {
         backgroundColor,
@@ -68,46 +76,81 @@ const BottomBarTab = () => {
             return;
         }
 
-        const { accounts, switchAccount } = useAuthStore.getState();
+        // ดึง state แบบสดใหม่จาก store
+        const authStore = useAuthStore.getState();
+        const { accounts, switchAccount, loadAccounts } = authStore;
 
         if (accounts.length <= 1) {
             return;
         }
 
-        // Find next account more efficiently
-        const currentIndex = accounts.findIndex(acc => acc.id === userDetails.id);
-        const nextIndex = (currentIndex + 1) % accounts.length;
-        const nextAccount = accounts[nextIndex];
-
-        if (nextAccount) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-            if (Platform.OS === 'android') {
-                ToastAndroid.show(`สลับบัญชีไปยัง ${nextAccount.username}`, ToastAndroid.SHORT);
-            } else {
-                Alert.alert(
-                    'สลับบัญชี',
-                    `เปลี่ยนบัญชีไปยัง ${nextAccount.username}`,
-                    [{ text: 'ตกลง', style: 'default' }],
-                    { cancelable: true }
-                );
+        // รีเฟรช accounts ก่อนใช้งาน
+        loadAccounts().then(() => {
+            // ดึง accounts อีกครั้งหลังจาก loadAccounts เสร็จสิ้น
+            const freshAccounts = useAuthStore.getState().accounts;
+            
+            if (freshAccounts.length <= 1) {
+                return;
             }
+            
+            // แสดงบัญชีทั้งหมดใน log เพื่อตรวจสอบ
+            console.log("All accounts:", freshAccounts.map(acc => ({ id: acc.id, username: acc.username })));
+            
+            // เรียงบัญชีตาม ID เพื่อให้ลำดับคงที่ไม่เปลี่ยนแปลง
+            const sortedAccounts = [...freshAccounts].sort((a, b) => a.id - b.id);
+            console.log("Sorted accounts:", sortedAccounts.map(acc => ({ id: acc.id, username: acc.username })));
+            
+            const currentUserId = lastSwitchedAccountIdRef.current || userDetails.id;
+            console.log("Current user ID:", currentUserId);
+            
+            // หาลำดับปัจจุบันในรายการที่เรียงตาม ID
+            const currentIndex = sortedAccounts.findIndex(acc => acc.id === currentUserId);
+            console.log("Current index in sorted list:", currentIndex);
+            
+            // คำนวณลำดับถัดไป
+            const nextIndex = (currentIndex + 1) % sortedAccounts.length;
+            console.log("Next index in sorted list:", nextIndex);
+            
+            const nextAccount = sortedAccounts[nextIndex];
+            
+            if (nextAccount) {
+                console.log("Switching to account:", nextAccount.username, nextAccount.id);
+                
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-            switchAccount(nextAccount.id, () => {
-                navigation.dispatch(
-                    CommonActions.navigate({
-                        name: 'bottom_bar',
-                        params: {
-                            screen: 'bottom_bar_home',
-                            params: { refresh: Date.now() }
+                if (Platform.OS === 'android') {
+                    ToastAndroid.show(`สลับบัญชีไปยัง ${nextAccount.username}`, ToastAndroid.SHORT);
+                } else {
+                    Alert.alert(
+                        'สลับบัญชี',
+                        `เปลี่ยนบัญชีไปยัง ${nextAccount.username}`,
+                        [{ text: 'ตกลง', style: 'default' }],
+                        { cancelable: true }
+                    );
+                }
 
-                        }
-                    })
-                );
-            }).catch(err => {
-                console.error('Error switching account:', err);
-            });
-        }
+                // เก็บค่า ID ของบัญชีที่เปลี่ยนไป
+                lastSwitchedAccountIdRef.current = nextAccount.id;
+
+                switchAccount(nextAccount.id, () => {
+                    // รีเฟรชอีกครั้งหลังเปลี่ยนบัญชี
+                    loadAccounts().then(() => {
+                        navigation.dispatch(
+                            CommonActions.navigate({
+                                name: 'bottom_bar',
+                                params: {
+                                    screen: 'bottom_bar_home',
+                                    params: { refresh: Date.now() }
+                                }
+                            })
+                        );
+                    });
+                }).catch(err => {
+                    console.error('Error switching account:', err);
+                    lastSwitchedAccountIdRef.current = userDetails.id;
+                });
+            }
+        });
     }, [isLoggedIn, userDetails, navigation]);
 
     const handleSingleTap = (event: any) => {

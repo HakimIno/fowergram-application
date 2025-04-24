@@ -32,36 +32,27 @@ export const switchAccount = async (
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
-    // ตรวจสอบและจัดรูปแบบ Authorization header ให้ถูกต้อง
+
     if (currentToken) {
-      // ถ้า token ไม่ได้เริ่มต้นด้วย 'Bearer ' ให้เติมให้
       if (!currentToken.startsWith('Bearer ')) {
         headers['Authorization'] = `Bearer ${currentToken}`;
       } else {
         headers['Authorization'] = currentToken;
       }
     }
-    
-    // Add Device-ID header if provided
+
     if (deviceId) {
       headers['Device-ID'] = deviceId;
     }
-    
-    // ถ้า request มี refresh token (กรณี token-based switching)
+
     if ('refresh_token' in request && request.refresh_token) {
-      console.log('Refresh token available, adding to headers:', !!request.refresh_token);
       headers['X-Refresh-Token'] = request.refresh_token;
-    } else {
-      console.log('No refresh token available, rejecting request');
     }
-    
+
     const response = await httpEndpoint.post('/api/v1/auth/switch-account', request, { headers });
-    
-    // ตรวจสอบรูปแบบข้อมูลที่ได้รับ
+
     const data = response.data;
-    
-    // Format 1: { token: string, refresh_token: string, user: UserDetails }
+
     if (data.token && data.user) {
       return {
         token: data.token,
@@ -69,8 +60,7 @@ export const switchAccount = async (
         user: data.user
       };
     }
-    
-    // Format 2: { data: { token: string, refresh_token: string, user: UserDetails } }
+
     if (data.data && data.data.token && data.data.user) {
       return {
         token: data.data.token,
@@ -78,7 +68,7 @@ export const switchAccount = async (
         user: data.data.user
       };
     }
-    
+
     console.error('Unexpected response format:', JSON.stringify(data));
     throw new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง');
   } catch (error) {

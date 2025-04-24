@@ -1,30 +1,25 @@
-import { 
-    Text, 
-    View, 
+import {
+    Text,
+    View,
     TouchableOpacity,
 } from 'react-native'
 import React from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { StoredAccount } from 'src/utils/auth'
 import styles from '../style'
+import UserAvatar from 'src/components/UserAvatar'
 
-type AccountItemProps = { 
+type AccountItemProps = {
     account: StoredAccount
     onPress: () => void
-    onLongPress: () => void 
+    onLongPress: () => void
 }
 
-const AccountItem = ({ 
-    account, 
+const AccountItem = ({
+    account,
     onPress,
-    onLongPress 
+    onLongPress
 }: AccountItemProps) => {
-    const getInitials = () => {
-        if (account.firstName && account.lastName) {
-            return `${account.firstName.charAt(0)}${account.lastName.charAt(0)}`.toUpperCase();
-        }
-        return account.username.charAt(0).toUpperCase();
-    };
 
     const getDisplayName = () => {
         if (account.firstName && account.lastName) {
@@ -34,15 +29,23 @@ const AccountItem = ({
     };
 
     return (
-        <TouchableOpacity 
-            style={styles.accountItem} 
+        <TouchableOpacity
+            style={styles.accountItem}
             onPress={onPress}
             onLongPress={onLongPress}
             delayLongPress={500}
         >
-            <View style={styles.accountAvatar}>
-                <Text style={styles.accountAvatarText}>{getInitials()}</Text>
-            </View>
+            <UserAvatar
+                user={{
+                    id: account.id,
+                    username: account.username,
+                    email: account.email,
+                    firstName: account.firstName,
+                    lastName: account.lastName,
+                    profile_picture: account.profile_picture
+                }}
+                size={40}
+            />
             <View style={styles.accountInfo}>
                 <Text style={styles.accountName}>{getDisplayName()}</Text>
                 <Text style={styles.accountEmail}>{account.email}</Text>
