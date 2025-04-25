@@ -88,34 +88,22 @@ const BottomBarTab = () => {
         loadAccounts().then(() => {
             // ดึง accounts อีกครั้งหลังจาก loadAccounts เสร็จสิ้น
             const freshAccounts = useAuthStore.getState().accounts;
-            
+
             if (freshAccounts.length <= 1) {
                 return;
             }
-            
-            // แสดงบัญชีทั้งหมดใน log เพื่อตรวจสอบ
-            console.log("All accounts:", freshAccounts.map(acc => ({ id: acc.id, username: acc.username })));
-            
-            // เรียงบัญชีตาม ID เพื่อให้ลำดับคงที่ไม่เปลี่ยนแปลง
+
             const sortedAccounts = [...freshAccounts].sort((a, b) => a.id - b.id);
-            console.log("Sorted accounts:", sortedAccounts.map(acc => ({ id: acc.id, username: acc.username })));
-            
             const currentUserId = lastSwitchedAccountIdRef.current || userDetails.id;
-            console.log("Current user ID:", currentUserId);
-            
-            // หาลำดับปัจจุบันในรายการที่เรียงตาม ID
+
             const currentIndex = sortedAccounts.findIndex(acc => acc.id === currentUserId);
-            console.log("Current index in sorted list:", currentIndex);
-            
-            // คำนวณลำดับถัดไป
+
             const nextIndex = (currentIndex + 1) % sortedAccounts.length;
-            console.log("Next index in sorted list:", nextIndex);
-            
+
             const nextAccount = sortedAccounts[nextIndex];
-            
+
             if (nextAccount) {
-                console.log("Switching to account:", nextAccount.username, nextAccount.id);
-                
+
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
                 if (Platform.OS === 'android') {
@@ -129,11 +117,9 @@ const BottomBarTab = () => {
                     );
                 }
 
-                // เก็บค่า ID ของบัญชีที่เปลี่ยนไป
                 lastSwitchedAccountIdRef.current = nextAccount.id;
 
                 switchAccount(nextAccount.id, () => {
-                    // รีเฟรชอีกครั้งหลังเปลี่ยนบัญชี
                     loadAccounts().then(() => {
                         navigation.dispatch(
                             CommonActions.navigate({

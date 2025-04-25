@@ -35,7 +35,7 @@ const notifySubscribersAboutNewToken = (token: string) => {
 };
 
 export const httpEndpoint = axios.create({
-    baseURL: "http://192.168.95.186:8080",
+    baseURL: process.env.EXPO_BASE_URL,
     timeout: 30 * 1000,
     headers: {
         'Content-Type': 'application/json',
