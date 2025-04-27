@@ -29,7 +29,6 @@ export const FeedItem = React.memo(({
   index,
   navigation
 }: FeedItemProps) => {
-  // Use stable key reference to avoid re-renders causing image loading issues
   const stableKey = useRef(`feed-item-${item.id}`).current;
 
   return (

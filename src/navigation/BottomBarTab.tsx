@@ -2,7 +2,7 @@ import { StyleSheet, View, Platform, ToastAndroid, Alert } from 'react-native'
 import React, { useRef, useCallback, useEffect } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { BottomBarParamList } from './types'
-import { HomeScreen, SettingScreen, ChatScreen, SearchScreen } from '../screens/TabsBottomScreen'
+import { HomeScreen, SettingScreen, ChatScreen, SearchScreen, ContentScreen } from '../screens/TabsBottomScreen'
 import { SvgIcon } from 'src/components/SvgIcon'
 import { useTheme } from 'src/context/ThemeContext'
 import { BlurView } from 'expo-blur'
@@ -169,7 +169,7 @@ const BottomBarTab = () => {
                 tabBarBackground: () => (
                     <BlurView
                         style={StyleSheet.absoluteFill}
-                        intensity={80}
+                        intensity={70}
                         experimentalBlurMethod="dimezisBlurView"
                         tint={isDarkMode ? "dark" : "light"}
                     />
@@ -180,7 +180,6 @@ const BottomBarTab = () => {
                 name="bottom_bar_home"
                 component={HomeScreen}
                 options={{ tabBarIcon: ({ focused }) => renderTabIcon('home', focused) }}
-
                 listeners={({ navigation }) => ({
                     tabPress: (e) => {
                         e.preventDefault();
@@ -217,10 +216,30 @@ const BottomBarTab = () => {
                 })}
             />
 
+            {/* <BottomBar.Screen
+                name="bottom_bar_content"
+                component={ContentScreen}
+                options={{ 
+                    tabBarIcon: ({ focused }) => renderTabIcon('grid', focused) 
+                }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault();
+                        navigation.navigate('bottom_bar_content');
+                    },
+                })}
+            /> */}
+
             <BottomBar.Screen
                 name="bottom_bar_search"
-                component={SearchScreen}
+                component={ContentScreen}
                 options={{ tabBarIcon: ({ focused }) => renderTabIcon('search', focused) }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                        e.preventDefault();
+                        navigation.navigate('bottom_bar_search');
+                    },
+                })}
             />
 
             <BottomBar.Screen

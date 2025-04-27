@@ -30,6 +30,22 @@ const memoryCache = {
   lastUpdated: 0,
 };
 
+// Add new constants for content grid storage
+const contentStorage = new MMKV({
+  id: 'content-grid-storage',
+  encryptionKey: 'content-grid-storage-key',
+});
+
+// Keys for content storage
+const CONTENT_GRID_DATA_KEY = 'content-grid-data';
+const CONTENT_GRID_VERSION_KEY = 'content-grid-version';
+const CURRENT_CONTENT_VERSION = '1.0.0';
+
+// Memory cache for content grid
+const contentMemoryCache = {
+  gridData: null as any[] | null,
+};
+
 /**
  * Convert FeedItem to FeedInfo type for compatibility
  */
@@ -320,6 +336,90 @@ export const FeedStorageService = {
       } catch (clearError) {
         console.error('Failed to reset MMKV storage:', clearError);
       }
+    }
+  }
+};
+
+/**
+ * Content Grid storage service for caching explore grid data
+ */
+export const ContentStorageService = {
+  /**
+   * Initialize storage and check version
+   */
+  initialize: (): void => {
+    try {
+      const storedVersion = contentStorage.getString(CONTENT_GRID_VERSION_KEY);
+      
+      // Clear cache if version mismatch
+      if (!storedVersion || storedVersion !== CURRENT_CONTENT_VERSION) {
+        console.log('Content grid data version changed, clearing cache');
+        ContentStorageService.clearData();
+        contentStorage.set(CONTENT_GRID_VERSION_KEY, CURRENT_CONTENT_VERSION);
+      }
+    } catch (error) {
+      console.error('Error initializing content grid storage:', error);
+      // Try to recover by clearing cache
+      try {
+        ContentStorageService.clearData();
+      } catch (clearError) {
+        console.error('Failed to clear cache after initialization error:', clearError);
+      }
+    }
+  },
+
+  /**
+   * Save grid data to MMKV storage
+   * @param data Grid data to save
+   */
+  saveGridData: (data: any[]): void => {
+    try {
+      // Update memory cache first (faster access)
+      contentMemoryCache.gridData = data;
+      
+      // Then persist to MMKV
+      contentStorage.set(CONTENT_GRID_DATA_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving grid data to MMKV:', error);
+    }
+  },
+
+  /**
+   * Get grid data from MMKV storage
+   * @returns Cached grid data or null if not found
+   */
+  getGridData: (): any[] | null => {
+    try {
+      // Check memory cache first for ultra-fast access
+      if (contentMemoryCache.gridData) {
+        return contentMemoryCache.gridData;
+      }
+      
+      // Fall back to MMKV if not in memory
+      const data = contentStorage.getString(CONTENT_GRID_DATA_KEY);
+      const parsedData = data ? JSON.parse(data) : null;
+      
+      // Update memory cache for next access
+      if (parsedData) {
+        contentMemoryCache.gridData = parsedData;
+      }
+      
+      return parsedData;
+    } catch (error) {
+      console.error('Error getting grid data from MMKV:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Clear all grid data
+   */
+  clearData: (): void => {
+    try {
+      contentMemoryCache.gridData = null;
+      contentStorage.delete(CONTENT_GRID_DATA_KEY);
+    } catch (error) {
+      console.error('Error clearing content grid data:', error);
     }
   }
 }; 

@@ -9,6 +9,13 @@ export type RootStackParamList = {
     profile_details_screen: { image: string, username: string };
     image_profile_screen: { image: string, username: string }
     gallery_screen: { index: number, feed: any }
+    image_viewer_modal: { 
+        imageUrl: string, 
+        imageId: string,
+        username?: string,
+        isFollowing?: boolean,
+        imageRect?: { x: number, y: number, width: number, height: number } 
+    }
     story_screen: { 
         stories: any[];
         initialIndex: number;
@@ -61,6 +68,7 @@ export type RootStackParamList = {
 
 export type BottomBarParamList = {
     bottom_bar_home: { refresh?: number } | undefined;
+    bottom_bar_content: undefined;
     bottom_bar_search: undefined;
     bottom_bar_create: undefined;
     bottom_bar_message: undefined;

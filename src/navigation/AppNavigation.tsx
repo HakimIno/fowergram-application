@@ -14,6 +14,7 @@ import StoryScreen from 'src/screens/StoryScreen';
 import RegisterScreen from 'src/screens/Auth/RegisterScreen';
 import RegisterBirthdayScreen from 'src/screens/Auth/RegisterBirthdayScreen';
 import WelcomeScreen from 'src/screens/Auth/WelcomeScreen';
+import ImageViewerModal from 'src/screens/TabsBottomScreen/ContentScreen/ImageViewerModal';
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -140,6 +141,17 @@ const AppNavigation = () => {
                             headerShown: false,
                             presentation: "transparentModal",
                             animation: "fade"
+                        }}
+                    />
+
+                    <AppStack.Screen
+                        name="image_viewer_modal"
+                        component={ImageViewerModal}
+                        options={{
+                            headerShown: false,
+                            presentation: 'transparentModal',
+                            animation: 'none',
+                            animationDuration: 0,
                         }}
                     />
                 </AppStack.Group>
