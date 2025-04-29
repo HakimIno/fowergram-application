@@ -232,7 +232,7 @@ const BottomBarTab = () => {
 
             <BottomBar.Screen
                 name="bottom_bar_search"
-                component={ContentScreen}
+                component={SearchScreen}
                 options={{ tabBarIcon: ({ focused }) => renderTabIcon('search', focused) }}
                 listeners={({ navigation }) => ({
                     tabPress: (e) => {
