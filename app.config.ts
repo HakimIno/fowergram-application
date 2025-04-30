@@ -110,7 +110,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                     deploymentTarget: '15.1',
                 },
             },
-        ]
+        ],
+        "./plugins/withAndroidStyles"
     ],
 
     extra: {
