@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import EditorPhoto from './components/EditorPhoto';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -192,11 +193,7 @@ const MediaPlayer: React.FC = () => {
                             </TouchableOpacity>
                         </>
                     ) : (
-                        <ExpoImage
-                            source={{ uri: mediaItem.uri }}
-                            style={styles.fullscreenMedia}
-                            contentFit="contain"
-                        />
+                        <EditorPhoto imageUri={mediaItem.uri} />
                     )}
                 </Animated.View>
             </GestureDetector>
@@ -211,15 +208,7 @@ const MediaPlayer: React.FC = () => {
                 </TouchableOpacity>
             )}
             
-            {/* Edit Button */}
-            {mediaItem?.type === 'image' && (
-                <TouchableOpacity 
-                    style={styles.editButton}
-                    onPress={() => navigation.navigate('edit_screen', { selectedMedia: mediaItem })}
-                >
-                    <Ionicons name="brush-outline" size={24} color="white" />
-                </TouchableOpacity>
-            )}
+           
         </View>
     );
 };

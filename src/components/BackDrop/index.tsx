@@ -12,6 +12,8 @@ type Props = {
     closeHeight: number;
     backDropColor: string;
     close: () => void;
+    zIndex?: number;
+    opacity?: number;
 };
 
 const BackDrop = ({
@@ -20,20 +22,22 @@ const BackDrop = ({
     closeHeight,
     backDropColor,
     close,
+    zIndex = 999989,
+    opacity = 0.5,
 }: Props) => {
     const { width, height } = Dimensions.get('window');
 
     const backDropAnimation = useAnimatedStyle(() => {
-        const opacity = interpolate(
+        const calculatedOpacity = interpolate(
             topAnimation.value,
             [closeHeight, openHeight],
-            [0, 0.5],
+            [0, opacity],
             { extrapolateRight: 'clamp', extrapolateLeft: 'clamp' }
         );
         
-        const display = opacity === 0 ? 'none' : 'flex';
+        const display = calculatedOpacity === 0 ? 'none' : 'flex';
         return {
-            opacity,
+            opacity: calculatedOpacity,
             display,
         };
     });
@@ -52,6 +56,8 @@ const BackDrop = ({
                         backgroundColor: backDropColor,
                         width,
                         height: height * 2,
+                        zIndex: zIndex,
+                        elevation: zIndex,
                     },
                 ]}
             />
@@ -65,8 +71,6 @@ const styles = StyleSheet.create({
     backDrop: {
         ...StyleSheet.absoluteFillObject,
         display: 'none',
-        zIndex: 999989,
-        elevation: 999989,
         position: 'absolute',
         top: 0,
         left: 0,

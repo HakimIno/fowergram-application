@@ -23,7 +23,6 @@ import { HeaderControls } from './components/HeaderControls';
 import { BottomGradient } from './components/BottomGradient';
 import { MainCanvasView } from './components/MainCanvasView';
 import { BottomSheetView } from './components/BottomSheetView';
-import { CreativeToolbar } from './components/CreativeToolbar';
 import { DrawingToolsContent } from './components/DrawingToolsContent';
 import { TextToolsContent } from './components/TextToolsContent';
 import {
@@ -341,31 +340,16 @@ const EditScreen: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <RNStatusBar barStyle="light-content" backgroundColor="#000000" />
       <StatusBar style="light" />
       <SafeAreaView style={styles.container}>
-        {/* Main Image Canvas */}
         <View style={styles.imageCanvasContainer}>
-          {/* Header controls */}
-          {showControls && (
-            <HeaderControls
-              style={controlsAnimatedStyle}
-              onGoBack={handleGoBack}
-              onToggleFullscreen={toggleFullscreen}
-              isFullscreenMode={isFullscreenMode}
-              onSave={startSaveProcess}
-              isSaving={isSaving}
-            />
-          )}
-
-          {/* Main image content */}
+       
           <MainCanvasView
             image={image}
             showAdvancedTools={showAdvancedTools}
             editMode={editMode}
             editSubMode={editSubMode}
             isFullscreenMode={isFullscreenMode}
-            gestures={gestures}
             animatedImageStyle={animatedImageStyle}
             selectedFilter={String(selectedFilter || 0)}
             adjustmentsValues={{
@@ -391,14 +375,10 @@ const EditScreen: React.FC = () => {
             currentBottomSheetHeight={currentBottomSheetHeight}
           />
 
-          {/* Bottom gradient overlay */}
-          {showControls && (
-            <BottomGradient style={controlsAnimatedStyle} />
-          )}
         </View>
 
-        {/* Bottom Sheet - only show when controls are visible and not in fullscreen */}
-        {showControls && !isFullscreenMode && (
+       
+        {/* {showControls && !isFullscreenMode && (
           <BottomSheetView
             editMode={editMode}
             editSubMode={editSubMode}
@@ -486,7 +466,7 @@ const EditScreen: React.FC = () => {
               return null;
             }}
           />
-        )}
+        )} */}
       </SafeAreaView>
     </GestureHandlerRootView>
   );

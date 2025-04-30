@@ -2,13 +2,12 @@ import React, { useMemo } from 'react';
 import { StyleSheet, View, Dimensions, Platform } from 'react-native';
 import { SkImage } from '@shopify/react-native-skia';
 import Animated, { SharedValue, useSharedValue } from 'react-native-reanimated';
-import { GestureDetector } from 'react-native-gesture-handler';
 
 import { EditMode, EditSubMode } from '../types';
 import { ImageFilters } from './ImageFilters';
 import { AdvancedImageEditor } from './AdvancedImageEditor';
-import { AdvancedFilters } from './AdvancedFilters';
 import { TextAndStickers } from './TextAndStickers';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // กำหนดความสูงคงที่ของ bottom sheet (ควรมีค่าเดียวกับในไฟล์ BottomSheet.tsx)
 const FIXED_SHEET_HEIGHT = Dimensions.get('window').height * 0.35;
@@ -36,7 +35,6 @@ interface MainCanvasViewProps {
   editMode: EditMode;
   editSubMode: EditSubMode;
   isFullscreenMode: boolean;
-  gestures: any; // Gesture type from react-native-gesture-handler
   animatedImageStyle: any; // AnimatedStyle from react-native-reanimated
   selectedFilter: string;
   adjustmentsValues: AdjustmentValues;
@@ -56,7 +54,6 @@ export const MainCanvasView: React.FC<MainCanvasViewProps> = ({
   editMode,
   editSubMode,
   isFullscreenMode,
-  gestures,
   animatedImageStyle,
   selectedFilter,
   adjustmentsValues,
@@ -76,42 +73,20 @@ export const MainCanvasView: React.FC<MainCanvasViewProps> = ({
     return value;
   };
 
-  // Convert selectedFilter from string to number
   const filterIndex = parseInt(selectedFilter) || 0;
 
   // Calculate dimensions once to avoid recalculation
   const displayDimensions = useMemo(() => {
-    // Calculate optimal display dimensions based on image aspect ratio
-    const imageAspectRatio = image.width() / image.height();
+    const availableHeight = SCREEN_HEIGHT - (isFullscreenMode ? 0 : (FIXED_SHEET_HEIGHT));
     
-    // คำนวณพื้นที่ที่เหลือเมื่อมี bottom sheet ขนาดคงที่
-    const availableHeight = SCREEN_HEIGHT - (isFullscreenMode ? 0 : (FIXED_SHEET_HEIGHT + 60)); // เพิ่ม padding บน-ล่าง
-    const screenAspectRatio = SCREEN_WIDTH / availableHeight;
-    
-    // Calculate display dimensions to maintain aspect ratio and fit screen
-    let displayWidth = SCREEN_WIDTH;
-    let displayHeight = availableHeight;
-    
-    if (imageAspectRatio > screenAspectRatio) {
-      // Wide image - fit to width
-      displayHeight = SCREEN_WIDTH / imageAspectRatio;
-    } else {
-      // Tall image - fit to available height
-      displayWidth = availableHeight * imageAspectRatio;
-    }
+    // กำหนดขนาดให้เต็มจอ
+    const displayWidth = SCREEN_WIDTH;
+    const displayHeight = availableHeight;
 
     // คำนวณขนาดสำหรับเครื่องมือขั้นสูง
     const advancedHeight = SCREEN_HEIGHT - (FIXED_SHEET_HEIGHT + 100);
-    let advancedDisplayWidth = SCREEN_WIDTH;
-    let advancedDisplayHeight = advancedHeight;
-    
-    if (imageAspectRatio > SCREEN_WIDTH / advancedHeight) {
-      // Wide image - fit to width
-      advancedDisplayHeight = SCREEN_WIDTH / imageAspectRatio;
-    } else {
-      // Tall image - fit to available height
-      advancedDisplayWidth = advancedHeight * imageAspectRatio;
-    }
+    const advancedDisplayWidth = SCREEN_WIDTH;
+    const advancedDisplayHeight = advancedHeight;
 
     return {
       displayWidth,
@@ -119,45 +94,42 @@ export const MainCanvasView: React.FC<MainCanvasViewProps> = ({
       advancedDisplayWidth,
       advancedDisplayHeight
     };
-  }, [image, isFullscreenMode]);
+  }, [isFullscreenMode]);
 
-  // Show the basic image editor with gesture support
+  const insets = useSafeAreaInsets();
+
+  // Show the basic image editor
   if (!showAdvancedTools || editMode !== 'creative') {
     return (
-      <GestureDetector gesture={gestures}>
-        <Animated.View
-          style={[
-            styles.imageContainer,
-            animatedImageStyle,
-            isFullscreenMode && styles.fullscreenImageContainer,
-            isFullscreenMode && { width: SCREEN_WIDTH, height: SCREEN_HEIGHT }
-          ]}
-        >
-          <ImageFilters
-            image={image}
-            width={displayDimensions.displayWidth}
-            height={displayDimensions.displayHeight}
-            selectedFilter={filterIndex}
-            brightnessValue={createSharedValue(adjustmentsValues.brightnessValue)}
-            contrastValue={createSharedValue(adjustmentsValues.contrastValue)}
-            saturationValue={createSharedValue(adjustmentsValues.saturationValue)}
-            temperatureValue={createSharedValue(adjustmentsValues.temperatureValue)}
-            blurValue={createSharedValue(adjustmentsValues.blurValue)}
-            highlightsValue={createSharedValue(adjustmentsValues.highlightsValue)}
-            shadowsValue={createSharedValue(adjustmentsValues.shadowsValue)}
-            vignetteValue={createSharedValue(adjustmentsValues.vignetteValue)}
-            fadeValue={createSharedValue(adjustmentsValues.fadeValue)}
-            sharpenValue={createSharedValue(adjustmentsValues.sharpenValue)}
-            structureValue={createSharedValue(adjustmentsValues.structureValue)}
-            grainValue={createSharedValue(adjustmentsValues.grainValue)}
-            tintValue={createSharedValue(adjustmentsValues.tintValue)}
-          />
-        </Animated.View>
-      </GestureDetector>
+      <Animated.View
+        style={[
+          styles.imageContainer,
+          { marginTop: insets.top + 20}
+        ]}
+      >
+        <ImageFilters
+          image={image}
+          width={displayDimensions.displayWidth}
+          height={displayDimensions.displayHeight}
+          selectedFilter={filterIndex}
+          brightnessValue={createSharedValue(adjustmentsValues.brightnessValue)}
+          contrastValue={createSharedValue(adjustmentsValues.contrastValue)}
+          saturationValue={createSharedValue(adjustmentsValues.saturationValue)}
+          temperatureValue={createSharedValue(adjustmentsValues.temperatureValue)}
+          blurValue={createSharedValue(adjustmentsValues.blurValue)}
+          highlightsValue={createSharedValue(adjustmentsValues.highlightsValue)}
+          shadowsValue={createSharedValue(adjustmentsValues.shadowsValue)}
+          vignetteValue={createSharedValue(adjustmentsValues.vignetteValue)}
+          fadeValue={createSharedValue(adjustmentsValues.fadeValue)}
+          sharpenValue={createSharedValue(adjustmentsValues.sharpenValue)}
+          structureValue={createSharedValue(adjustmentsValues.structureValue)}
+          grainValue={createSharedValue(adjustmentsValues.grainValue)}
+          tintValue={createSharedValue(adjustmentsValues.tintValue)}
+        />
+      </Animated.View>
     );
   }
 
-  // For advanced tools, show the appropriate component based on the edit sub-mode
   return (
     <View style={[
       styles.advancedContainer,
@@ -174,15 +146,7 @@ export const MainCanvasView: React.FC<MainCanvasViewProps> = ({
           ref={advancedImageEditorRef}
         />
       )}
-      
-      {editSubMode === 'effects' && (
-        <AdvancedFilters
-          image={image}
-          width={displayDimensions.advancedDisplayWidth}
-          height={displayDimensions.advancedDisplayHeight}
-        />
-      )}
-      
+
       {editSubMode === 'text' && (
         <TextAndStickers
           width={displayDimensions.advancedDisplayWidth}
@@ -198,22 +162,7 @@ export const MainCanvasView: React.FC<MainCanvasViewProps> = ({
 const styles = StyleSheet.create({
   imageContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000',
-    width: '100%',
-    height: '100%',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.5,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+   
   },
   fullscreenImageContainer: {
     backgroundColor: '#000',

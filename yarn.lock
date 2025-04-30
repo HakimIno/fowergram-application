@@ -3478,6 +3478,14 @@ expo-modules-core@2.2.3:
   dependencies:
     invariant "^2.2.4"
 
+expo-navigation-bar@^4.0.9:
+  version "4.0.9"
+  resolved "https://registry.yarnpkg.com/expo-navigation-bar/-/expo-navigation-bar-4.0.9.tgz#e0409c2db8f6384d12c87f45c2674effc9fae1b6"
+  integrity sha512-dCJ04yPixFOUixJaWlmCZafGeQ1L1g6vWn+oX8rqPnYN9kYCMUz2aRNnhRRoK5MBGFTK/nue2D49TE/AwwWt9w==
+  dependencies:
+    "@react-native/normalize-colors" "0.76.8"
+    debug "^4.3.2"
+
 expo-splash-screen@^0.29.24:
   version "0.29.24"
   resolved "https://registry.yarnpkg.com/expo-splash-screen/-/expo-splash-screen-0.29.24.tgz#4e5f6d576d3fbb37c5e3e4ee6d3f3b3ece350f75"
@@ -5880,6 +5888,11 @@ readline@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/readline/-/readline-1.3.0.tgz#c580d77ef2cfc8752b132498060dc9793a7ac01c"
   integrity sha512-k2d6ACCkiNYz222Fs/iNze30rRJ1iIicW7JuX/7/cozvih6YCkFZH+J6mAFDVgv0dRBaAyr4jDqC95R2y4IADg==
+
+reanimated-color-picker@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/reanimated-color-picker/-/reanimated-color-picker-4.0.1.tgz#0a8f988ae456776f6e1e0f284064290b18b1591c"
+  integrity sha512-blZ6k/H+2lofyHGNdHZXsWMC5sQbvFAZg6aovs47v4h0SJcqoyrX4wUDR7RQylPGdWGlAPZz/TiJWcG0FMYQag==
 
 recast@^0.21.0:
   version "0.21.5"

@@ -42,12 +42,17 @@ const BottomBarTab = () => {
 
     const tabBarStyle = {
         backgroundColor,
-        height: 55,
+        height: Platform.OS === 'android' ? 65 : 55,
         zIndex: 1,
         paddingTop: 10,
+        paddingBottom: Platform.OS === 'android' ? 15 : 0,
         marginBottom: Platform.OS === 'ios' ? 5 : 0,
         position: 'absolute' as const,
         borderTopWidth: 0,
+        elevation: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
     }
 
     const renderTabIcon = (iconKey: keyof typeof tabIcons, focused: boolean) => (

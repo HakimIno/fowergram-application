@@ -49,30 +49,17 @@ export const ImageFilters = memo<ImageFiltersProps>(({
 }) => {
   // Calculate image dimensions just once per render
   const { displayWidth, displayHeight, offsetX, offsetY } = useMemo(() => {
-    // Calculate optimal fit for the image
-    const imageAspectRatio = image.width() / image.height();
-    const screenAspectRatio = width / height;
+    // กำหนดขนาดให้เต็มพื้นที่ที่ได้รับมา
+    const displayWidth = width;
+    const displayHeight = height;
     
-    let displayWidth = width;
-    let displayHeight = height;
-    
-    // Adjust dimensions to maintain aspect ratio and maximize screen usage
-    if (imageAspectRatio > screenAspectRatio) {
-      // Wide image - use full width
-      displayHeight = width / imageAspectRatio;
-    } else {
-      // Tall image - use full height
-      displayWidth = height * imageAspectRatio;
-    }
-    
-    // Center the image on screen
-    const offsetX = (width - displayWidth) / 2;
-    const offsetY = (height - displayHeight) / 2;
+    // จัดให้อยู่กึ่งกลาง
+    const offsetX = 0;
+    const offsetY = 0;
     
     return { displayWidth, displayHeight, offsetX, offsetY };
-  }, [image, width, height]);
+  }, [width, height]);
 
-  // Memoize the filter matrix to avoid re-calculations
   const filterMatrix = useMemo(() => {
     return FILTERS[selectedFilter]?.matrix || FILTERS[0].matrix;
   }, [selectedFilter]);

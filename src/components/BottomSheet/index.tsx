@@ -29,11 +29,14 @@ export interface BottomSheetMethods {
 type Props = {
     children: ReactNode
     handleClose: () => void;
+    isDark?: boolean;
     title: string;
     keyboardAvoidingViewEnabled?: boolean;
+    headerRight?: ReactNode;
+    headerLeft?: ReactNode;
 }
 
-const BottomSheet = forwardRef<BottomSheetMethods, Props>(({ children, handleClose, title, keyboardAvoidingViewEnabled = true }, ref) => {
+const BottomSheet = forwardRef<BottomSheetMethods, Props>(({ children, handleClose, title, isDark = false, keyboardAvoidingViewEnabled = true, headerRight, headerLeft }, ref) => {
     const insets = useSafeAreaInsets();
     const { width, height } = useWindowDimensions();
     const [bottomSheetHeight, setBottomSheetHeight] = useState(1000);
@@ -155,7 +158,7 @@ const BottomSheet = forwardRef<BottomSheetMethods, Props>(({ children, handleClo
                     styles.container,
                     {
                         width: width,
-                        backgroundColor: isDarkMode ? '#1a1a1a' : 'white',
+                        backgroundColor: isDarkMode || isDark ? 'black' : 'white',
                         position: 'absolute',
                         left: 0,
                         right: 0,
@@ -168,12 +171,25 @@ const BottomSheet = forwardRef<BottomSheetMethods, Props>(({ children, handleClo
             >
                 <GestureDetector gesture={headerPan}>
                     <View style={styles.header}>
-                        <View style={[styles.line, { backgroundColor: isDarkMode ? '#333' : 'rgba(0,0,0,0.1)' }]} />
-                        <Text style={[styles.textTitle, { color: isDarkMode ? '#fff' : '#1a1a1a' }]}>{title}</Text>
+                        <View style={[styles.line, { backgroundColor: isDarkMode || isDark ? '#333' : 'rgba(0,0,0,0.1)' }]} />
+                        
+                        <View style={styles.headerContainer}>
+                            {headerLeft && (
+                                <View style={styles.headerLeft}>
+                                    {headerLeft}
+                                </View>
+                            )}
+                            
+                            <Text style={[styles.textTitle, { color: isDarkMode || isDark ? '#fff' : '#1a1a1a' }]}>{title}</Text>
+                            
+                            {headerRight && (
+                                <View style={styles.headerRight}>
+                                    {headerRight}
+                                </View>
+                            )}
+                        </View>
                     </View>
                 </GestureDetector>
-
-
 
                 {keyboardAvoidingViewEnabled ? (
                     <KeyboardAvoidingView
@@ -210,12 +226,27 @@ const styles = StyleSheet.create({
     },
     header: {
         width: '100%',
-        height: 40,
+        height: 60,
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
         gap: 10,
         paddingTop: 10,
+    },
+    headerContainer: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+    },
+    headerLeft: {
+        minWidth: 40,
+        alignItems: 'flex-start',
+    },
+    headerRight: {
+        minWidth: 40,
+        alignItems: 'flex-end',
     },
     content: {
         width: '100%',
