@@ -99,8 +99,7 @@ const AppNavigation = () => {
                         component={PreviewScreen}
                         options={{
                             headerShown: false,
-                            presentation: "card",
-                            animation: "slide_from_right"
+                            animation: "ios_from_right"
                         }}
                     />
 

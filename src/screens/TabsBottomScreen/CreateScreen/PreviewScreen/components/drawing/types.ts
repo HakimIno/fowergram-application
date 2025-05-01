@@ -8,12 +8,16 @@ export interface Point {
     y: number;
 }
 
+// Tool mode (drawing or erasing)
+export type ToolMode = 'draw' | 'erase';
+
 // Drawing path with properties
 export interface DrawingPath {
     path: SkPath;
     color: string;
     strokeWidth: number;
     strokeStyle: StrokeStyleType;
+    mode: ToolMode;
 }
 
 // Editor component props
@@ -27,10 +31,9 @@ export type StrokeStyleType =
     | 'solid'
     | 'dashed'
     | 'dotted'
-    | 'double'
-    | 'zigzag'
-    | 'wavy'
-    | 'gradient';
+    | 'heart'
+    | 'flower'
+    | 'star';
 
 // Stroke style option with icon
 export interface StrokeStyleOption {

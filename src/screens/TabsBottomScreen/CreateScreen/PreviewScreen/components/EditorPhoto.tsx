@@ -1,11 +1,9 @@
-import React, { useCallback, useState, useEffect } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { useImage } from '@shopify/react-native-skia';
-import * as MediaLibrary from 'expo-media-library';
 
-// Import from our modular drawing system
 import {
     EditorPhotoProps,
     DrawingCanvas,
@@ -13,20 +11,21 @@ import {
     ControlButtons,
     useDrawing,
     useImageSaver,
+    ToolMode
 } from './drawing';
 
 // Main component
 const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
-    // State
+    // State - use lazy initialization for initial values
     const [showToolbar, setShowToolbar] = useState(true);
     const [selectedColor, setSelectedColor] = useState('#FF0000');
     const [selectedWidth, setSelectedWidth] = useState(4);
     const [selectedStyle, setSelectedStyle] = useState('solid' as const);
+    const [toolMode, setToolMode] = useState<ToolMode>('draw');
 
-    // Load image
+    // Load image just once and cache it
     const image = useImage(imageUri);
 
-    // Initialize drawing system
     const {
         canvasRef,
         paths,
@@ -42,20 +41,20 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
         setCurrentColor,
         setStrokeWidth,
         setStrokeStyle,
+        setToolMode: setDrawingToolMode,
         canUndoPath,
         canRedoPath,
     } = useDrawing(selectedColor, selectedWidth);
 
-    // Initialize image saver
     const { saveImage, requestMediaLibraryPermission } = useImageSaver(canvasRef);
 
-    // Request permissions for saving images
+    // Request permission just once
     useEffect(() => {
         requestMediaLibraryPermission();
     }, []);
 
-    // Configure pan gesture for drawing
-    const gesture = Gesture.Pan()
+    // Memoize gesture to prevent recreation on each render
+    const gesture = useMemo(() => Gesture.Pan()
         .onStart((e) => {
             runOnJS(onTouchStart)(e.x, e.y);
         })
@@ -66,10 +65,10 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
             runOnJS(onTouchEnd)();
         })
         .minDistance(1)
-        .averageTouches(true) 
-        .maxPointers(1);       // Limit to single finger drawing
+        .averageTouches(true)
+        .maxPointers(1), // Limit to single finger drawing
+    [onTouchStart, onTouchMove, onTouchEnd]);
 
-    // Selection handlers
     const handleColorSelect = useCallback((color: string) => {
         setSelectedColor(color);
         setCurrentColor(color);
@@ -85,15 +84,20 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
         setStrokeStyle(style);
     }, [setStrokeStyle]);
 
+    const handleToolModeChange = useCallback((mode: ToolMode) => {
+        setToolMode(mode);
+        setDrawingToolMode(mode);
+    }, [setDrawingToolMode]);
+
     const handleSaveImage = useCallback(async () => {
-        const savedUri = await saveImage(onSave);
-        return savedUri;
+        return await saveImage(onSave);
     }, [saveImage, onSave]);
 
     const toggleToolbar = useCallback(() => {
         setShowToolbar(prev => !prev);
     }, []);
 
+    // Don't render until image is loaded
     if (!image) {
         return null;
     }
@@ -107,7 +111,7 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
                     paths={paths}
                     currentPath={currentPath}
                     currentPaint={currentPaint}
-                    createPaint={createPaint}
+                    toolMode={toolMode}
                 />
             </GestureDetector>
 
@@ -129,6 +133,8 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
                 onWidthSelect={handleWidthSelect}
                 selectedStyle={selectedStyle}
                 onStyleSelect={handleStyleSelect}
+                toolMode={toolMode}
+                onToolModeChange={handleToolModeChange}
                 show={showToolbar}
                 onToggle={toggleToolbar}
             />
@@ -139,7 +145,8 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#000',
     },
 });
 
-export default EditorPhoto;
+export default React.memo(EditorPhoto);

@@ -33,4 +33,7 @@ export const STROKE_STYLES: StrokeStyleOption[] = [
     { type: 'solid', icon: 'minus', label: 'Solid' },
     { type: 'dashed', icon: 'dots-horizontal', label: 'Dashed' },
     { type: 'dotted', icon: 'dots-horizontal', label: 'Dotted' },
+    { type: 'heart', icon: 'heart', label: 'Heart' },
+    { type: 'flower', icon: 'flower', label: 'Flower' },
+    { type: 'star', icon: 'star', label: 'Star' },
 ]; 

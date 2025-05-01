@@ -15,8 +15,10 @@ export { useImageSaver } from './hooks/useImageSaver';
 export { default as DrawingCanvas } from './components/DrawingCanvas';
 export { default as DrawingToolbar } from './components/DrawingToolbar';
 export { default as ControlButtons } from './components/ControlButtons';
+export { default as AnimatedSlider } from './components/AnimatedSlider';
 
 // Export types
 export type { EditorPhotoProps } from './types';
 export type { StrokeStyleType } from './types';
-export type { DrawingPath } from './types'; 
+export type { DrawingPath } from './types';
+export type { ToolMode } from './types'; 

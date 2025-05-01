@@ -171,34 +171,33 @@ const MediaPlayer: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <GestureDetector gesture={composedGestures}>
-                <Animated.View style={[styles.contentContainer, animatedStyle]}>
-                    {mediaItem.type === 'video' && videoPlayer ? (
-                        <>
-                            <VideoView
-                                player={videoPlayer}
-                                style={styles.fullscreenMedia}
-                                nativeControls={false}
-                                contentFit="contain"
+            <EditorPhoto imageUri={mediaItem.uri} />
+            {/* <Animated.View style={[styles.contentContainer]}>
+                {mediaItem.type === 'video' && videoPlayer ? (
+                    <>
+                        <VideoView
+                            player={videoPlayer}
+                            style={styles.fullscreenMedia}
+                            nativeControls={false}
+                            contentFit="contain"
+                        />
+                        <TouchableOpacity
+                            style={styles.playButton}
+                            onPress={togglePlayback}
+                        >
+                            <Ionicons
+                                name={isPlaying ? 'pause' : 'play'}
+                                size={40}
+                                color="white"
                             />
-                            <TouchableOpacity
-                                style={styles.playButton}
-                                onPress={togglePlayback}
-                            >
-                                <Ionicons
-                                    name={isPlaying ? 'pause' : 'play'}
-                                    size={40}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-                        </>
-                    ) : (
-                        <EditorPhoto imageUri={mediaItem.uri} />
-                    )}
-                </Animated.View>
-            </GestureDetector>
+                        </TouchableOpacity>
+                    </>
+                ) : (
+                    <EditorPhoto imageUri={mediaItem.uri} />
+                )}
+            </Animated.View> */}
 
-            {mediaItem?.type === 'video' && (
+            {/* {mediaItem?.type === 'video' && (
                 <TouchableOpacity style={styles.playButton} onPress={togglePlayback}>
                     <Ionicons
                         name={isPlaying ? 'pause' : 'play'}
@@ -206,9 +205,9 @@ const MediaPlayer: React.FC = () => {
                         color="white"
                     />
                 </TouchableOpacity>
-            )}
-            
-           
+            )} */}
+
+
         </View>
     );
 };

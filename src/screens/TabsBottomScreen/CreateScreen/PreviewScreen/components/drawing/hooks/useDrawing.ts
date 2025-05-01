@@ -1,8 +1,8 @@
-import { useCallback, useRef, useState, useMemo } from 'react';
-import { useCanvasRef, Skia, SkPath } from '@shopify/react-native-skia';
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import { useCanvasRef, Skia, SkPath, BlendMode } from '@shopify/react-native-skia';
 import { useSharedValue } from 'react-native-reanimated';
-import { Point, DrawingPath, StrokeStyleType } from '../types';
-import { createPaint, createSmoothPath, createSimplePath } from '../DrawingUtils';
+import { Point, DrawingPath, StrokeStyleType, ToolMode } from '../types';
+import { createPaint, createSmoothPath, createSimplePath, createEraserPaint } from '../DrawingUtils';
 
 export const useDrawing = (initialColor: string = '#FF0000', initialWidth: number = 4) => {
     // Refs
@@ -11,6 +11,9 @@ export const useDrawing = (initialColor: string = '#FF0000', initialWidth: numbe
     const pointsQueue = useRef<Point[]>([]);
     const pathRef = useRef<SkPath | null>(null);
     const animationFrameId = useRef<number | null>(null);
+    const lastTimeRef = useRef<number>(0);
+    const velocityRef = useRef<number>(0);
+    const prevPointRef = useRef<Point | null>(null);
 
     // State
     const [paths, setPaths] = useState<DrawingPath[]>([]);
@@ -19,105 +22,153 @@ export const useDrawing = (initialColor: string = '#FF0000', initialWidth: numbe
     const [currentColor, setCurrentColor] = useState(initialColor);
     const [strokeWidth, setStrokeWidth] = useState(initialWidth);
     const [strokeStyle, setStrokeStyle] = useState<StrokeStyleType>('solid');
+    const [toolMode, setToolMode] = useState<ToolMode>('draw');
 
-    // For tracking in gesture worklets
     const isDrawing = useSharedValue(false);
     const lastPoint = useSharedValue<Point | null>(null);
 
-    // Create paint for current drawing
-    const currentPaint = useMemo(() => {
-        return createPaint(currentColor, strokeWidth, strokeStyle);
-    }, [currentColor, strokeWidth, strokeStyle]);
+    // Clean up animation frame on unmount
+    useEffect(() => {
+        return () => {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+                animationFrameId.current = null;
+            }
+        };
+    }, []);
 
-    // Process points in animation frame for smoother drawing
-    const processPoints = useCallback(() => {
-        // Use a local variable for isDrawing.value to avoid direct reading during rendering
+    const currentPaint = useMemo(() => {
+        const paint = createPaint(currentColor, strokeWidth, strokeStyle);
+        if (toolMode === 'erase') {
+            paint.setBlendMode(BlendMode.Clear);
+        }
+        
+        return paint;
+    }, [currentColor, strokeWidth, strokeStyle, toolMode]);
+
+    const calculateSmoothingFactor = useCallback((velocity: number) => {
+        const baseSmoothing = Math.max(0.1, Math.min(0.5, strokeWidth / 20));
+        const velocityFactor = Math.max(0.1, Math.min(0.9, 500 / (velocity + 200)));
+        
+        return baseSmoothing * velocityFactor;
+    }, [strokeWidth]);
+
+    const shouldAddPoint = useCallback((newPoint: Point): boolean => {
+        if (!prevPointRef.current) return true;
+        
+        const prev = prevPointRef.current;
+        const dx = newPoint.x - prev.x;
+        const dy = newPoint.y - prev.y;
+        const distanceSquared = dx * dx + dy * dy;
+        
+        const minDistanceThreshold = Math.max(1, Math.min(5, strokeWidth / 4));
+        
+        return distanceSquared > minDistanceThreshold * minDistanceThreshold;
+    }, [strokeWidth]);
+
+    const processPoints = useCallback((timestamp: number) => {
         const currentIsDrawing = isDrawing.value;
 
         if (pointsQueue.current.length > 0 && currentIsDrawing) {
-            // Process all points in queue at once
+            if (lastTimeRef.current > 0) {
+                const deltaTime = timestamp - lastTimeRef.current;
+                const deltaPoints = pointsQueue.current.length;
+                velocityRef.current = (deltaPoints / deltaTime) * 1000;
+            }
+            lastTimeRef.current = timestamp;
+
             const newPoints = [...pointsQueue.current];
             pointsQueue.current = [];
 
-            // Add to our total points array
-            pointsRef.current = [...pointsRef.current, ...newPoints];
+            for (const point of newPoints) {
+                if (shouldAddPoint(point)) {
+                    pointsRef.current.push(point);
+                    prevPointRef.current = point;
+                }
+            }
 
-            // Create a path with all points for real-time drawing preview
             if (pathRef.current && pointsRef.current.length > 0) {
-                // Use simple lines for performance during drawing
                 const path = createSimplePath(pointsRef.current);
                 setCurrentPath(path);
             }
 
-            // Request next frame if still drawing
             if (currentIsDrawing) {
                 animationFrameId.current = requestAnimationFrame(processPoints);
             }
         } else {
             animationFrameId.current = null;
         }
-    }, [isDrawing]);
+    }, [isDrawing, shouldAddPoint]);
 
     const onTouchStart = useCallback((x: number, y: number) => {
         isDrawing.value = true;
-        lastPoint.value = { x, y };
-        pointsRef.current = [{ x, y }];
+        const startPoint = { x, y };
+        lastPoint.value = startPoint;
+        pointsRef.current = [startPoint];
+        prevPointRef.current = startPoint;
         pointsQueue.current = [];
+        lastTimeRef.current = 0;
+        velocityRef.current = 0;
 
-        // Clear redo stack when starting a new drawing
         setRedoPaths([]);
 
-        // Initialize the path
         const path = Skia.Path.Make();
         path.moveTo(x, y);
         pathRef.current = path;
         setCurrentPath(path);
 
-        // Start animation frame for processing points
         if (!animationFrameId.current) {
             animationFrameId.current = requestAnimationFrame(processPoints);
         }
     }, [processPoints]);
 
     const onTouchMove = useCallback((x: number, y: number) => {
-        // Get the current value from shared values to avoid reading during render
         const currentIsDrawing = isDrawing.value;
         const currentLastPoint = lastPoint.value;
 
         if (!currentIsDrawing || !currentLastPoint) return;
 
-        // Add point to queue for processing in animation frame
-        pointsQueue.current.push({ x, y });
-        lastPoint.value = { x, y };
+        const newPoint = { x, y };
+        const dx = newPoint.x - currentLastPoint.x;
+        const dy = newPoint.y - currentLastPoint.y;
+        const distSquared = dx * dx + dy * dy;
+        
+        if (distSquared > 1) {
+            pointsQueue.current.push(newPoint);
+            lastPoint.value = newPoint;
+        }
 
-        // Ensure animation frame is running
         if (!animationFrameId.current) {
             animationFrameId.current = requestAnimationFrame(processPoints);
         }
     }, [processPoints, isDrawing, lastPoint]);
 
     const onTouchEnd = useCallback(() => {
-        // Get the current value from shared values to avoid reading during render
         const currentIsDrawing = isDrawing.value;
 
         if (currentIsDrawing && pointsRef.current.length > 0) {
-            // Cancel animation frame
             if (animationFrameId.current) {
                 cancelAnimationFrame(animationFrameId.current);
                 animationFrameId.current = null;
             }
 
-            // Create the final smooth path only when touch ends
-            const finalPath = createSmoothPath(pointsRef.current);
+            const smoothingFactor = calculateSmoothingFactor(velocityRef.current);
+            
+            let finalPath;
+            if (pointsRef.current.length < 3) {
+                finalPath = createSimplePath(pointsRef.current);
+            } else {
+                finalPath = createSmoothPath(pointsRef.current, smoothingFactor);
+            }
 
-            // Add to paths
             setPaths(prevPaths => [
                 ...(prevPaths || []),
                 {
                     path: finalPath,
                     color: currentColor,
                     strokeWidth: strokeWidth,
-                    strokeStyle: strokeStyle
+                    strokeStyle: strokeStyle,
+                    mode: toolMode
                 }
             ]);
 
@@ -125,13 +176,13 @@ export const useDrawing = (initialColor: string = '#FF0000', initialWidth: numbe
             pathRef.current = null;
             pointsRef.current = [];
             pointsQueue.current = [];
+            prevPointRef.current = null;
         }
 
         isDrawing.value = false;
         lastPoint.value = null;
-    }, [currentColor, strokeWidth, strokeStyle]);
+    }, [currentColor, strokeWidth, strokeStyle, toolMode, calculateSmoothingFactor]);
 
-    // Action handlers
     const undoLastPath = useCallback(() => {
         if (paths.length > 0) {
             const pathsCopy = [...paths];
@@ -173,6 +224,8 @@ export const useDrawing = (initialColor: string = '#FF0000', initialWidth: numbe
         setStrokeWidth,
         strokeStyle,
         setStrokeStyle,
+        toolMode,
+        setToolMode,
         onTouchStart,
         onTouchMove,
         onTouchEnd,
@@ -182,4 +235,4 @@ export const useDrawing = (initialColor: string = '#FF0000', initialWidth: numbe
         canUndoPath: paths.length > 0,
         canRedoPath: redoPaths.length > 0,
     };
-}; 
+};
