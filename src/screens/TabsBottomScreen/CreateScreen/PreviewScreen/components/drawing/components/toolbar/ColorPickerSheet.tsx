@@ -36,7 +36,11 @@ const ColorPickerSheet = forwardRef<BottomSheetMethods, ColorPickerSheetProps>(
         <ColorPicker
           value={selectedColor}
           onComplete={onSelectColor}
-          style={{ width: '100%' }}
+          style={{
+            width: '100%',
+            flexDirection: 'column',
+            gap: 20,
+          }}
         >
           <Panel1 style={styles.colorPanel} thumbSize={20} />
           <HueSlider style={styles.slider} thumbSize={24} />
@@ -49,9 +53,10 @@ const ColorPickerSheet = forwardRef<BottomSheetMethods, ColorPickerSheetProps>(
 
 const styles = StyleSheet.create({
   bottomSheetContent: {
+
     width: '100%',
     paddingVertical: 20,
-    paddingHorizontal: 5,
+    paddingHorizontal: 10,
   },
   colorPanel: {
     borderRadius: 10,

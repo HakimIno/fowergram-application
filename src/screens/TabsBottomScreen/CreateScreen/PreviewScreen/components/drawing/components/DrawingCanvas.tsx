@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Canvas, Image, Path, Group } from '@shopify/react-native-skia';
+import { Canvas, Image, Path, Group, Circle } from '@shopify/react-native-skia';
 import { width, height } from '../constants';
 import { DrawingPath, ToolMode } from '../types';
 import { createPaint, createEraserPaint } from '../DrawingUtils';
@@ -11,6 +11,9 @@ interface DrawingCanvasProps {
     currentPath: any;
     currentPaint: any;
     toolMode?: ToolMode;
+    brushSize?: number;
+    pointerPosition?: { x: number, y: number };
+    isDrawing?: boolean;
 }
 
 const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
@@ -20,14 +23,16 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     currentPath,
     currentPaint,
     toolMode = 'draw',
+    brushSize = 4,
+    pointerPosition = { x: 0, y: 0 },
+    isDrawing = false,
 }) => {
-    // Memoize paths to prevent unnecessary re-renders
     const memoizedPaths = useMemo(() => {
         return paths.map((item, index) => {
-            const paint = item.mode === 'erase' 
+            const paint = item.mode === 'erase'
                 ? createEraserPaint(item.strokeWidth)
                 : createPaint(item.color, item.strokeWidth, item.strokeStyle);
-            
+
             return (
                 <Path
                     key={`path-${index}`}
@@ -38,7 +43,6 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
         });
     }, [paths]);
 
-    // Optimize image dimensions to fit screen
     const imageHeight = useMemo(() => height * 0.65, []);
     const canvasHeight = useMemo(() => height * 0.65, []);
 
@@ -70,6 +74,26 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
                     />
                 )}
             </Group>
+
+            {/* วงกลมแสดงขนาดยางลบ */}
+            {toolMode === 'erase' && isDrawing && (
+                <Group>
+                    <Circle
+                        cx={pointerPosition.x}
+                        cy={pointerPosition.y}
+                        r={brushSize}
+                        color="rgba(255, 255, 255, 0.3)"
+                    />
+                    <Circle
+                        cx={pointerPosition.x}
+                        cy={pointerPosition.y}
+                        r={brushSize}
+                        color="white"
+                        style="stroke"
+                        strokeWidth={1}
+                    />
+                </Group>
+            )}
         </Canvas>
     );
 };

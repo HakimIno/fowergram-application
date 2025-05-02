@@ -16,14 +16,14 @@ import {
 
 // Main component
 const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
-    // State - use lazy initialization for initial values
     const [showToolbar, setShowToolbar] = useState(true);
     const [selectedColor, setSelectedColor] = useState('#FF0000');
     const [selectedWidth, setSelectedWidth] = useState(4);
     const [selectedStyle, setSelectedStyle] = useState('solid' as const);
     const [toolMode, setToolMode] = useState<ToolMode>('draw');
+    const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
+    const [isDrawing, setIsDrawing] = useState(false);
 
-    // Load image just once and cache it
     const image = useImage(imageUri);
 
     const {
@@ -48,26 +48,36 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
 
     const { saveImage, requestMediaLibraryPermission } = useImageSaver(canvasRef);
 
-    // Request permission just once
     useEffect(() => {
         requestMediaLibraryPermission();
     }, []);
 
-    // Memoize gesture to prevent recreation on each render
+    const updatePointerPosition = useCallback((x: number, y: number) => {
+        setPointerPosition({ x, y });
+    }, []);
+
+    const updateIsDrawing = useCallback((value: boolean) => {
+        setIsDrawing(value);
+    }, []);
+
     const gesture = useMemo(() => Gesture.Pan()
         .onStart((e) => {
+            runOnJS(updateIsDrawing)(true);
+            runOnJS(updatePointerPosition)(e.x, e.y);
             runOnJS(onTouchStart)(e.x, e.y);
         })
         .onUpdate((e) => {
+            runOnJS(updatePointerPosition)(e.x, e.y);
             runOnJS(onTouchMove)(e.x, e.y);
         })
         .onEnd(() => {
+            runOnJS(updateIsDrawing)(false);
             runOnJS(onTouchEnd)();
         })
         .minDistance(1)
         .averageTouches(true)
-        .maxPointers(1), // Limit to single finger drawing
-    [onTouchStart, onTouchMove, onTouchEnd]);
+        .maxPointers(1),
+    [onTouchStart, onTouchMove, onTouchEnd, updatePointerPosition, updateIsDrawing]);
 
     const handleColorSelect = useCallback((color: string) => {
         setSelectedColor(color);
@@ -97,7 +107,6 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
         setShowToolbar(prev => !prev);
     }, []);
 
-    // Don't render until image is loaded
     if (!image) {
         return null;
     }
@@ -112,6 +121,9 @@ const EditorPhoto: React.FC<EditorPhotoProps> = ({ imageUri, onSave }) => {
                     currentPath={currentPath}
                     currentPaint={currentPaint}
                     toolMode={toolMode}
+                    brushSize={selectedWidth}
+                    pointerPosition={pointerPosition}
+                    isDrawing={isDrawing}
                 />
             </GestureDetector>
 
