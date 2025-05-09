@@ -14,7 +14,7 @@ import RegisterScreen from 'src/screens/Auth/RegisterScreen';
 import RegisterBirthdayScreen from 'src/screens/Auth/RegisterBirthdayScreen';
 import WelcomeScreen from 'src/screens/Auth/WelcomeScreen';
 import ImageViewerModal from 'src/screens/TabsBottomScreen/ContentScreen/ImageViewerModal';
-// import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -22,7 +22,7 @@ const AppNavigation = () => {
     const { isLoggedIn } = useAuthStore();
 
     return (
-        // <KeyboardProvider>
+        <KeyboardProvider>
             <AppStack.Navigator screenOptions={{ headerShown: false, animation: 'ios_from_right' }}>
                 {isLoggedIn ? (
                     // Authenticated routes
@@ -189,7 +189,7 @@ const AppNavigation = () => {
                     </AppStack.Group>
                 )}
             </AppStack.Navigator>
-        // </KeyboardProvider>
+        </KeyboardProvider>
     )
 }
 

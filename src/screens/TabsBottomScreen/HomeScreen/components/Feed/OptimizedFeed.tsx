@@ -85,6 +85,11 @@ const FeedComponent = ({
 
   // Stable key extractor
   const keyExtractor = React.useCallback((item: FeedInfo) => item.id, []);
+  
+  // Memoize ListHeaderComponent to prevent recreation on each render
+  const headerComponent = React.useCallback(() => {
+    return <MemoizedStoriesHeader stories={stories} isDarkMode={isDarkMode} />;
+  }, [stories, isDarkMode]);
 
   // Memoize FlashList props to prevent re-renders
   const flashListProps = React.useMemo(() => ({
@@ -94,7 +99,7 @@ const FeedComponent = ({
     estimatedItemSize: 385, // Fixed size for better memory usage
     showsVerticalScrollIndicator: false,
     ListEmptyComponent: <MemoizedEmptyComponent textColor={theme.textColor} />,
-    ListHeaderComponent: stories.length > 0 ? () => <MemoizedStoriesHeader stories={stories} isDarkMode={isDarkMode} /> : null,
+    ListHeaderComponent: stories.length > 0 ? headerComponent : null,
     contentContainerStyle: {
       ...styles.listContentContainer,
       paddingTop: (Platform.OS === 'ios' ? insets.top : 60) + 10
@@ -119,7 +124,8 @@ const FeedComponent = ({
     stories,
     isDarkMode,
     onViewableItemsChanged,
-    viewabilityConfig
+    viewabilityConfig,
+    headerComponent
   ]);
 
   return (

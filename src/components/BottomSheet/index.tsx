@@ -57,7 +57,10 @@ const BottomSheet = forwardRef<BottomSheetMethods, Props>(({ children, handleClo
         handleClose();
         Keyboard.dismiss();
         setClosingState(false);
-    }, [handleClose, setClosingState]);
+        
+        // Reset translateY to ensure backdrop is hidden
+        translateY.value = CLOSE;
+    }, [handleClose, setClosingState, CLOSE, translateY]);
 
     const expand = useCallback(() => {
         if (isClosing) return;
@@ -70,6 +73,7 @@ const BottomSheet = forwardRef<BottomSheetMethods, Props>(({ children, handleClo
 
     const close = useCallback(() => {
         setClosingState(true);
+        Keyboard.dismiss();
 
         translateY.value = withTiming(CLOSE, {
             duration: 200,
@@ -141,6 +145,15 @@ const BottomSheet = forwardRef<BottomSheetMethods, Props>(({ children, handleClo
                 });
             }
         });
+
+    // เพิ่ม cleanup เมื่อ component unmount
+    useEffect(() => {
+        return () => {
+            // ทำให้แน่ใจว่าเมื่อ component unmount ค่า translateY ถูกตั้งให้เป็น CLOSE
+            translateY.value = CLOSE;
+            setClosingState(false);
+        };
+    }, [CLOSE, translateY]);
 
     return (
         <>

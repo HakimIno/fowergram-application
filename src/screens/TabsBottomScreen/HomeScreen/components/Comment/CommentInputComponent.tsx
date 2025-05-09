@@ -1,7 +1,8 @@
-import React, { useRef, useState, RefObject } from 'react';
-import { View, TextInput, TouchableOpacity, Text, Animated, Platform } from 'react-native';
+import React, { useRef, useState, RefObject, useEffect } from 'react';
+import { View, TextInput, TouchableOpacity, Text, Animated, Platform, Keyboard, KeyboardEvent, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SuggestionsListComponent from './SuggestionsListComponent';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CommentInputComponentProps {
   inputText: string;
@@ -17,7 +18,7 @@ interface CommentInputComponentProps {
   handleSubmitReply: () => void;
   styles: any;
   colors: any;
-  inputRef?: RefObject<TextInput>;
+  inputRef?: React.RefObject<TextInput>;
 }
 
 const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
@@ -38,14 +39,103 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
 }) => {
   const localInputRef = useRef<TextInput>(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const insets = useSafeAreaInsets();
+  const [keyboardWillHide, setKeyboardWillHide] = useState(false);
+
   // ใช้ external input ref ถ้ามี หรือ local ref ถ้าไม่มี
   const inputRefToUse = externalInputRef || localInputRef;
 
+  // ตรวจจับ keyboard โดยใช้ Keyboard API ของ React Native แทน KeyboardController
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e: KeyboardEvent) => {
+        setIsKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+        setKeyboardWillHide(false);
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+        setKeyboardWillHide(true);
+      }
+    );
+
+    // ตรวจจับการเปลี่ยนแปลงของ keyboard frame (ขนาด/ตำแหน่ง)
+    const keyboardDidChangeFrameListener = Keyboard.addListener(
+      'keyboardDidChangeFrame',
+      (e: KeyboardEvent) => {
+        if (e.endCoordinates.height > 0) {
+          setKeyboardHeight(e.endCoordinates.height);
+          setIsKeyboardVisible(true);
+          setKeyboardWillHide(false);
+        }
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+      keyboardDidChangeFrameListener.remove();
+    };
+  }, []);
+
+  // ทำให้แน่ใจว่า input field จะได้รับ focus เมื่อมีการตอบกลับ
+  useEffect(() => {
+    if (replyingTo && inputRefToUse.current) {
+      setTimeout(() => {
+        inputRefToUse.current?.focus();
+      }, 100);
+    }
+  }, [replyingTo]);
+
+  // จัดการเมื่อ blur โดยตรง
+  const handleBlur = () => {
+    // เช็คว่าถ้าไม่มี focus จริงๆ แล้วให้ซ่อน keyboard
+    setTimeout(() => {
+      const isFocused = inputRefToUse.current?.isFocused();
+      if (!isFocused) {
+        setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+        setKeyboardWillHide(true);
+        Keyboard.dismiss();
+      }
+    }, 150);
+  };
+
+  const resetInputPosition = () => {
+    setIsKeyboardVisible(false);
+    setKeyboardHeight(0);
+    setKeyboardWillHide(true);
+  };
+
+  // รีเซ็ตตำแหน่ง input เมื่อ keyboard ถูกซ่อน
+  useEffect(() => {
+    if (keyboardWillHide) {
+      resetInputPosition();
+    }
+  }, [keyboardWillHide]);
+
   return (
-    <Animated.View style={styles.inputContainerWrapper}>
+    <Animated.View
+      style={[
+        styles.inputContainerWrapper,
+        {
+          paddingBottom: Math.max(insets.bottom, 0),
+          bottom: isKeyboardVisible ? keyboardHeight - (Platform.OS === 'ios' ? 0 : insets.bottom) : 0,
+          transform: [],
+          zIndex: 1000000,
+          elevation: 1000000
+        }
+      ]}
+    >
       {showSuggestions && (
-        <SuggestionsListComponent 
+        <SuggestionsListComponent
           mentionSuggestions={mentionSuggestions}
           hashtagSuggestions={hashtagSuggestions}
           handleSelectMention={handleSelectMention}
@@ -63,7 +153,6 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
             <TouchableOpacity
               style={styles.cancelReplyButton}
               onPress={() => {
-                console.log('Canceling reply');
                 setReplyingTo(null);
                 setInputText('');
               }}
@@ -75,40 +164,45 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
 
         <View style={styles.inputRow}>
           <View style={styles.inputWrapper}>
-          <TextInput
+            <TextInput
               ref={inputRefToUse}
               placeholder={replyingTo ? `Add a reply...` : "Add a comment..."}
               placeholderTextColor={colors.text.placeholder}
               style={styles.input}
-              defaultValue={inputText}
+              value={inputText}
               onChangeText={setInputText}
               multiline
               maxLength={1000}
-              onFocus={() => setIsKeyboardVisible(true)}
-              onBlur={() => {
-                setTimeout(() => {
-                  if (inputRefToUse.current?.isFocused?.() !== true) {
-                    setIsKeyboardVisible(false);
-                  }
-                }, 100);
+              onFocus={() => {
+                setIsKeyboardVisible(true);
+                setKeyboardWillHide(false);
               }}
+              onBlur={handleBlur}
               keyboardType="default"
               returnKeyType="done"
-              blurOnSubmit={false}
               autoCapitalize="none"
               autoCorrect={false}
               enablesReturnKeyAutomatically={Platform.OS === 'ios'}
               textAlignVertical="center"
-              scrollEnabled={Platform.OS === 'ios'}
+              scrollEnabled={true}
               keyboardAppearance={Platform.OS === 'ios' ? (colors.text.primary === '#ffffff' ? 'dark' : 'light') : undefined}
             />
           </View>
-          <TouchableOpacity
+          <Pressable
             style={[
               styles.sendButton,
               inputText.trim() && styles.sendButtonActive
             ]}
-            onPress={replyingTo ? handleSubmitReply : handleSubmitComment}
+            onPress={() => {
+              if (replyingTo) {
+                handleSubmitReply();
+              } else {
+                handleSubmitComment();
+              }
+              setTimeout(() => {
+                inputRefToUse.current?.focus();
+              }, 50);
+            }}
             disabled={!inputText.trim()}
           >
             <Ionicons
@@ -116,11 +210,12 @@ const CommentInputComponent: React.FC<CommentInputComponentProps> = ({
               size={20}
               color={inputText.trim() ? colors.text.inverse : colors.text.tertiary}
             />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </Animated.View>
   );
 };
+
 
 export default CommentInputComponent; 

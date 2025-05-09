@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { StatusBar, StyleSheet, Dimensions, ViewStyle, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MMKVStorage } from '../util/MMKVStorage';
 import Animated, {
     withTiming,
     useSharedValue,
@@ -54,7 +54,7 @@ type ThemeContextType = {
 // สร้าง initial context value
 const initialValue: ThemeContextType = {
     isDarkMode: false,
-    toggleTheme: () => {},
+    toggleTheme: () => { },
     theme: lightTheme,
     animatedValue: { value: 0 } as SharedValue<number>,
     circleSize: { value: 0 } as SharedValue<number>,
@@ -100,8 +100,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             width: maxSize,
             height: maxSize,
             borderRadius: maxSize / 2,
-            backgroundColor: !isDarkMode ? 
-                lightTheme.backgroundColor : 
+            backgroundColor: !isDarkMode ?
+                lightTheme.backgroundColor :
                 darkTheme.backgroundColor,
             transform: [
                 { translateX: circleX.value - maxSize / 2 },
@@ -115,14 +115,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
     });
 
+    // Add useEffect to load the theme preference when component mounts
+    useEffect(() => {
+        const loadThemePreference = async () => {
+            try {
+                const savedTheme = MMKVStorage.getItem('@theme_mode');
+                if (savedTheme) {
+                    const isDark = savedTheme === 'dark';
+                    setIsDarkMode(isDark);
+                    animatedValue.value = isDark ? 1 : 0;
+                    StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content', true);
+                }
+            } catch (error) {
+                console.error('Error loading theme preference:', error);
+            }
+        };
+
+        loadThemePreference();
+    }, []);
+
     const toggleTheme = useCallback(async (x: number, y: number) => {
         try {
             const newThemeMode = !isDarkMode;
-            
+
             // รั้งค่าตำแหน่งเริ่มต้น
             circleX.value = x;
             circleY.value = y;
-            
+
             // เริ่ม animation วงกลมขยายออก
             circleScale.value = 0;
             circleScale.value = withTiming(1, {
@@ -143,7 +162,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
 
             setIsDarkMode(newThemeMode);
-            await AsyncStorage.setItem('@theme_mode', newThemeMode ? 'dark' : 'light');
+            MMKVStorage.setItem('@theme_mode', newThemeMode ? 'dark' : 'light');
             StatusBar.setBarStyle(newThemeMode ? 'light-content' : 'dark-content', true);
         } catch (error) {
             console.error('Error saving theme preference:', error);
@@ -151,22 +170,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [isDarkMode]);
 
     return (
-        <ThemeContext.Provider 
-            value={{ 
-                isDarkMode, 
-                toggleTheme, 
+        <ThemeContext.Provider
+            value={{
+                isDarkMode,
+                toggleTheme,
                 theme: isDarkMode ? darkTheme : lightTheme,
                 animatedValue,
                 circleSize: circleScale,
                 circleX,
-                circleY 
+                circleY
             }}
         >
             <View style={styles.container}>
                 <Animated.View style={backgroundStyle} />
-                <Animated.View 
-                    style={[styles.circleOverlay, circleStyle]} 
-                    pointerEvents="none" 
+                <Animated.View
+                    style={[styles.circleOverlay, circleStyle]}
+                    pointerEvents="none"
                 />
                 <View style={styles.content}>
                     {children}

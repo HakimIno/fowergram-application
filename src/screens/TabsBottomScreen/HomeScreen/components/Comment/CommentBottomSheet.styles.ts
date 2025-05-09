@@ -152,14 +152,17 @@ export const createStyles = (isDarkMode: boolean) => {
     inputContainerWrapper: {
       width: '100%',
       paddingTop: 8,
+      paddingHorizontal: 12,
       backgroundColor: colors.background.primary,
       borderTopColor: colors.border.light,
+      borderTopWidth: 0.3,
       position: 'absolute',
       bottom: 0,
       left: 0,
       right: 0,
       zIndex: 999999,
       elevation: 999999,
+      
     },
     inputContainer: {
       width: '100%',
@@ -168,7 +171,7 @@ export const createStyles = (isDarkMode: boolean) => {
     inputRow: {
       flexDirection: 'row',
       alignItems: 'flex-end',
-      paddingHorizontal: 12,
+      paddingHorizontal: 6,
       paddingBottom: 8,
       gap: 8,
     },
@@ -191,18 +194,10 @@ export const createStyles = (isDarkMode: boolean) => {
       textAlignVertical: 'center',
       color: colors.text.primary,
     },
-    characterCount: {
-      position: 'absolute',
-      right: 12,
-      bottom: 8,
-      fontSize: 12,
-      color: colors.text.tertiary,
-      fontFamily: "Chirp_Regular",
-    },
     sendButton: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: 15,
       justifyContent: 'center',
       alignItems: 'center',
       borderWidth: 1,

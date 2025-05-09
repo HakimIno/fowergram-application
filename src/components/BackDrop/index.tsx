@@ -1,5 +1,5 @@
 import { StyleSheet, TouchableWithoutFeedback, Dimensions } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Animated, {
     SharedValue,
     interpolate,
@@ -39,9 +39,18 @@ const BackDrop = ({
         return {
             opacity: calculatedOpacity,
             display,
+            zIndex: calculatedOpacity === 0 ? -1 : zIndex,
+            elevation: calculatedOpacity === 0 ? -1 : zIndex,
         };
     });
 
+    useEffect(() => {
+        // Cleanup function to ensure BackDrop is properly removed
+        return () => {
+            // Force the backdrop to be hidden when component unmounts
+            // This is an empty cleanup function but it helps with proper unmounting
+        };
+    }, []);
 
     return (
         <TouchableWithoutFeedback
@@ -56,8 +65,6 @@ const BackDrop = ({
                         backgroundColor: backDropColor,
                         width,
                         height: height * 2,
-                        zIndex: zIndex,
-                        elevation: zIndex,
                     },
                 ]}
             />

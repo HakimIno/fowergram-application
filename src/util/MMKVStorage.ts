@@ -72,7 +72,7 @@ export const FeedStorageService = {
   initialize: (): void => {
     try {
       const storedVersion = feedStorage.getString(DATA_VERSION_KEY);
-      
+
       // ถ้าไม่มีเวอร์ชัน หรือเวอร์ชันไม่ตรงกับปัจจุบัน ให้ล้างแคชทั้งหมด
       if (!storedVersion || storedVersion !== CURRENT_DATA_VERSION) {
         console.log('Feed data version changed, clearing cache');
@@ -99,7 +99,7 @@ export const FeedStorageService = {
       // Update memory cache first (faster access)
       memoryCache.feedData = data;
       memoryCache.lastUpdated = Date.now();
-      
+
       // Then persist to MMKV
       feedStorage.set(FEED_DATA_KEY, JSON.stringify(data));
       feedStorage.set(FEED_LAST_UPDATED_KEY, memoryCache.lastUpdated.toString());
@@ -116,7 +116,7 @@ export const FeedStorageService = {
     try {
       // Update memory cache
       memoryCache.storiesData = data;
-      
+
       // Persist to MMKV
       feedStorage.set(STORIES_DATA_KEY, JSON.stringify(data));
     } catch (error) {
@@ -131,11 +131,11 @@ export const FeedStorageService = {
   saveVisibleItems: (items: FeedInfo[]): void => {
     try {
       if (!items || items.length === 0) return;
-      
+
       // Only store the first 5-6 visible items for quick access
       const visibleItems = items.slice(0, 6);
       memoryCache.visibleItems = visibleItems;
-      
+
       // Save to MMKV for persistence
       feedStorage.set(FEED_VISIBLE_ITEMS_KEY, JSON.stringify(visibleItems));
     } catch (error) {
@@ -153,16 +153,16 @@ export const FeedStorageService = {
       if (memoryCache.visibleItems) {
         return memoryCache.visibleItems;
       }
-      
+
       // Fall back to MMKV
       const data = feedStorage.getString(FEED_VISIBLE_ITEMS_KEY);
       const items = data ? JSON.parse(data) : null;
-      
+
       // Update memory cache
       if (items) {
         memoryCache.visibleItems = items;
       }
-      
+
       return items;
     } catch (error) {
       console.error('Error getting visible items from MMKV:', error);
@@ -180,16 +180,16 @@ export const FeedStorageService = {
       if (memoryCache.feedData) {
         return memoryCache.feedData;
       }
-      
+
       // Fall back to MMKV if not in memory
       const data = feedStorage.getString(FEED_DATA_KEY);
       const parsedData = data ? JSON.parse(data) : null;
-      
+
       // Update memory cache for next access
       if (parsedData) {
         memoryCache.feedData = parsedData;
       }
-      
+
       return parsedData;
     } catch (error) {
       console.error('Error getting feed data from MMKV:', error);
@@ -207,16 +207,16 @@ export const FeedStorageService = {
       if (memoryCache.storiesData) {
         return memoryCache.storiesData;
       }
-      
+
       // Fall back to MMKV
       const data = feedStorage.getString(STORIES_DATA_KEY);
       const parsedData = data ? JSON.parse(data) : null;
-      
+
       // Update memory cache
       if (parsedData) {
         memoryCache.storiesData = parsedData;
       }
-      
+
       return parsedData;
     } catch (error) {
       console.error('Error getting stories data from MMKV:', error);
@@ -235,18 +235,18 @@ export const FeedStorageService = {
       if (memoryCache.lastUpdated > 0) {
         return Date.now() - memoryCache.lastUpdated > maxAgeMs;
       }
-      
+
       // Fall back to MMKV
       const lastUpdated = feedStorage.getString(FEED_LAST_UPDATED_KEY);
-      
+
       if (!lastUpdated) return true;
-      
+
       const lastUpdatedTime = parseInt(lastUpdated, 10);
       const now = Date.now();
-      
+
       // Update memory cache
       memoryCache.lastUpdated = lastUpdatedTime;
-      
+
       return now - lastUpdatedTime > maxAgeMs;
     } catch (error) {
       console.error('Error checking feed data expiration:', error);
@@ -274,7 +274,7 @@ export const FeedStorageService = {
     try {
       // Update memory cache
       memoryCache.currentPage = page;
-      
+
       // Persist to MMKV
       feedStorage.set(FEED_PAGE_KEY, page.toString());
     } catch (error) {
@@ -292,14 +292,14 @@ export const FeedStorageService = {
       if (memoryCache.currentPage > 1) {
         return memoryCache.currentPage;
       }
-      
+
       // Fall back to MMKV
       const page = feedStorage.getString(FEED_PAGE_KEY);
       const parsedPage = page ? parseInt(page, 10) : 1;
-      
+
       // Update memory cache
       memoryCache.currentPage = parsedPage;
-      
+
       return parsedPage;
     } catch (error) {
       console.error('Error getting current page from MMKV:', error);
@@ -318,14 +318,14 @@ export const FeedStorageService = {
       memoryCache.visibleItems = null;
       memoryCache.currentPage = 1;
       memoryCache.lastUpdated = 0;
-      
+
       // Clear MMKV storage for feed data
       feedStorage.delete(FEED_DATA_KEY);
       feedStorage.delete(STORIES_DATA_KEY);
       feedStorage.delete(FEED_LAST_UPDATED_KEY);
       feedStorage.delete(FEED_PAGE_KEY);
       feedStorage.delete(FEED_VISIBLE_ITEMS_KEY);
-      
+
       // Don't delete the version key
       feedStorage.set(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
     } catch (error) {
@@ -350,7 +350,7 @@ export const ContentStorageService = {
   initialize: (): void => {
     try {
       const storedVersion = contentStorage.getString(CONTENT_GRID_VERSION_KEY);
-      
+
       // Clear cache if version mismatch
       if (!storedVersion || storedVersion !== CURRENT_CONTENT_VERSION) {
         console.log('Content grid data version changed, clearing cache');
@@ -376,7 +376,7 @@ export const ContentStorageService = {
     try {
       // Update memory cache first (faster access)
       contentMemoryCache.gridData = data;
-      
+
       // Then persist to MMKV
       contentStorage.set(CONTENT_GRID_DATA_KEY, JSON.stringify(data));
     } catch (error) {
@@ -394,16 +394,16 @@ export const ContentStorageService = {
       if (contentMemoryCache.gridData) {
         return contentMemoryCache.gridData;
       }
-      
+
       // Fall back to MMKV if not in memory
       const data = contentStorage.getString(CONTENT_GRID_DATA_KEY);
       const parsedData = data ? JSON.parse(data) : null;
-      
+
       // Update memory cache for next access
       if (parsedData) {
         contentMemoryCache.gridData = parsedData;
       }
-      
+
       return parsedData;
     } catch (error) {
       console.error('Error getting grid data from MMKV:', error);
@@ -422,4 +422,42 @@ export const ContentStorageService = {
       console.error('Error clearing content grid data:', error);
     }
   }
+};
+
+const appStorage = new MMKV({
+  id: 'app-storage',
+  encryptionKey: 'app-storage-key',
+});
+
+export const MMKVStorage = {
+  getItem: (key: string): string | null => {
+    return appStorage.getString(key) || null;
+  },
+
+  setItem: (key: string, value: string): void => {
+    appStorage.set(key, value);
+  },
+
+  removeItem: (key: string): void => {
+    appStorage.delete(key);
+  },
+
+  clear: (): void => {
+    appStorage.clearAll();
+  },
+
+  // For objects
+  getObject: <T>(key: string): T | null => {
+    const value = appStorage.getString(key);
+    if (!value) return null;
+    try {
+      return JSON.parse(value) as T;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  setObject: <T>(key: string, value: T): void => {
+    appStorage.set(key, JSON.stringify(value));
+  },
 }; 

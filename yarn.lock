@@ -3223,13 +3223,6 @@ expo-image-loader@~5.1.0:
   resolved "https://registry.yarnpkg.com/expo-image-loader/-/expo-image-loader-5.1.0.tgz#f7d65f9b9a9714eaaf5d50a406cb34cb25262153"
   integrity sha512-sEBx3zDQIODWbB5JwzE7ZL5FJD+DK3LVLWBVJy6VzsqIA6nDEnSFnsnWyCfCTSvbGigMATs1lgkC2nz3Jpve1Q==
 
-expo-image-manipulator@~13.1.6:
-  version "13.1.6"
-  resolved "https://registry.yarnpkg.com/expo-image-manipulator/-/expo-image-manipulator-13.1.6.tgz#c3dddce41987f4da4774bc1a3095bc78244e068e"
-  integrity sha512-u/xiOlpo+CSJfOvvPYpYldqZJcsJKq1z5/WNX5LE0m2S6VVqINu8SHWN2VbsOlOq2WV/F9jJ75s7ZnJIUFfZNg==
-  dependencies:
-    expo-image-loader "~5.1.0"
-
 expo-image-picker@~16.1.4:
   version "16.1.4"
   resolved "https://registry.yarnpkg.com/expo-image-picker/-/expo-image-picker-16.1.4.tgz#d4ac2d1f64f6ec9347c3f64f8435b40e6e4dcc40"
@@ -3294,16 +3287,6 @@ expo-modules-core@2.3.12:
   integrity sha512-bOm83mskw1S7xuDX50DlLdx68u0doQ6BZHSU2qTv8P1/5QYeAae3pCgFLq2hoptUNeMF7W+68ShJFTOHAe68BQ==
   dependencies:
     invariant "^2.2.4"
-
-expo-navigation-bar@~4.2.4:
-  version "4.2.4"
-  resolved "https://registry.yarnpkg.com/expo-navigation-bar/-/expo-navigation-bar-4.2.4.tgz#54c79d8d75b1da8e3887ca5d44c4f937f033cc7c"
-  integrity sha512-aagtBaGtqeFT9GbxTBU0sUrwupZO6OLbKYJgvmZ54KSMQa5QfwNk1qScPTy5VzHs9lwAGUkBkzC1QKrnsXtj0w==
-  dependencies:
-    "@react-native/normalize-colors" "0.79.2"
-    debug "^4.3.2"
-    react-native-edge-to-edge "1.6.0"
-    react-native-is-edge-to-edge "^1.1.6"
 
 expo-splash-screen@~0.29.0:
   version "0.29.24"
