@@ -30,7 +30,7 @@ const AnimatedText = ({ text, color }: { text: string, color: string }) => {
                 });
 
                 return (
-                    <Animated.Text key={index.toString()} style={[animatedStyle, { fontFamily: 'SukhumvitSet_Bd', fontSize: 14, margin: 0, color: color }]}>
+                    <Animated.Text key={index.toString()} style={[animatedStyle, { fontFamily: 'Chirp_Bold', fontSize: 14, margin: 0, color: color }]}>
                         {char}
                     </Animated.Text>
                 );

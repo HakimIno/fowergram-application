@@ -1,34 +1,35 @@
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from 'src/redux-store';
-import {
-    setLoading,
-    setPhotos,
-    appendPhotos,
-    setVideos,
-    appendVideos,
-    setAllFiles,
-    appendAllFiles,
-    setAlbumsInfo,
-    setSelectAlbums,
-    setPageInfo
-} from '../../../../redux-store/slices/mediaSlice';
+import { useEffect } from 'react';
 import * as MediaLibrary from 'expo-media-library';
+import { useMediaStore, useAlbumsInfo, useLoading, useSelectAlbums } from '../../../../store/mediaStore';
 
 export const useCreateScreen = () => {
-    const dispatch = useDispatch();
-    const loading = useSelector((state: RootState) => state.medias.loading);
-    const photos = useSelector((state: RootState) => state.medias.photos);
-    const videos = useSelector((state: RootState) => state.medias.videos);
-    const allFiles = useSelector((state: RootState) => state.medias.allFiles);
-    const albumsInfo = useSelector((state: RootState) => state.medias.albumsInfo);
-    const selectAlbums = useSelector((state: RootState) => state.medias.selectAlbums);
-    const pageInfo = useSelector((state: RootState) => state.medias.pageInfo);
-    const pageSize = useSelector((state: RootState) => state.medias.pageSize);
+    const {
+        photos,
+        videos,
+        allFiles,
+        pageInfo,
+        pageSize,
+        setLoading,
+        setPhotos,
+        appendPhotos,
+        setVideos,
+        appendVideos,
+        setAllFiles,
+        appendAllFiles,
+        setAlbumsInfo,
+        setSelectAlbums,
+        setPageInfo,
+        batchActions
+    } = useMediaStore();
+    
+    // Use optimized selectors
+    const loading = useLoading();
+    const albumsInfo = useAlbumsInfo();
+    const selectAlbums = useSelectAlbums();
 
     const loadPhotos = async (isInitial = true) => {
         try {
-            dispatch(setLoading(true));
+            setLoading(true);
 
             const { status } = await MediaLibrary.requestPermissionsAsync();
             if (status !== 'granted') {
@@ -63,25 +64,28 @@ export const useCreateScreen = () => {
             const newAssets = [...photosResponse.assets, ...videosResponse.assets]
                 .sort((a, b) => b.creationTime - a.creationTime);
 
-            // Update pagination info
-            dispatch(setPageInfo({
-                hasNextPage: photosResponse.hasNextPage || videosResponse.hasNextPage,
-                endCursor: photosResponse.endCursor || videosResponse.endCursor
-            }));
-
-            // Filter and update media arrays
+            // Filter media arrays
             const newPhotos = newAssets.filter(asset => asset.mediaType === MediaLibrary.MediaType.photo);
             const newVideos = newAssets.filter(asset => asset.mediaType === MediaLibrary.MediaType.video);
-
-            if (isInitial) {
-                dispatch(setPhotos(newPhotos));
-                dispatch(setVideos(newVideos));
-                dispatch(setAllFiles(newAssets));
-            } else {
-                dispatch(appendPhotos(newPhotos));
-                dispatch(appendVideos(newVideos));
-                dispatch(appendAllFiles(newAssets));
-            }
+            
+            // Batch state updates for better performance
+            batchActions((state) => {
+                // Update pagination info
+                state.pageInfo = {
+                    hasNextPage: photosResponse.hasNextPage || videosResponse.hasNextPage,
+                    endCursor: photosResponse.endCursor || videosResponse.endCursor
+                };
+                
+                if (isInitial) {
+                    state.photos = newPhotos;
+                    state.videos = newVideos;
+                    state.allFiles = newAssets;
+                } else {
+                    state.photos.push(...newPhotos);
+                    state.videos.push(...newVideos);
+                    state.allFiles.push(...newAssets);
+                }
+            });
 
             // Load albums info only on initial load
             if (isInitial) {
@@ -110,13 +114,13 @@ export const useCreateScreen = () => {
                 );
 
                 const validAlbumsInfoArray = albumsInfoArray.filter((album): album is { title: string; url: string; assetCount: number } => album !== null);
-                dispatch(setAlbumsInfo(validAlbumsInfoArray.sort((a, b) => b.assetCount - a.assetCount)));
+                setAlbumsInfo(validAlbumsInfoArray.sort((a, b) => b.assetCount - a.assetCount));
             }
 
         } catch (error) {
             console.error('Error loading photos:', error);
         } finally {
-            dispatch(setLoading(false));
+            setLoading(false);
         }
     };
 
@@ -127,7 +131,7 @@ export const useCreateScreen = () => {
     };
 
     const handelSelectAlbums = (title: string, indx: number) => {
-        dispatch(setSelectAlbums({ title, indx }));
+        setSelectAlbums({ title, indx });
     };
 
     useEffect(() => {

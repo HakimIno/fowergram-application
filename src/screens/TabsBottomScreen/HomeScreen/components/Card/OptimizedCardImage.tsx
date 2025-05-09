@@ -1,82 +1,45 @@
 import React, { useRef, useState, useEffect, memo } from 'react';
-import { View, StyleSheet, Pressable, GestureResponderEvent, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, GestureResponderEvent } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import Pinchable from 'react-native-pinchable';
 import { Dimensions } from 'react-native';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("screen");
+const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 const CAROUSEL_WIDTH = SCREEN_WIDTH - 16;
-const CAROUSEL_HEIGHT = SCREEN_HEIGHT / 1.8;
 
-// ค่า blurhash ที่สั้นแต่มีคุณภาพเพียงพอ
-const DEFAULT_BLURHASH = 'L6PZfSi_.AyE_3t7t7R*0KtQ%MRj';
+const DEFAULT_BLURHASH = 'L6PZfSi_.AyE_3t7R*0K';
 
-// กำหนดข้อมูลรูปที่โหลด global state
-const loadedImagesMap = new Map<string, boolean>();
-const loadingImagesMap = new Map<string, boolean>();
+// ใช้ Set เพื่อติดตามรูปภาพที่โหลดแล้ว
+const loadedImageUrls = new Set<string>();
 
-// ฟังก์ชั่นโหลดรูปล่วงหน้าที่มีประสิทธิภาพ
-const preloadImages = (sources: string[]): Promise<void[]> => {
-  const preloads = sources
-    .filter(source => !loadedImagesMap.has(source) && !loadingImagesMap.has(source))
-    .map(source => {
-      loadingImagesMap.set(source, true);
-      return ExpoImage.prefetch(source)
-        .then(() => {
-          loadedImagesMap.set(source, true);
-          loadingImagesMap.delete(source);
-        })
-        .catch(() => {
-          loadingImagesMap.delete(source);
-        });
-    });
-  
-  return Promise.all(preloads);
-};
-
-// Batch preload สำหรับทั้ง feed
+// Optimized preloading function with reduced batch size and cancelable promises
 export function preloadFeedImages(feedImages: string[][], visibleIndices: number[] = []): void {
-  // สร้าง priority queue โดยให้รูปที่มองเห็นได้มาก่อน
+  if (!feedImages?.length) return;
+  
+  // Only process essential images
   const highPriorityImages: string[] = [];
-  const normalPriorityImages: string[] = [];
-
-  // แยกรูปตาม priority
-  feedImages.forEach((images, index) => {
-    const isVisible = visibleIndices.includes(index);
-    
-    if (images.length > 0) {
-      // รูปแรกของทุกโพสต์มี priority เสมอ
-      const firstImage = images[0];
-      if (!loadedImagesMap.has(firstImage)) {
-        if (isVisible) {
-          highPriorityImages.push(firstImage);
-        } else {
-          normalPriorityImages.push(firstImage);
-        }
-      }
-      
-      // รูปที่เหลือ
-      images.slice(1).forEach(img => {
-        if (!loadedImagesMap.has(img)) {
-          if (isVisible) {
-            normalPriorityImages.push(img);
-          }
-          // ไม่โหลดรูปที่เหลือของโพสต์ที่ไม่แสดง
-        }
-      });
+  
+  // Only preload visible image thumbnails
+  visibleIndices.slice(0, 3).forEach(index => {
+    if (feedImages[index]?.[0] && !loadedImageUrls.has(feedImages[index][0])) {
+      highPriorityImages.push(feedImages[index][0]);
     }
   });
 
-  // ทำการโหลด high priority ทันที
+  // Batch preloading with smaller concurrency
   if (highPriorityImages.length > 0) {
-    preloadImages(highPriorityImages);
-  }
-  
-  // Delay สำหรับรูปที่ priority ต่ำกว่า
-  if (normalPriorityImages.length > 0) {
-    setTimeout(() => {
-      preloadImages(normalPriorityImages);
-    }, 100);
+    // Process in smaller batches to avoid memory spikes
+    const batchSize = 2;
+    for (let i = 0; i < highPriorityImages.length; i += batchSize) {
+      const batch = highPriorityImages.slice(i, i + batchSize);
+      
+      // Use setTimeout to allow UI thread to breathe
+      setTimeout(() => {
+        batch.forEach(url => {
+          ExpoImage.prefetch(url).then(() => loadedImageUrls.add(url));
+        });
+      }, 100 * Math.floor(i / batchSize));
+    }
   }
 }
 
@@ -95,49 +58,30 @@ export const OptimizedCardImage = memo(({
   isVisible,
   isCurrentIndex
 }: OptimizedCardImageProps) => {
-  const [isLoaded, setIsLoaded] = useState(loadedImagesMap.has(imageUrl));
+  const [isLoaded, setIsLoaded] = useState(false);
   const mountedRef = useRef(true);
-  const loadingStartedRef = useRef(false);
 
-  // เริ่มโหลดทันทีที่ visible
+  // ตรวจสอบว่ารูปนี้โหลดแล้วหรือยัง
   useEffect(() => {
-    // ป้องกันการโหลดซ้ำซ้อน
-    if (isVisible && !loadingStartedRef.current && !loadedImagesMap.has(imageUrl)) {
-      loadingStartedRef.current = true;
-      loadingImagesMap.set(imageUrl, true);
-      
-      // บังคับให้โหลดทันที
-      if (isCurrentIndex) {
-        ExpoImage.prefetch(imageUrl)
-          .then(() => {
-            if (mountedRef.current) {
-              loadedImagesMap.set(imageUrl, true);
-              loadingImagesMap.delete(imageUrl);
-              setIsLoaded(true);
-            }
-          })
-          .catch(() => {
-            if (mountedRef.current) {
-              loadingImagesMap.delete(imageUrl);
-            }
-          });
-      }
+    if (loadedImageUrls.has(imageUrl)) {
+      setIsLoaded(true);
+    }
+    
+    // ถ้ารูปยังไม่ถูกโหลด ให้ prefetch
+    if (!loadedImageUrls.has(imageUrl) && isCurrentIndex) {
+      ExpoImage.prefetch(imageUrl);
     }
 
     return () => {
       mountedRef.current = false;
     };
-  }, [imageUrl, isVisible, isCurrentIndex]);
+  }, [imageUrl, isCurrentIndex]);
 
-  // สร้าง progressive loading เหมือน Instagram
-  const thumbnailSource = isLoaded ? undefined : DEFAULT_BLURHASH;
-
-  // อย่าแสดง animation เมื่อทำการเปลี่ยนรูป IG ไม่มี transition
   return (
     <View style={styles.slideContainer}>
       <Pressable
         onPress={onDoubleTap}
-        style={styles.pinchableContainer}
+        style={styles.imageContainer}
       >
         <Pinchable>
           <ExpoImage
@@ -145,15 +89,12 @@ export const OptimizedCardImage = memo(({
             style={styles.image}
             recyclingKey={imageKey}
             contentFit="cover"
-            placeholder={thumbnailSource}
-            placeholderContentFit="cover"
-            transition={100}
-            cachePolicy="memory-disk"
-            contentPosition="center"
-            priority={isCurrentIndex ? "high" : (isVisible ? "normal" : "low")}
+            placeholder={DEFAULT_BLURHASH}
+            transition={isCurrentIndex ? 100 : 0}
+            cachePolicy="memory"
             onLoad={() => {
               if (mountedRef.current) {
-                loadedImagesMap.set(imageUrl, true);
+                loadedImageUrls.add(imageUrl);
                 setIsLoaded(true);
               }
             }}
@@ -163,24 +104,21 @@ export const OptimizedCardImage = memo(({
     </View>
   );
 }, (prevProps, nextProps) => {
-  // ป้องกันการ render ซ้ำเมื่อไม่จำเป็น
-  return (
-    prevProps.imageKey === nextProps.imageKey &&
-    prevProps.isVisible === nextProps.isVisible &&
-    prevProps.isCurrentIndex === nextProps.isCurrentIndex &&
-    prevProps.imageUrl === nextProps.imageUrl
-  );
+  // ป้องกันการ re-render ที่ไม่จำเป็น
+  return prevProps.imageKey === nextProps.imageKey && 
+    prevProps.isCurrentIndex === nextProps.isCurrentIndex;
 });
 
 const styles = StyleSheet.create({
   slideContainer: {
     width: CAROUSEL_WIDTH,
-    height: CAROUSEL_HEIGHT,
+    height: 'auto',
+    aspectRatio: 0.8,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
   },
-  pinchableContainer: {
+  imageContainer: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
@@ -189,7 +127,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: CAROUSEL_WIDTH,
-    height: CAROUSEL_HEIGHT,
+    height: '100%',
     borderRadius: 8,
   },
 }); 

@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
     messageText: {
         fontSize: 14,
         lineHeight: 20,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     messageFooter: {
         flexDirection: 'row',
@@ -796,7 +796,7 @@ const styles = StyleSheet.create({
     timestamp: {
         fontSize: 10,
         marginRight: 4,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     statusIcon: {
         marginLeft: 2,
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         maxHeight: 100,
         paddingVertical: 8,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     attachButton: {
         padding: 4,
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
     },
     timestampDividerText: {
         fontSize: 10,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     typingContainer: {
         flexDirection: 'row',
@@ -888,7 +888,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 16,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         textAlign: 'center',
     },
     messageOptionsMenu: {
@@ -918,7 +918,7 @@ const styles = StyleSheet.create({
     },
     stickerButtonText: {
         fontSize: 12,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     stickerImage: {
         width: "100%",
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
     },
     moreStickerText: {
         fontSize: 14,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     stickerPicker: {
         position: 'absolute',
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
     stickerPickerTitle: {
         fontSize: 16,
         fontWeight: '600',
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     categoryTabs: {
         flexGrow: 0,
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
     },
     categoryText: {
         fontSize: 14,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     stickersGrid: {
         flex: 1,

@@ -277,7 +277,7 @@ Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos
                                             readMoreText={"เพิ่มเติม"}
                                             readLessText={"ย่อน้อยลง"}
                                             style={styles.textBody}
-                                            readMoreStyle={{ color: "#CACACA", fontFamily: 'SukhumvitSet_Bd', }}
+                                            readMoreStyle={{ color: "#CACACA", fontFamily: 'Chirp_Bold', }}
                                             readLessStyle={{ color: "#CACACA" }}>{longText}</ReadMoreText>
                                     </View>
                                 )}
@@ -289,7 +289,7 @@ Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos
                                                 style={[{ width: 45, height: 45, borderRadius: 45 }]}
                                             />
                                             <View style={{ width: "80%", marginLeft: 5, }}>
-                                                <Text style={[styles.textBody, { fontFamily: 'SukhumvitSet_Bd', }]}>{item.username}</Text>
+                                                <Text style={[styles.textBody, { fontFamily: 'Chirp_Bold', }]}>{item.username}</Text>
                                                 <Text style={[styles.textBody]}>{item.message}</Text>
                                             </View>
                                             <Pressable
@@ -408,12 +408,12 @@ const styles = StyleSheet.create({
         paddingVertical: 5
     },
     textHeader: {
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
         color: "#242424",
         marginHorizontal: 20,
     },
     textBody: {
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         color: "#242424",
     },
     // input: {
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
         textAlignVertical: 'center',
         width: "85%",
         padding: 10,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     iconContainer: {
         flexDirection: 'row',

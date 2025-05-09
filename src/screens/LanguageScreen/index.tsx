@@ -52,8 +52,8 @@ const LanguageScreen = () => {
                     <View style={{ flexDirection: 'row', alignItems: 'center', padding: 5, paddingHorizontal: 15, borderTopWidth: 0.5, borderTopColor: "rgba(0,0,0,0.2)" }}>
                         <Image source={{ uri: item.flag }} style={{ width: 30, height: 30, marginEnd: 10, borderRadius: 3 }} />
                         <View>
-                            <Text style={[{ fontSize: 13, fontFamily: 'SukhumvitSet_Bd', color: "#1a1a1a", lineHeight: 13 * 1.4 }]}>{item.title}</Text>
-                            <Text style={[{ fontSize: 13, fontFamily: 'SukhumvitSet_Me', color: "#1a1a1a", lineHeight: 13 * 1.4 }]}>{item.subTitle}</Text>
+                            <Text style={[{ fontSize: 13, fontFamily: 'Chirp_Bold', color: "#1a1a1a", lineHeight: 13 * 1.4 }]}>{item.title}</Text>
+                            <Text style={[{ fontSize: 13, fontFamily: 'Chirp_Medium', color: "#1a1a1a", lineHeight: 13 * 1.4 }]}>{item.subTitle}</Text>
                         </View>
                     </View>
                 )}
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     text: {
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         color: "#242424"
     },
 })

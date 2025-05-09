@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: '600',
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
     },
     closeButton: {
         width: 32,

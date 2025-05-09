@@ -20,312 +20,64 @@ import { preloadFeedImages } from './components/Card/OptimizedCardImage'
 import { FeedStorageService, convertFeedItemToFeedInfo } from 'src/util/MMKVStorage'
 import { EventEmitter } from 'src/utils/EventEmitter'
 
-// Number of items to load per page
+// Constants
 const PAGE_SIZE = 20
-// Preload threshold - when to start loading the next page (percentage of current page)
 const PRELOAD_THRESHOLD = 0.8
+const HEADER_HEIGHT = 60
+const MIN_SCROLL_TO_HIDE = 50
+const INITIAL_PRELOAD_ITEMS = [0, 1, 2]
+const PAGINATION_PRELOAD_ITEMS = [0, 1]
+const SCROLL_TOP_THRESHOLD = 5
+const SCROLL_NOT_TOP_THRESHOLD = 10
+const SCROLL_CAPTURE_VELOCITY = 0.5
+const UX_DELAY = 300
+const UI_UPDATE_DELAY = 100
+const BACKGROUND_UPDATE_DELAY = 200
 
-// Type definition for viewable items
+// Type definitions
 interface ViewableItemsChangedInfo {
     viewableItems: Array<ViewToken>;
     changed: Array<ViewToken>;
 }
 
-/**
- * Performance-optimized HomeScreen component
- * - Uses memoized subcomponents
- * - Optimized data loading with MMKV caching
- * - Memory-efficient rendering with memory cache
- * - Reduced re-renders with intelligent updates
- * - Infinite loading with pagination and preloading
- * - Visual elements optimized for 120Hz displays
- */
-const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigationProp; route?: any }) => {
-    const insets = useSafeAreaInsets();
-    const { isDarkMode, toggleTheme, theme, animatedValue } = useTheme();
+interface HomeScreenProps {
+    navigation: HomeNavigationProp;
+    route?: any;
+}
 
-    // State management
-    const [feed, setFeed] = useState<FeedInfo[]>([]);
-    const [stories, setStories] = useState<StoryItem[]>([]);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [hasMoreData, setHasMoreData] = useState(true);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [visibleIndices, setVisibleIndices] = useState<number[]>([]);
-    const [isInitialRenderComplete, setIsInitialRenderComplete] = useState(false);
-    const [forceRefresh, setForceRefresh] = useState(false);
+// Custom hooks
+const useScrollAnimation = (insets: any) => {
+    const scrollY = useSharedValue(0)
+    const lastScrollY = useSharedValue(0)
+    const headerTranslateY = useSharedValue(0)
+    const isScrollingUp = useSharedValue(false)
 
-    // Animated values and refs
-    const listRef = useRef<FlashList<FeedInfo>>(null);
-    const scrollY = useSharedValue(0);
-    const lastScrollY = useSharedValue(0);
-    const headerTranslateY = useSharedValue(0);
-    const isScrollingUp = useSharedValue(false);
-    const lastRefreshTimestamp = useRef<number>(0);
-    const nextPagePreloaded = useRef<boolean>(false);
-
-    // Initialize storage system
-    useEffect(() => {
-        FeedStorageService.initialize();
-    }, []);
-
-    // เพิ่ม event listener สำหรับการเลื่อนกลับขึ้นด้านบนโดยไม่ต้อง refresh
-    useEffect(() => {
-        // ฟังก์ชันสำหรับการเลื่อนขึ้นด้านบน
-        const scrollToTop = () => {
-            if (listRef.current) {
-                listRef.current.scrollToOffset({ offset: 0, animated: true });
-            }
-        };
-
-        // ใช้ EventEmitter แทน document event
-        const unsubscribe = EventEmitter.on('scrollHomeToTop', scrollToTop);
-        
-        // Cleanup
-        return () => {
-            unsubscribe();
-        };
-    }, []);
-
-    // Initial quick renderer for immediate display
-    const renderInitialItems = useCallback(async () => {
-        // Try to get visible items from cache for immediate display
-        const visibleItems = FeedStorageService.getVisibleItems();
-
-        if (visibleItems && visibleItems.length > 0) {
-            // Show the cached visible items immediately while loading full data
-            setFeed(visibleItems);
-        }
-    }, []);
-
-    // Track currently visible items and save them for next launch
-    const saveVisibleItems = useCallback((indices: number[]) => {
-        if (!feed || feed.length === 0 || !indices || indices.length === 0) return;
-
-        const visibleItems = indices.map(index => feed[index]).filter(Boolean);
-        if (visibleItems.length > 0) {
-            FeedStorageService.saveVisibleItems(visibleItems);
-        }
-    }, [feed]);
-
-    // Memoize visible indices to prevent unnecessary updates
-    const onViewableItemsChanged = useCallback(({ viewableItems }: ViewableItemsChangedInfo) => {
-        if (!viewableItems || viewableItems.length === 0) return;
-
-        const indices = viewableItems.map((item: ViewToken) => item.index).filter((index: number | null | undefined) => index !== null && index !== undefined) as number[];
-        setVisibleIndices(indices);
-
-        // Save visible items but defer to prevent frame drops
-        InteractionManager.runAfterInteractions(() => {
-            saveVisibleItems(indices);
-        });
-
-        // Preload next page when nearing end of current data
-        const highestIndex = Math.max(...indices);
-        const preloadThreshold = feed.length * PRELOAD_THRESHOLD;
-
-        if (highestIndex > preloadThreshold && !isLoadingMore && hasMoreData && !nextPagePreloaded.current) {
-            nextPagePreloaded.current = true;
-            // Defer loading to prevent frame drops
-            InteractionManager.runAfterInteractions(() => {
-                handleLoadMore();
-            });
-        }
-    }, [feed.length, isLoadingMore, hasMoreData, saveVisibleItems]);
-
-    const viewabilityConfig = useMemo(() => ({
-        itemVisiblePercentThreshold: 20,
-        minimumViewTime: 300,
-    }), []);
-
-    // Data loading functions
-    const handleRefresh = useCallback(async () => {
-        if (isRefreshing) return;
-
-        setIsRefreshing(true);
-        // Reset scroll position
-        scrollY.value = 0;
-        lastScrollY.value = 0;
-        headerTranslateY.value = 0;
-        setCurrentPage(1);
-        nextPagePreloaded.current = false;
-
-        try {
-            // ถ้าเป็น force refresh ให้เคลียร์แคชทั้งหมด
-            if (forceRefresh) {
-                console.log('Force refreshing feed data...');
-                FeedStorageService.clearAll();
-                setForceRefresh(false);
-            } else {
-                // ลองใช้ข้อมูลจากแคชก่อนเพื่อแสดงผลเร็วๆ
-                const cachedData = FeedStorageService.getFeedData();
-                const cachedStories = FeedStorageService.getStoriesData();
-
-                if (cachedData && cachedStories && cachedData.length > 0 && !FeedStorageService.isFeedDataExpired()) {
-                    // แสดงข้อมูลจากแคชทันที
-                    setFeed(cachedData);
-                    setStories(cachedStories);
-
-                    // รอสักนิดเพื่อให้ UI อัพเดทก่อน
-                    await new Promise(resolve => setTimeout(resolve, 100));
-
-                    // ตั้ง timeout เพื่อทำ background update
-                    setTimeout(() => {
-                        FeedStorageService.markDataAsExpired();
-                        // โหลดข้อมูลใหม่แบบเบื้องหลัง
-                        _loadFreshData(false);
-                    }, 200);
-
-                    setIsRefreshing(false);
-                    return;
-                } else {
-                    // มาร์คข้อมูลเป็นหมดอายุ เพื่อให้โหลดใหม่ครั้งต่อไป
-                    FeedStorageService.markDataAsExpired();
-                }
-            }
-
-            // โหลดข้อมูลใหม่
-            await _loadFreshData(true);
-
-        } catch (error) {
-            console.error('Error refreshing feed:', error);
-        } finally {
-            setIsRefreshing(false);
-        }
-    }, [isRefreshing, forceRefresh]);
-
-    // แยกฟังก์ชันโหลดข้อมูลใหม่ออกมา
-    const _loadFreshData = async (showLoadingIndicator = true) => {
-        try {
-            // โหลดข้อมูลใหม่จาก API
-            const mockData = generateMockGridFeed(PAGE_SIZE / 5);
-            const mockStoryData = generateMockStories(8);
-
-            // Convert mockData to FeedInfo type
-            const convertedFeedData = mockData.map(item => convertFeedItemToFeedInfo(item));
-
-            // Preload images before setting feed data if showing loading indicator
-            // (ถ้าโหลดเบื้องหลัง ไม่ต้องรอ preload)
-            if (showLoadingIndicator) {
-                const imageUrls = convertedFeedData.map(item => item.images);
-                const initialVisibleItems = [0, 1, 2];
-                await preloadFeedImages(imageUrls, initialVisibleItems);
-            }
-
-            // Use batch update to reduce re-renders
-            setFeed(convertedFeedData);
-            setStories(mockStoryData);
-
-            // Cache the data in MMKV storage
-            FeedStorageService.saveFeedData(convertedFeedData);
-            FeedStorageService.saveStoriesData(mockStoryData);
-            FeedStorageService.saveCurrentPage(1);
-
-            // Reset hasMoreData flag
-            setHasMoreData(true);
-
-            if (showLoadingIndicator) {
-                // UX delay for loading indicator - ลดลงเพื่อให้แสดงผลเร็วขึ้น
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-        } catch (error) {
-            console.error('Error loading fresh data:', error);
-        }
-    };
-
-    // เพิ่มฟังก์ชันสำหรับบังคับรีเฟรช
-    const triggerForceRefresh = useCallback(() => {
-        setForceRefresh(true);
-        handleRefresh();
-    }, [handleRefresh]);
-
-    const handleLoadMore = useCallback(async () => {
-        if (isLoadingMore || !hasMoreData) return;
-
-        setIsLoadingMore(true);
-        const nextPage = currentPage + 1;
-
-        try {
-            // Try to get cached data for next page
-            const cachedData = FeedStorageService.getFeedData();
-
-            // Calculate how many more items we need
-            const totalItemsNeeded = nextPage * PAGE_SIZE;
-
-            // If we already have enough cached items, just update the page
-            if (cachedData && cachedData.length >= totalItemsNeeded) {
-                const newPageData = cachedData.slice(0, totalItemsNeeded);
-                setFeed(newPageData);
-                setCurrentPage(nextPage);
-                FeedStorageService.saveCurrentPage(nextPage);
-                setIsLoadingMore(false);
-                return;
-            }
-
-            // Fetch new data from the mock API
-            const newData = generateMockGridFeed(PAGE_SIZE / 5);
-
-            if (newData.length === 0) {
-                setHasMoreData(false);
-                setIsLoadingMore(false);
-                return;
-            }
-
-            // Convert newData to FeedInfo type
-            const convertedNewData = newData.map(item => convertFeedItemToFeedInfo(item));
-
-            // Prepare for image preloading - prioritize first couple items
-            const imageUrls = convertedNewData.map(item => item.images);
-            const priorityIndices = [0, 1];
-
-            // Preload in parallel with state updates for better performance
-            const preloadPromise = preloadFeedImages(imageUrls, priorityIndices);
-
-            // Use functional update to avoid race conditions and ensure we're working with latest state
-            setFeed(prevFeed => {
-                const updatedFeed = [...prevFeed, ...convertedNewData];
-
-                // Update cache with all data (off the critical path)
-                setTimeout(() => {
-                    FeedStorageService.saveFeedData(updatedFeed);
-                }, 0);
-
-                return updatedFeed;
-            });
-
-            setCurrentPage(nextPage);
-            FeedStorageService.saveCurrentPage(nextPage);
-
-            // Wait for preload to complete
-            await preloadPromise;
-        } catch (error) {
-            console.error('Error loading more data:', error);
-        } finally {
-            setIsLoadingMore(false);
-            nextPagePreloaded.current = false;
-        }
-    }, [isLoadingMore, hasMoreData, currentPage]);
-
-    // Header animation calculation
     const derivedHeaderTranslateY = useDerivedValue(() => {
-        const HEADER_HEIGHT = 60;
+        'worklet';
         const HIDE_HEADER_SCROLL_DISTANCE = HEADER_HEIGHT + insets.top;
         const MIN_SCROLL_TO_HIDE = 50;
 
         if (scrollY.value <= 10) {
-            return withTiming(0, { duration: 150 });
+            if (headerTranslateY.value !== 0) {
+                headerTranslateY.value = withTiming(0, { duration: 150 });
+            }
+            return headerTranslateY.value;
         }
 
         if (!isScrollingUp.value && scrollY.value > MIN_SCROLL_TO_HIDE) {
-            return withTiming(-HIDE_HEADER_SCROLL_DISTANCE, { duration: 200 });
+            if (headerTranslateY.value !== -HIDE_HEADER_SCROLL_DISTANCE) {
+                headerTranslateY.value = withTiming(-HIDE_HEADER_SCROLL_DISTANCE, { duration: 200 });
+            }
+            return headerTranslateY.value;
         }
 
-        if (isScrollingUp.value) {
-            return withTiming(0, { duration: 200 });
+        if (isScrollingUp.value && headerTranslateY.value !== 0) {
+            headerTranslateY.value = withTiming(0, { duration: 200 });
+            return headerTranslateY.value;
         }
 
         return headerTranslateY.value;
-    });
+    }, [scrollY, isScrollingUp]);
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({
         transform: [
@@ -337,7 +89,430 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
         left: 0,
         right: 0,
         zIndex: 100,
-    }));
+    }))
+
+    return {
+        scrollY,
+        lastScrollY,
+        headerTranslateY,
+        isScrollingUp,
+        headerAnimatedStyle,
+    }
+}
+
+const useFeedData = (
+    scrollY: any,
+    lastScrollY: any,
+    headerTranslateY: any,
+    listRef: React.RefObject<FlashList<FeedInfo> | null>,
+    route?: any
+) => {
+    const [feed, setFeed] = useState<FeedInfo[]>([])
+    const [stories, setStories] = useState<StoryItem[]>([])
+    const [isRefreshing, setIsRefreshing] = useState(false)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const [hasMoreData, setHasMoreData] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [isInitialRenderComplete, setIsInitialRenderComplete] = useState(false)
+    const [forceRefresh, setForceRefresh] = useState(false)
+    const nextPagePreloaded = useRef<boolean>(false)
+    const lastRefreshTimestamp = useRef<number>(0)
+
+    // Initialize storage system
+    useEffect(() => {
+        FeedStorageService.initialize()
+    }, [])
+
+    // Fast initial render from cache
+    const renderInitialItems = useCallback(async () => {
+        const visibleItems = FeedStorageService.getVisibleItems()
+        if (visibleItems && visibleItems.length > 0) {
+            setFeed(visibleItems)
+        }
+    }, [])
+
+    // Load fresh data either with or without loading indicator
+    const loadFreshData = useCallback(async (showLoadingIndicator = true) => {
+        try {
+            const mockData = generateMockGridFeed(PAGE_SIZE / 5)
+            const mockStoryData = generateMockStories(8)
+            const convertedFeedData = mockData.map(item => convertFeedItemToFeedInfo(item))
+
+            if (showLoadingIndicator) {
+                const imageUrls = convertedFeedData.map(item => item.images)
+                await preloadFeedImages(imageUrls, INITIAL_PRELOAD_ITEMS)
+            }
+
+            setFeed(convertedFeedData)
+            setStories(mockStoryData)
+
+            FeedStorageService.saveFeedData(convertedFeedData)
+            FeedStorageService.saveStoriesData(mockStoryData)
+            FeedStorageService.saveCurrentPage(1)
+            setHasMoreData(true)
+
+            if (showLoadingIndicator) {
+                await new Promise(resolve => setTimeout(resolve, UX_DELAY))
+            }
+        } catch (error) {
+            console.error('Error loading fresh data:', error)
+        }
+    }, [])
+
+    // Handle pull-to-refresh
+    const handleRefresh = useCallback(async () => {
+        if (isRefreshing) return
+
+        setIsRefreshing(true)
+        scrollY.value = 0
+        lastScrollY.value = 0
+        headerTranslateY.value = 0
+        setCurrentPage(1)
+        nextPagePreloaded.current = false
+
+        try {
+            if (forceRefresh) {
+                FeedStorageService.clearAll()
+                setForceRefresh(false)
+            } else {
+                const cachedData = FeedStorageService.getFeedData()
+                const cachedStories = FeedStorageService.getStoriesData()
+
+                if (cachedData && cachedStories && cachedData.length > 0 && !FeedStorageService.isFeedDataExpired()) {
+                    setFeed(cachedData)
+                    setStories(cachedStories)
+                    await new Promise(resolve => setTimeout(resolve, UI_UPDATE_DELAY))
+
+                    setTimeout(() => {
+                        FeedStorageService.markDataAsExpired()
+                        loadFreshData(false)
+                    }, BACKGROUND_UPDATE_DELAY)
+
+                    setIsRefreshing(false)
+                    return
+                } else {
+                    FeedStorageService.markDataAsExpired()
+                }
+            }
+
+            await loadFreshData(true)
+        } catch (error) {
+            console.error('Error refreshing feed:', error)
+        } finally {
+            setIsRefreshing(false)
+        }
+    }, [isRefreshing, forceRefresh, scrollY, lastScrollY, headerTranslateY, loadFreshData])
+
+    // Trigger force refresh (user-initiated)
+    const triggerForceRefresh = useCallback(() => {
+        setForceRefresh(true)
+        handleRefresh()
+    }, [handleRefresh])
+
+    // Handle loading more data when scrolling to end
+    const handleLoadMore = useCallback(async () => {
+        if (isLoadingMore || !hasMoreData) return
+
+        setIsLoadingMore(true)
+        const nextPage = currentPage + 1
+
+        try {
+            const cachedData = FeedStorageService.getFeedData()
+            const totalItemsNeeded = nextPage * PAGE_SIZE
+
+            if (cachedData && cachedData.length >= totalItemsNeeded) {
+                const newPageData = cachedData.slice(0, totalItemsNeeded)
+                setFeed(newPageData)
+                setCurrentPage(nextPage)
+                FeedStorageService.saveCurrentPage(nextPage)
+                setIsLoadingMore(false)
+                return
+            }
+
+            const newData = generateMockGridFeed(PAGE_SIZE / 5)
+
+            if (newData.length === 0) {
+                setHasMoreData(false)
+                return
+            }
+
+            const convertedNewData = newData.map(item => convertFeedItemToFeedInfo(item))
+            const imageUrls = convertedNewData.map(item => item.images)
+
+            const preloadPromise = preloadFeedImages(imageUrls, PAGINATION_PRELOAD_ITEMS)
+
+            setFeed(prevFeed => {
+                const updatedFeed = [...prevFeed, ...convertedNewData]
+                setTimeout(() => {
+                    FeedStorageService.saveFeedData(updatedFeed)
+                }, 0)
+                return updatedFeed
+            })
+
+            setCurrentPage(nextPage)
+            FeedStorageService.saveCurrentPage(nextPage)
+            await preloadPromise
+        } catch (error) {
+            console.error('Error loading more data:', error)
+        } finally {
+            setIsLoadingMore(false)
+            nextPagePreloaded.current = false
+        }
+    }, [isLoadingMore, hasMoreData, currentPage])
+
+    // Handle route parameter refresh
+    useEffect(() => {
+        if (route?.params?.refresh) {
+            const currentRefresh = route.params.refresh as number
+            if (currentRefresh > lastRefreshTimestamp.current) {
+                lastRefreshTimestamp.current = currentRefresh
+                scrollY.value = 0
+                lastScrollY.value = 0
+                headerTranslateY.value = 0
+
+                if (listRef.current) {
+                    listRef.current.scrollToOffset({ offset: 0, animated: true })
+                }
+
+                const cachedData = FeedStorageService.getFeedData()
+                const cachedStories = FeedStorageService.getStoriesData()
+
+                if (cachedData && cachedData.length > 0 && cachedStories && cachedStories.length > 0) {
+                    setFeed(cachedData)
+                    setStories(cachedStories)
+
+                    setTimeout(() => {
+                        if (!isRefreshing) {
+                            setIsRefreshing(true)
+                            handleRefresh().finally(() => {
+                                setIsRefreshing(false)
+                            })
+                        }
+                    }, UX_DELAY)
+                } else {
+                    setForceRefresh(true)
+                    handleRefresh()
+                }
+            }
+        }
+    }, [route?.params?.refresh, handleRefresh, isRefreshing, scrollY, lastScrollY, headerTranslateY, listRef])
+
+    // Initial load: first from cache, then full data
+    useEffect(() => {
+        renderInitialItems()
+    }, [renderInitialItems])
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            const cachedData = FeedStorageService.getFeedData()
+            const cachedStories = FeedStorageService.getStoriesData()
+            const isDataExpired = FeedStorageService.isFeedDataExpired()
+            const savedPage = FeedStorageService.getCurrentPage() || 1
+
+            if (cachedData && cachedStories && !isDataExpired) {
+                setFeed(cachedData)
+                setStories(cachedStories)
+                setCurrentPage(savedPage)
+                setIsInitialRenderComplete(true)
+            } else {
+                await handleRefresh()
+                setIsInitialRenderComplete(true)
+            }
+        }
+
+        if (!isInitialRenderComplete) {
+            InteractionManager.runAfterInteractions(() => {
+                loadInitialData()
+            })
+        }
+    }, [handleRefresh, isInitialRenderComplete, renderInitialItems])
+
+    return {
+        feed,
+        stories,
+        isRefreshing,
+        isLoadingMore,
+        hasMoreData,
+        currentPage,
+        handleRefresh,
+        handleLoadMore,
+        triggerForceRefresh,
+        setFeed,
+    }
+}
+
+const useVisibleItems = (feed: FeedInfo[], handleLoadMore: () => void) => {
+    const [visibleIndices, setVisibleIndices] = useState<number[]>([])
+    const nextPagePreloaded = useRef<boolean>(false)
+
+    const saveVisibleItems = useCallback((indices: number[]) => {
+        if (!feed?.length || !indices?.length) return
+
+        const visibleItems = indices.map(index => feed[index]).filter(Boolean)
+        if (visibleItems.length > 0) {
+            FeedStorageService.saveVisibleItems(visibleItems)
+        }
+    }, [feed])
+
+    const onViewableItemsChanged = useCallback(({ viewableItems }: ViewableItemsChangedInfo) => {
+        if (!viewableItems?.length) return
+
+        const indices = viewableItems
+            .map((item: ViewToken) => item.index)
+            .filter((index): index is number => index !== null && index !== undefined)
+
+        setVisibleIndices(indices)
+
+        InteractionManager.runAfterInteractions(() => {
+            saveVisibleItems(indices)
+        })
+
+        const highestIndex = Math.max(...indices)
+        const preloadThreshold = feed.length * PRELOAD_THRESHOLD
+
+        if (highestIndex > preloadThreshold && !nextPagePreloaded.current) {
+            nextPagePreloaded.current = true
+            InteractionManager.runAfterInteractions(() => {
+                handleLoadMore()
+            })
+        }
+    }, [feed.length, saveVisibleItems, handleLoadMore])
+
+    const viewabilityConfig = useMemo(() => ({
+        itemVisiblePercentThreshold: 20,
+        minimumViewTime: 300,
+    }), [])
+
+    return {
+        visibleIndices,
+        onViewableItemsChanged,
+        viewabilityConfig,
+        saveVisibleItems
+    }
+}
+
+/**
+ * Performance-optimized HomeScreen component
+ * - Uses memoized subcomponents
+ * - Optimized data loading with MMKV caching
+ * - Memory-efficient rendering with memory cache
+ * - Reduced re-renders with intelligent updates
+ * - Infinite loading with pagination and preloading
+ * - Visual elements optimized for 120Hz displays
+ */
+const RefactoredHomeScreen = ({ navigation, route }: HomeScreenProps) => {
+    const insets = useSafeAreaInsets()
+    const { isDarkMode, toggleTheme, theme, animatedValue } = useTheme()
+    const listRef = useRef<FlashList<FeedInfo> | null>(null)
+
+    // Custom hooks for different concerns
+    const {
+        scrollY,
+        lastScrollY,
+        headerTranslateY,
+        isScrollingUp,
+        headerAnimatedStyle
+    } = useScrollAnimation(insets)
+
+    const {
+        feed,
+        stories,
+        isRefreshing,
+        isLoadingMore,
+        hasMoreData,
+        handleRefresh,
+        handleLoadMore,
+        triggerForceRefresh
+    } = useFeedData(scrollY, lastScrollY, headerTranslateY, listRef, route)
+
+    const {
+        visibleIndices,
+        onViewableItemsChanged,
+        viewabilityConfig,
+        saveVisibleItems
+    } = useVisibleItems(feed, handleLoadMore)
+
+    // Listen for scroll to top events
+    useEffect(() => {
+        const scrollToTop = () => {
+            if (listRef.current) {
+                listRef.current.scrollToOffset({ offset: 0, animated: true })
+            }
+        }
+
+        const unsubscribe = EventEmitter.on('scrollHomeToTop', scrollToTop)
+        return () => { unsubscribe() }
+    }, [])
+
+    // Optimized scroll handler
+    const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const currentY = event.nativeEvent.contentOffset.y
+        
+        // Update shared values in a way that's compatible with both JS and Worklet environments
+        isScrollingUp.value = currentY < lastScrollY.value
+        const scrollVelocity = Math.abs(currentY - lastScrollY.value)
+        
+        scrollY.value = currentY
+        lastScrollY.value = currentY
+        
+        // Update scroll position status for tab bar behavior - runs on JS thread
+        if (currentY <= SCROLL_TOP_THRESHOLD && navigation && route) {
+            InteractionManager.runAfterInteractions(() => {
+                const params = navigation.getState().routes.find(
+                    r => r.name === 'bottom_bar_home'
+                )?.params || {}
+                
+                const isCurrentlyAtTop = (params as any)?.isScrolledToTop || false
+                if (!isCurrentlyAtTop) {
+                    navigation.setParams({
+                        ...params,
+                        isScrolledToTop: true
+                    } as any)
+                }
+            });
+        } else if (currentY > SCROLL_NOT_TOP_THRESHOLD && navigation && route) {
+            InteractionManager.runAfterInteractions(() => {
+                const params = navigation.getState().routes.find(
+                    r => r.name === 'bottom_bar_home'
+                )?.params || {}
+                
+                const isCurrentlyAtTop = (params as any)?.isScrolledToTop || false
+                if (isCurrentlyAtTop) {
+                    navigation.setParams({
+                        ...params,
+                        isScrolledToTop: false
+                    } as any)
+                }
+            });
+        }
+        
+        // Handle header animation based on scroll position
+        const SCROLL_THRESHOLD = 10
+        const MIN_SCROLL_TO_HIDE = 50
+        const HIDE_HEADER_SCROLL_DISTANCE = 60 + insets.top
+        
+        const delta = currentY - lastScrollY.value
+        
+        if (Math.abs(delta) > SCROLL_THRESHOLD) {
+            if (delta > SCROLL_THRESHOLD && currentY > MIN_SCROLL_TO_HIDE) {
+                headerTranslateY.value = -HIDE_HEADER_SCROLL_DISTANCE
+            } else if (delta < -SCROLL_THRESHOLD) {
+                headerTranslateY.value = 0
+            }
+        }
+        
+        // Save visible items when scrolling stops - runs on JS thread
+        if (scrollVelocity < SCROLL_CAPTURE_VELOCITY) {
+            InteractionManager.runAfterInteractions(() => {
+                saveVisibleItems(visibleIndices)
+            });
+        }
+    }, [visibleIndices, saveVisibleItems, navigation, route, isScrollingUp, scrollY, lastScrollY, headerTranslateY, insets.top])
+
+    // Theme toggling with animation
+    const handleThemePress = useCallback((x: number, y: number) => {
+        toggleTheme(x, y)
+    }, [toggleTheme])
 
     // Theme icon animation
     const themeIconStyle = useAnimatedStyle(() => ({
@@ -360,141 +535,9 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
             damping: 20,
             stiffness: 90
         })
-    }));
+    }))
 
-    // 1. First render quickly with visible items cache 
-    useEffect(() => {
-        renderInitialItems();
-    }, [renderInitialItems]);
-
-    // 2. Then load full data from cache or API
-    useEffect(() => {
-        const loadInitialData = async () => {
-            // Try to load data from cache first
-            const cachedData = FeedStorageService.getFeedData();
-            const cachedStories = FeedStorageService.getStoriesData();
-            const isDataExpired = FeedStorageService.isFeedDataExpired();
-            const savedPage = FeedStorageService.getCurrentPage() || 1;
-
-            if (cachedData && cachedStories && !isDataExpired) {
-                setFeed(cachedData);
-                setStories(cachedStories);
-                setCurrentPage(savedPage);
-                setIsInitialRenderComplete(true);
-            } else {
-                // If no cached data or expired, refresh from API
-                await handleRefresh();
-                setIsInitialRenderComplete(true);
-            }
-        };
-
-        // Defer full data loading to ensure UI is responsive
-        if (!isInitialRenderComplete) {
-            InteractionManager.runAfterInteractions(() => {
-                loadInitialData();
-            });
-        }
-    }, [handleRefresh, isInitialRenderComplete]);
-
-    useEffect(() => {
-        if (route?.params?.refresh) {
-            const currentRefresh = route.params.refresh as number;
-
-            if (currentRefresh > lastRefreshTimestamp.current) {
-                lastRefreshTimestamp.current = currentRefresh;
-
-                scrollY.value = 0;
-                lastScrollY.value = 0;
-                headerTranslateY.value = 0;
-
-                if (listRef.current) {
-                    listRef.current.scrollToOffset({ offset: 0, animated: true });
-                }
-
-                const cachedData = FeedStorageService.getFeedData();
-                const cachedStories = FeedStorageService.getStoriesData();
-
-                if (cachedData && cachedData.length > 0 && cachedStories && cachedStories.length > 0) {
-                    setFeed(cachedData);
-                    setStories(cachedStories);
-
-                    setTimeout(() => {
-                        if (!isRefreshing) {
-                            setIsRefreshing(true);
-                            handleRefresh().finally(() => {
-                                setIsRefreshing(false);
-                            });
-                        }
-                    }, 300);
-                } else {
-                    setForceRefresh(true);
-                    handleRefresh();
-                }
-            }
-        }
-    }, [route?.params?.refresh, handleRefresh, isRefreshing]);
-
-    // Track device motion for optimistic scrolling
-    const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        'worklet';
-        const currentY = event.nativeEvent.contentOffset.y;
-        
-        // Determine scroll direction
-        isScrollingUp.value = currentY < lastScrollY.value;
-        
-        // Track velocity for smoother animations
-        const scrollVelocity = Math.abs(currentY - lastScrollY.value);
-        
-        // Update shared values
-        scrollY.value = currentY;
-        lastScrollY.value = currentY;
-        
-        // ตรวจจับว่าเลื่อนถึงบนสุดหรือยัง (เพื่อใช้กับการกด tab ซ้ำ)
-        if (currentY <= 5 && navigation && route) {
-            // เมื่อเลื่อนถึงบนสุด (scroll position <= 5) ให้อัปเดต route param
-            runOnJS(() => {
-                const params = navigation.getState().routes.find(
-                    r => r.name === 'bottom_bar_home'
-                )?.params || {};
-                
-                // อัปเดต params เฉพาะเมื่อค่าเปลี่ยน
-                const isCurrentlyAtTop = (params as any)?.isScrolledToTop || false;
-                if (!isCurrentlyAtTop) {
-                    navigation.setParams({ 
-                        ...params,
-                        isScrolledToTop: true 
-                    } as any);
-                }
-            })();
-        } else if (currentY > 10 && navigation && route) {
-            // เมื่อเลื่อนลงมาแล้ว (scroll position > 10) ให้รีเซ็ต isScrolledToTop
-            runOnJS(() => {
-                const params = navigation.getState().routes.find(
-                    r => r.name === 'bottom_bar_home'
-                )?.params || {};
-                
-                // อัปเดต params เฉพาะเมื่อค่าเปลี่ยน
-                const isCurrentlyAtTop = (params as any)?.isScrolledToTop || false;
-                if (isCurrentlyAtTop) {
-                    navigation.setParams({ 
-                        ...params,
-                        isScrolledToTop: false 
-                    } as any);
-                }
-            })();
-        }
-        
-        // Capture visible items when scrolling stops
-        if (scrollVelocity < 0.5) {
-            runOnJS(saveVisibleItems)(visibleIndices);
-        }
-    }, [visibleIndices, saveVisibleItems, navigation, route]);
-
-    const handleThemePress = useCallback((x: number, y: number) => {
-        toggleTheme(x, y);
-    }, [toggleTheme]);
-
-    // Memoize feed props for better performance
+    // Memoize feed props to prevent unnecessary re-renders
     const feedProps = useMemo(() => ({
         feed,
         stories,
@@ -530,7 +573,7 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
         handleScroll,
         onViewableItemsChanged,
         viewabilityConfig,
-    ]);
+    ])
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
@@ -552,13 +595,11 @@ const RefactoredHomeScreen = ({ navigation, route }: { navigation: HomeNavigatio
             />
 
             <View style={styles.mainContent}>
-                <OptimizedFeed
-                    {...feedProps}
-                />
+                <OptimizedFeed {...feedProps} />
             </View>
         </SafeAreaView>
-    );
-};
+    )
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -568,6 +609,6 @@ const styles = StyleSheet.create({
         flex: 1,
         zIndex: 0,
     },
-});
+})
 
-export default React.memo(RefactoredHomeScreen); 
+export default React.memo(RefactoredHomeScreen) 

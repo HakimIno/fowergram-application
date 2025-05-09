@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     },
     textButton: {
         color: 'black',
-        fontFamily: 'SukhumvitSet_Bd'
+        fontFamily: 'Chirp_Bold'
     },
     slideContainer: {
         ...StyleSheet.absoluteFillObject,

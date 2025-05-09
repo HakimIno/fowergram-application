@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     errorText: {
         fontSize: 14,
         textAlign: 'center',
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
 })
 

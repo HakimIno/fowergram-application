@@ -35,7 +35,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: insets.top }}>
                     <Ionicons name="arrow-back" size={24} color={"#1a1a1a"} onPress={goBack} />
                     <View style={{ width: '70%' }}>
-                        <Text style={[{ fontSize: 18, fontFamily: 'SukhumvitSet_Bd', color: "#1a1a1a" }]} numberOfLines={1} ellipsizeMode="tail">{titile}</Text>
+                        <Text style={[{ fontSize: 18, fontFamily: 'Chirp_Bold', color: "#1a1a1a" }]} numberOfLines={1} ellipsizeMode="tail">{titile}</Text>
                     </View>
                     {iconRight?.show ? (<Ionicons name="ellipsis-vertical" size={20} color="#1a1a1a" onPress={iconRight?.onPress} />) : <View style={{ width: 24, height: 24 }}></View>}
                 </View>
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     },
     headerText: {
         fontSize: 18,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
         color: "#1a1a1a",
     },
 });

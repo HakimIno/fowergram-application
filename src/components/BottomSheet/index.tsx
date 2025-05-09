@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 16,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
 
 });

@@ -3,10 +3,8 @@ import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { memo, useCallback, useRef } from "react";
 import { ActivityIndicator, Dimensions, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { setSelectPhotos } from "src/redux-store/slices/mediaSlice";
 import * as MediaLibrary from 'expo-media-library';
-import { RootState } from "src/redux-store";
+import { useMediaStore, useSelectedPhotos } from "src/store/mediaStore";
 
 const { width } = Dimensions.get("window");
 const COLUMN_COUNT = 3;
@@ -86,8 +84,8 @@ const SelectedPhotoItem = memo(({ item, onPress }: {
 ));
 
 const TabScreen: React.FC<TabScreenProps> = memo(({ photos, onLoadMore, loading }) => {
-    const dispatch = useDispatch();
-    const selectedPhotos = useSelector((state: RootState) => state.medias.selectedPhotos);
+    const selectedPhotos = useSelectedPhotos();
+    const setSelectPhotos = useMediaStore(state => state.setSelectPhotos);
     const listRef = useRef<FlashList<any>>(null);
 
     const scrollToTop = useCallback(() => {
@@ -101,12 +99,12 @@ const TabScreen: React.FC<TabScreenProps> = memo(({ photos, onLoadMore, loading 
     }, [loading, onLoadMore]);
 
     const toggleSelectPhoto = useCallback((item: MediaLibrary.Asset) => {
-        dispatch(setSelectPhotos(
+        setSelectPhotos(
             selectedPhotos.some(photo => photo.id === item.id)
                 ? selectedPhotos.filter(photo => photo.id !== item.id)
                 : [...selectedPhotos, item]
-        ));
-    }, [dispatch, selectedPhotos]);
+        );
+    }, [selectedPhotos, setSelectPhotos]);
 
     const renderItem = useCallback(({ item }: { item: MediaLibrary.Asset }) => {
         const isSelected = selectedPhotos.some(photo => photo.id === item.id);
@@ -241,7 +239,7 @@ const styles = StyleSheet.create({
     durationText: {
         fontSize: 12,
         color: "white",
-        fontFamily: 'SukhumvitSet_Bd'
+        fontFamily: 'Chirp_Bold'
     },
     selectedPhotoContainer: {
         position: 'relative',

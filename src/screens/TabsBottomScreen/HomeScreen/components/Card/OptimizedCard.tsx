@@ -1,12 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState, memo } from 'react';
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, GestureResponderEvent, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import Animated, {
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-  useSharedValue,
-} from 'react-native-reanimated';
+
 import { useTheme } from 'src/context/ThemeContext';
 import TweetActionButtons from '../UI/TweetActionButtons';
 import { OptimizedCardCarousel } from './OptimizedCardCarousel';
@@ -22,18 +17,37 @@ interface CardProps {
   isVisible: boolean;
 }
 
-// Enhanced memo equality check - prevent unnecessary renders
-const arePropsEqual = (prevProps: CardProps, nextProps: CardProps) => {
+// Create content component separately
+const ContentComponent = ({ caption, theme }: { caption: string, theme: any }) => {
+  const parts = caption.split(/(\#[a-zA-Z0-9_]+)/g);
+
   return (
-    prevProps.cardIndex === nextProps.cardIndex &&
-    prevProps.title === nextProps.title &&
-    prevProps.likes === nextProps.likes &&
-    prevProps.isVisible === nextProps.isVisible
+    <View style={styles.contentContainer}>
+      <Text style={[styles.caption, { color: theme.textColor }]}>
+        {parts.map((part, index) => {
+          if (part.startsWith('#')) {
+            return (
+              <Text key={index} style={styles.hashtag}>
+                {part}{' '}
+              </Text>
+            );
+          }
+          return (
+            <Text key={index} style={{ color: theme.textColor }}>
+              {part}{' '}
+            </Text>
+          );
+        })}
+      </Text>
+    </View>
   );
 };
 
-// Highly optimized Card component that only re-renders when necessary
-export const OptimizedCard = memo(({
+// Memoize the content component
+const MemoizedContentComponent = React.memo(ContentComponent);
+
+// Define the main component function
+const Card = ({
   navigation,
   images,
   title,
@@ -43,119 +57,51 @@ export const OptimizedCard = memo(({
   isVisible
 }: CardProps) => {
   const { theme, isDarkMode } = useTheme();
-  const cardKey = useRef(`card-${cardIndex}-${title.slice(0, 10)}`).current;
-  
-  // State for like handling
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(parseInt(likes) || 0);
-  
-  // Use refs to avoid closure issues with event handlers
-  const likeStateRef = useRef({ isLiked: false, count: parseInt(likes) || 0 });
-  const lastTapRef = useRef(0);
-  const scale = useSharedValue(1);
-  
-  // Reset state when card properties change
-  useEffect(() => {
-    setIsLiked(false);
-    setLikeCount(parseInt(likes) || 0);
-    likeStateRef.current = { isLiked: false, count: parseInt(likes) || 0 };
-    
-    // Force preload รูปแรกทันที
-    if (images && images.length > 0) {
-      // Import dynamically to avoid circular dependency
-      const { preloadFeedImages } = require('./OptimizedCardImage');
-      preloadFeedImages([images], [0]);
-    }
-  }, [cardIndex, title, likes, images]);
-  
-  // Handle double-tap like gesture
-  const handleDoubleTap = useCallback((event: GestureResponderEvent) => {
+  const cardKey = React.useRef(`card-${cardIndex}-${title.slice(0, 10)}`).current;
+
+  const [isLiked, setIsLiked] = React.useState(false);
+  const [likeCount, setLikeCount] = React.useState(parseInt(likes) || 0);
+
+  const likeStateRef = React.useRef({ isLiked: false, count: parseInt(likes) || 0 });
+  const lastTapRef = React.useRef(0);
+
+  const handleDoubleTap = React.useCallback((event: GestureResponderEvent) => {
     const now = Date.now();
-    const DOUBLE_PRESS_DELAY = 250;
-    
+    const DOUBLE_PRESS_DELAY = 300;
+
     if (lastTapRef.current && (now - lastTapRef.current) < DOUBLE_PRESS_DELAY) {
-      // If already liked, don't unlike on double tap
       if (likeStateRef.current.isLiked) {
         lastTapRef.current = 0;
         return;
       }
-      
-      // Update refs first to avoid closure issues
+
       likeStateRef.current.isLiked = true;
       likeStateRef.current.count += 1;
-      
-      // Then update state
+
       setIsLiked(true);
       setLikeCount(likeStateRef.current.count);
-      
-      scale.value = withSequence(
-        withSpring(0.8, { damping: 12, stiffness: 300, mass: 0.5 }),
-        withSpring(1.2, { damping: 12, stiffness: 300, mass: 0.5 }),
-        withSpring(1, { damping: 12, stiffness: 300, mass: 0.5 })
-      );
-      
+
       lastTapRef.current = 0;
     } else {
       lastTapRef.current = now;
     }
   }, []);
-  
-  // Handle like button press
-  const handleLike = useCallback(() => {
-    // Update like status using refs first to avoid closure issues
+
+  const handleLike = React.useCallback(() => {
     const newLikeState = !likeStateRef.current.isLiked;
     likeStateRef.current.isLiked = newLikeState;
     likeStateRef.current.count = newLikeState
       ? likeStateRef.current.count + 1
       : Math.max(0, likeStateRef.current.count - 1);
-    
-    // Update UI state after
+
     setIsLiked(newLikeState);
     setLikeCount(likeStateRef.current.count);
-    
-    scale.value = withSequence(
-      withSpring(0.8, { damping: 12, stiffness: 300, mass: 0.5 }),
-      withSpring(1.2, { damping: 12, stiffness: 300, mass: 0.5 }),
-      withSpring(1, { damping: 12, stiffness: 300, mass: 0.5 })
-    );
   }, []);
-  
-  // Animated style for like button
-  const likeIconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }]
-  }));
-  
-  // Parse caption with hashtags
-  const ContentComponent = memo(({ caption, theme }: { caption: string, theme: any }) => {
-    const parts = caption.split(/(\#[a-zA-Z0-9_]+)/g);
-    
-    return (
-      <View style={styles.contentContainer}>
-        <Text style={[styles.caption, { color: theme.textColor }]}>
-          {parts.map((part, index) => {
-            if (part.startsWith('#')) {
-              return (
-                <Text key={index} style={styles.hashtag}>
-                  {part}{' '}
-                </Text>
-              );
-            }
-            return (
-              <Text key={index} style={{ color: theme.textColor }}>
-                {part}{' '}
-              </Text>
-            );
-          })}
-        </Text>
-      </View>
-    );
-  });
-  
-  // ตัดชื่อผู้ใช้ให้สั้นลงถ้ายาวเกินไป
+
   const formattedUsername = title.length > 25 ? `${title.substring(0, 22)}...` : title;
-  
+
   return (
-    <Animated.View style={styles.root} key={cardKey}>
+    <View style={styles.root} key={cardKey}>
       <View style={styles.headerContainer}>
         <Pressable
           style={styles.userContainer}
@@ -165,9 +111,9 @@ export const OptimizedCard = memo(({
             <ExpoImage
               source={{ uri: images[0] }}
               style={styles.avatar}
-              contentFit="cover"
-              transition={200}
-              cachePolicy="memory-disk"
+              contentFit="contain"
+              cachePolicy="memory"
+              priority={isVisible ? 'high' : 'low'}
             />
           </View>
           <View style={styles.userInfo}>
@@ -178,27 +124,29 @@ export const OptimizedCard = memo(({
           </View>
         </Pressable>
       </View>
-      
-      <ContentComponent caption={caption + "#kimsnow"} theme={theme} />
-      
+
+      <MemoizedContentComponent caption={caption + "#kimsnow"} theme={theme} />
+
       <OptimizedCardCarousel
         images={images}
         cardId={cardKey}
         onDoubleTap={handleDoubleTap}
       />
-      
+
       <TweetActionButtons
         Comments={100}
         retweets={100}
         likes={likeCount}
         isLiked={isLiked}
         onLikePress={handleLike}
-        likeIconStyle={likeIconStyle}
         uniqueId={cardKey}
       />
-    </Animated.View>
+    </View>
   );
-}, arePropsEqual);
+};
+
+// Export using proper memo pattern
+export const OptimizedCard = React.memo(Card);
 
 const styles = StyleSheet.create({
   root: {
@@ -240,12 +188,12 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flexDirection: 'column',
-    flex: 1, // เพิ่ม flex เพื่อให้ข้อความอยู่ภายในพื้นที่
-    marginRight: 8, // เพิ่มระยะห่างด้านขวา
+    flex: 1,
+    marginRight: 8,
   },
   username: {
     fontFamily: "Chirp_Medium",
-    flexShrink: 1, 
+    flexShrink: 1,
   },
   timestamp: {
     fontSize: 12,

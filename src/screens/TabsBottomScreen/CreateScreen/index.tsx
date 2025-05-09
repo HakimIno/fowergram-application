@@ -12,8 +12,7 @@ import { useCreateScreen } from './hooks/useCreateScreen'
 import { FlashList } from '@shopify/flash-list'
 import AnimatedText from 'src/components/AnimatedText'
 import TabScreen from './TabScreen'
-import { useSelector } from 'react-redux'
-import { RootState } from 'src/redux-store'
+import { useSelectedPhotos, useSelectAlbums } from 'src/store/mediaStore'
 import { useRoute, RouteProp } from '@react-navigation/native'
 
 const { width, height } = Dimensions.get("window")
@@ -121,8 +120,9 @@ const CreateScreen: React.FC<{ navigation: CreateNavigationProp }> = ({ navigati
     )
     const [editedImage, setEditedImage] = useState<string | null>(null)
 
-    const { loading, loadMore, photos, videos, allFiles, albumsInfo, loadPhotos, selectAlbums, handelSelectAlbums } = useCreateScreen()
-    const selectedPhotos = useSelector((state: RootState) => state.medias.selectedPhotos)
+    const { loading, loadMore, photos, videos, allFiles, albumsInfo, loadPhotos, handelSelectAlbums } = useCreateScreen()
+    const selectedPhotos = useSelectedPhotos();
+    const selectAlbums = useSelectAlbums();
 
     // Check for edited image from route params
     useEffect(() => {
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     },
     nextText: {
         fontSize: 13,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
         color: 'white',
     },
     countBadge: {
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     },
     countText: {
         fontSize: 8,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
         color: 'white',
     },
     image: {
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     },
     textHeaderTitle: {
         color: "white",
-        fontFamily: 'SukhumvitSet_Bd'
+        fontFamily: 'Chirp_Bold'
     },
     contentContainer: {
         position: 'absolute',
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly'
     },
     assetCountText: {
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         marginLeft: 5,
         color: "white",
         fontSize: 12
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     },
     editAgainText: {
         color: 'white',
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
         fontSize: 14,
     },
     clearEditButton: {

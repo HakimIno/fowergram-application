@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         maxHeight: 100,
         paddingVertical: 8,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     sendButton: {
         width: 40,

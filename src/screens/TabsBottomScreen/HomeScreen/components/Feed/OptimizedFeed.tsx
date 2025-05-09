@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { Platform, View, Text, RefreshControl, NativeSyntheticEvent, NativeScrollEvent, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated from 'react-native-reanimated';
@@ -24,31 +24,34 @@ interface OptimizedFeedProps {
   isScrollingUp: Animated.SharedValue<boolean>;
   onRefresh: () => void;
   onLoadMore: () => void;
-  listRef: React.RefObject<FlashList<FeedInfo>>;
+  listRef: React.RefObject<FlashList<FeedInfo> | null>;
+  onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onViewableItemsChanged?: (info: any) => void;
+  viewabilityConfig?: any;
+  onItemVisible?: (index: number, item: FeedInfo) => void;
 }
 
-// Simple loading placeholder
-const MemoizedEmptyComponent = React.memo(({ textColor }: { textColor: string }) => (
+// Simple loading component with pure render
+const EmptyComponent = ({ textColor }: { textColor: string }) => (
   <View style={styles.loadingContainer}>
     <AnimatedText text="Loading..." color={textColor} />
   </View>
-));
+);
 
-// Minimal footer component
-const MemoizedFooterComponent = React.memo(({ isLoadingMore, textColor }: { isLoadingMore: boolean, textColor: string }) => 
+// Simple footer component with pure render
+const FooterComponent = ({ isLoadingMore, textColor }: { isLoadingMore: boolean, textColor: string }) =>
   isLoadingMore ? (
     <View style={styles.loadingMoreContainer}>
       <Text style={{ color: textColor }}>Loading more...</Text>
     </View>
-  ) : null
-);
+  ) : null;
 
-// Minimal, optimized separator
-const MemoizedItemSeparator = React.memo(() => (
-  <View style={styles.separator} />
-));
+// Memoized components to prevent re-renders
+const MemoizedEmptyComponent = React.memo(EmptyComponent);
+const MemoizedFooterComponent = React.memo(FooterComponent);
 
-export const OptimizedFeed = React.memo(({
+// Define main component function
+const FeedComponent = ({
   feed,
   stories,
   isRefreshing,
@@ -63,50 +66,32 @@ export const OptimizedFeed = React.memo(({
   onRefresh,
   onLoadMore,
   listRef,
+  onScroll,
+  onViewableItemsChanged,
+  viewabilityConfig,
+  onItemVisible,
 }: OptimizedFeedProps) => {
   const { theme, isDarkMode } = useTheme();
-  const SCROLL_THRESHOLD = 5;
-  const MIN_SCROLL_TO_HIDE = 50;
-  const HIDE_HEADER_SCROLL_DISTANCE = 60 + insets.top;
-  
-  // Optimized scroll handler with reduced calculations
-  const scrollHandler = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const currentScrollY = event.nativeEvent.contentOffset.y;
-    const delta = currentScrollY - lastScrollY.value;
 
-    if (Math.abs(delta) > SCROLL_THRESHOLD) {
-      isScrollingUp.value = delta < 0;
-
-      // Use immediate value updates for better responsiveness
-      if (delta > SCROLL_THRESHOLD && currentScrollY > MIN_SCROLL_TO_HIDE) {
-        headerTranslateY.value = -HIDE_HEADER_SCROLL_DISTANCE;
-      } else if (delta < -SCROLL_THRESHOLD) {
-        headerTranslateY.value = 0;
-      }
-    }
-
-    // Update scroll position values
-    scrollY.value = currentScrollY;
-    lastScrollY.value = currentScrollY;
-  }, [SCROLL_THRESHOLD, MIN_SCROLL_TO_HIDE, HIDE_HEADER_SCROLL_DISTANCE, scrollY, lastScrollY, headerTranslateY, isScrollingUp]);
-
-  // Memoized handlers for maximum performance
-  const renderItem = useCallback(({ item, index }: { item: FeedInfo, index: number }) => (
+  // Optimized renderItem function with minimal props
+  const renderItem = React.useCallback(({ item, index }: { item: FeedInfo, index: number }) => (
     <FeedItem
       item={item}
       index={index}
       navigation={navigation}
+      onVisible={(item) => onItemVisible?.(index, item)}
     />
-  ), [navigation]);
+  ), [navigation, onItemVisible]);
 
-  const keyExtractor = useCallback((item: FeedInfo) => item.id, []);
+  // Stable key extractor
+  const keyExtractor = React.useCallback((item: FeedInfo) => item.id, []);
 
-  // Optimized FlashList configuration with aggressive virtualization
-  const flashListProps = useMemo(() => ({
+  // Memoize FlashList props to prevent re-renders
+  const flashListProps = React.useMemo(() => ({
     data: feed,
     keyExtractor,
     renderItem,
-    estimatedItemSize: 385,
+    estimatedItemSize: 385, // Fixed size for better memory usage
     showsVerticalScrollIndicator: false,
     ListEmptyComponent: <MemoizedEmptyComponent textColor={theme.textColor} />,
     ListHeaderComponent: stories.length > 0 ? () => <MemoizedStoriesHeader stories={stories} isDarkMode={isDarkMode} /> : null,
@@ -114,41 +99,28 @@ export const OptimizedFeed = React.memo(({
       ...styles.listContentContainer,
       paddingTop: (Platform.OS === 'ios' ? insets.top : 60) + 10
     },
-    onScroll: scrollHandler,
-    onEndReached: onLoadMore,
+    onScroll,
+    onEndReached: hasMoreData ? onLoadMore : undefined,
+    onEndReachedThreshold: 0.2,
     ListFooterComponent: <MemoizedFooterComponent isLoadingMore={isLoadingMore} textColor={theme.textColor} />,
-    removeClippedSubviews: true, // Enable for both platforms
-    maxToRenderPerBatch: 3, // Render fewer items per batch
-    initialNumToRender: 3, // Start with fewer items
-    windowSize: 5, // Reduce window size for better performance
-    updateCellsBatchingPeriod: 50, // More frequent batching
-    onEndReachedThreshold: 0.5,
-    estimatedFirstItemOffset: 0,
-    drawDistance: 900, // Reduce draw distance
-    maintainVisibleContentPosition: { // Keep position when content changes
-      minIndexForVisible: 0
-    }
+    removeClippedSubviews: true,
+    onViewableItemsChanged,
+    viewabilityConfig
   }), [
     feed,
     keyExtractor,
     renderItem,
     insets.top,
-    scrollHandler,
+    onScroll,
     onLoadMore,
+    hasMoreData,
     isLoadingMore,
     theme.textColor,
     stories,
-    isDarkMode
+    isDarkMode,
+    onViewableItemsChanged,
+    viewabilityConfig
   ]);
-
-  useEffect(() => {
-    // Preload visible items immediately when feed data changes
-    if (feed.length > 0) {
-      const { preloadFeedImages } = require('../Card/OptimizedCardImage');
-      const initialVisibleImages = feed.slice(0, 3).map(item => item.images);
-      preloadFeedImages(initialVisibleImages, [0, 1, 2]);
-    }
-  }, [feed]);
 
   return (
     <View style={styles.listContainer}>
@@ -166,13 +138,15 @@ export const OptimizedFeed = React.memo(({
             colors={['#4f46e5']}
             progressViewOffset={insets.top + 50}
             enabled={true}
-            titleColor="transparent"
           />
         }
       />
     </View>
   );
-});
+};
+
+// Export using React.memo pattern
+export const OptimizedFeed = React.memo(FeedComponent);
 
 const styles = StyleSheet.create({
   listContainer: {
@@ -183,14 +157,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingBottom: 16,
   },
-  separator: {
-    height: 12, // Slightly smaller separator for faster scrolling
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 60,
     marginTop: 20,
   },
   loadingMoreContainer: {

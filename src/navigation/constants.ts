@@ -7,7 +7,7 @@ export const DEFAULT_HEADER_OPTIONS: StackNavigationOptions = {
     headerTitleAlign: 'center',
     headerTitleStyle: {
         fontSize: 18,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
     },
     headerStyle: {
         backgroundColor: '#f2f2f2',

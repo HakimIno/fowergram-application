@@ -1,48 +1,34 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withTiming,
+  cancelAnimation
+} from 'react-native-reanimated';
 
 interface PaginationProps {
   totalCount: number;
   currentIndex: number;
 }
 
-// Animated dot component for smoother transitions
-const AnimatedDot = React.memo(({ isActive }: { isActive: boolean }) => {
-  const width = useSharedValue(isActive ? 10 : 8);
-  const opacity = useSharedValue(isActive ? 1 : 0.5);
-  
-  // Apply smooth animation when active state changes
-  React.useEffect(() => {
-    width.value = withSpring(isActive ? 10 : 8, {
-      damping: 20,
-      stiffness: 300,
-      mass: 0.5
-    });
-    opacity.value = withTiming(isActive ? 1 : 0.5, {
-      duration: 200
-    });
-  }, [isActive, width, opacity]);
-  
-  const dotStyle = useAnimatedStyle(() => {
-    return {
-      width: width.value,
-      backgroundColor: isActive ? 'white' : 'rgba(255, 255, 255, 0.5)',
-      opacity: opacity.value
-    };
-  });
-  
+// Simplified dot component with lighter animations
+const Dot = React.memo(({ isActive }: { isActive: boolean }) => {
   return (
-    <Animated.View
+    <View
       style={[
         styles.paginationDot,
-        dotStyle
+        {
+          width: isActive ? 10 : 8,
+          backgroundColor: isActive ? 'white' : 'rgba(255, 255, 255, 0.5)',
+          opacity: isActive ? 1 : 0.5
+        }
       ]}
     />
   );
 });
 
-// Simple separator dot for pagination
+// Simple separator dot
 const Separator = React.memo(() => (
   <View style={styles.paginationSeparator} />
 ));
@@ -51,74 +37,63 @@ export const OptimizedPagination = React.memo(({ totalCount, currentIndex }: Pag
   // Don't render pagination for single images
   if (totalCount <= 1) return null;
 
-  // Using useMemo to avoid recreating dot array on every render
-  const paginationDots = useMemo(() => {
-    // Show up to 5 dots with ellipsis for the rest
-    const maxVisibleDots = 5;
-    
-    if (totalCount <= maxVisibleDots) {
-      // If we have few images, just show all dots
-      return Array.from({ length: totalCount }).map((_, index) => (
-        <AnimatedDot key={`dot-${index}`} isActive={currentIndex === index} />
-      ));
-    } else {
-      // For many images, show current position with some context
-      const dots = [];
-      
-      // Always show first dot
-      dots.push(<AnimatedDot key="dot-first" isActive={currentIndex === 0} />);
-      
-      // If not at the beginning, show separator
-      if (currentIndex > 1) {
-        dots.push(<Separator key="sep-left" />);
-      }
-      
-      // Show dot before current if not at beginning
-      if (currentIndex > 0) {
-        dots.push(<AnimatedDot key={`dot-prev`} isActive={false} />);
-      }
-      
-      // Current dot
-      dots.push(<AnimatedDot key={`dot-current`} isActive={true} />);
-      
-      // Show dot after current if not at end
-      if (currentIndex < totalCount - 1) {
-        dots.push(<AnimatedDot key={`dot-next`} isActive={false} />);
-      }
-      
-      // If not at the end, show separator
-      if (currentIndex < totalCount - 2) {
-        dots.push(<Separator key="sep-right" />);
-      }
-      
-      // Always show last dot
-      dots.push(<AnimatedDot key="dot-last" isActive={currentIndex === totalCount - 1} />);
-      
-      return dots;
-    }
-  }, [totalCount, currentIndex]);
-
-  // Use Animated.View for container with subtle scale effect on change
-  const containerScale = useSharedValue(1);
+  // Track the active index and animate only the active indicator position
+  const activePosition = useSharedValue(currentIndex);
   
+  // Update the active position with a light animation
   React.useEffect(() => {
-    containerScale.value = withSpring(1.05, { damping: 15, stiffness: 120 });
-    setTimeout(() => {
-      containerScale.value = withSpring(1, { damping: 15, stiffness: 120 });
-    }, 150);
-  }, [currentIndex, containerScale]);
+    // Cancel any ongoing animations first
+    cancelAnimation(activePosition);
+    
+    // Use a fast timing function for smooth transitions
+    activePosition.value = withTiming(currentIndex, { 
+      duration: 150
+    });
+    
+    // Cleanup animations on unmount
+    return () => {
+      cancelAnimation(activePosition);
+    };
+  }, [currentIndex, activePosition]);
   
-  const containerStyle = useAnimatedStyle(() => {
+  // Animated style for the active indicator overlay
+  const indicatorStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: containerScale.value }]
+      transform: [{ translateX: activePosition.value * 12 }]
     };
   });
 
+  // Generate static dots - no animations for individual dots
+  const staticDots = useMemo(() => {
+    if (totalCount <= 5) {
+      // For few images, show all dots
+      return Array.from({ length: totalCount }).map((_, index) => (
+        <Dot key={`dot-${index}`} isActive={false} />
+      ));
+    } else {
+      // For many images, show all but use a simplified view
+      return Array.from({ length: totalCount }).map((_, index) => (
+        <Dot key={`dot-${index}`} isActive={false} />
+      ));
+    }
+  }, [totalCount]);
+  
   return (
     <View style={styles.paginationContainer}>
-      <Animated.View style={[styles.paginationDotsContainer, containerStyle]}>
-        {paginationDots}
-      </Animated.View>
+      <View style={styles.paginationDotsContainer}>
+        {/* Static background dots */}
+        {staticDots}
+        
+        {/* Single animated active dot overlay */}
+        <Animated.View 
+          style={[
+            styles.activeDotContainer,
+            indicatorStyle
+          ]}
+        >
+          <View style={styles.activeDot} />
+        </Animated.View>
+      </View>
     </View>
   );
 }, (prevProps, nextProps) => {
@@ -136,13 +111,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     paddingVertical: 3,
     paddingHorizontal: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    zIndex: 10,
   },
   paginationDotsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    height: 6,
   },
   paginationDot: {
     height: 3,
@@ -157,4 +132,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
+  activeDotContainer: {
+    position: 'absolute',
+    left: 2, // Account for the marginHorizontal of dots
+    top: 1.5,
+    zIndex: 1,
+  },
+  activeDot: {
+    width: 10,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: 'white'
+  }
 }); 

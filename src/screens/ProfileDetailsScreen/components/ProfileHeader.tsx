@@ -69,11 +69,11 @@ const styles = StyleSheet.create({
     },
     statCount: {
         fontSize: 17,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
     },
     statLabel: {
         fontSize: 13,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         lineHeight: 15.6,
     },
     socialContainer: {
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     },
     username: {
         fontSize: 15,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
     },
 
     // ProfileBio styles
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     },
     bioText: {
         fontSize: 13,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         lineHeight: 15.6,
     },
 
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     followButtonText: {
         color: 'white',
         fontSize: 16,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
     },
     actionButton: {
         width: 48,

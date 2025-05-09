@@ -30,7 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     splash: {
         image: './assets/icon.png',
         resizeMode: 'contain',
-        backgroundColor: '#000000',
+        backgroundColor: '#ffffff',
     },
 
     assetBundlePatterns: ['**/*'],
@@ -49,7 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     android: {
         adaptiveIcon: {
             foregroundImage: './assets/icon.png',
-            backgroundColor: '#000000',
+            backgroundColor: '#ffffff',
         },
         package: getBundleId(),
         permissions: [
@@ -58,6 +58,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             'android.permission.READ_EXTERNAL_STORAGE',
             'android.permission.WRITE_EXTERNAL_STORAGE',
         ],
+        newArchEnabled: true,
     },
 
     web: {
@@ -110,6 +111,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                     deploymentTarget: '15.1',
                 },
             },
+        ],
+        [
+            "@config-plugins/react-native-webrtc",
+            {
+                cameraPermission: "Allow $(PRODUCT_NAME) to access your camera for video calls",
+                microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone for calls"
+            }
         ],
         "./plugins/withAndroidStyles"
     ],

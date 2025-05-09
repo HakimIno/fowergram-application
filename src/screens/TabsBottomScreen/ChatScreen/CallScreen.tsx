@@ -286,11 +286,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginTop: 20,
         marginBottom: 8,
-        fontFamily: 'SukhumvitSet_Bd',
+        fontFamily: 'Chirp_Bold',
     },
     callStatus: {
         fontSize: 16,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
     },
     controls: {
         position: 'absolute',

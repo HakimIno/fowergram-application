@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     },
     bioText: {
         fontSize: 13,
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         lineHeight: 15.6,
     },
 

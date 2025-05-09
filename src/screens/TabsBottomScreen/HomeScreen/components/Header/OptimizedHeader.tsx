@@ -159,6 +159,9 @@ const styles = StyleSheet.create({
     top: -3,
     right: -2
   },
+  animatedHeaderContainer: {
+    backfaceVisibility: 'hidden',
+  }
 });
 
 // Animated header wrapper
@@ -166,17 +169,37 @@ interface AnimatedHeaderProps extends HeaderProps {
   style: StyleProp<ViewStyle>;
 }
 
-export const AnimatedHeader = React.memo((props: AnimatedHeaderProps) => (
-  <Animated.View style={props.style}>
-    <OptimizedHeader
-      insets={props.insets}
-      onNotificationPress={props.onNotificationPress}
-      isDarkMode={props.isDarkMode}
-      onThemePress={props.onThemePress}
-      themeIconStyle={props.themeIconStyle}
-      theme={props.theme}
-      isRefreshing={props.isRefreshing}
-      onRefresh={props.onRefresh}
-    />
-  </Animated.View>
-)); 
+export const AnimatedHeader = React.memo((props: AnimatedHeaderProps) => {
+  // Destructure all props explicitly to avoid errors
+  const {
+    style,
+    insets,
+    onNotificationPress,
+    isDarkMode,
+    onThemePress,
+    themeIconStyle,
+    theme,
+    isRefreshing,
+    onRefresh
+  } = props;
+  
+  return (
+    <Animated.View 
+      style={[
+        style,
+        styles.animatedHeaderContainer
+      ]}
+    >
+      <OptimizedHeader
+        insets={insets}
+        onNotificationPress={onNotificationPress}
+        isDarkMode={isDarkMode}
+        onThemePress={onThemePress}
+        themeIconStyle={themeIconStyle}
+        theme={theme}
+        isRefreshing={isRefreshing}
+        onRefresh={onRefresh}
+      />
+    </Animated.View>
+  );
+}); 

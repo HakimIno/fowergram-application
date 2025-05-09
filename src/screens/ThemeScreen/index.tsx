@@ -83,7 +83,7 @@ const ThemeScreen = () => {
             <Animated.View style={[{ paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: 'rgba(0,0,0,0.3)' }, backgroundColorAnimation]}>
                 <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <AntDesign name="arrowleft" size={26} color={theme === 'dark' ? "white" : "#1a1a1a"} onPress={() => navigation.goBack()} />
-                    <Animated.Text style={[{ fontSize: 18, fontFamily: 'SukhumvitSet_Bd', color: "white" }, textTheme]}>ธีม</Animated.Text>
+                    <Animated.Text style={[{ fontSize: 18, fontFamily: 'Chirp_Bold', color: "white" }, textTheme]}>ธีม</Animated.Text>
                     <View style={{ width: 24, height: 24 }}></View>
                 </View>
             </Animated.View>
@@ -96,7 +96,7 @@ const ThemeScreen = () => {
                                     styles.text, textTheme, {
                                         paddingTop: 20,
                                         paddingHorizontal: 20,
-                                        fontFamily: 'SukhumvitSet_Me'
+                                        fontFamily: 'Chirp_Medium'
                                     }]}>{item.sectionHeaderTitle}
                             </Animated.Text>
                         )
@@ -127,7 +127,7 @@ const ThemeScreen = () => {
                                             textTheme,
                                             {
                                                 fontSize: 13,
-                                                fontFamily: 'SukhumvitSet_Me'
+                                                fontFamily: 'Chirp_Medium'
                                             }]}>{list.description}</Animated.Text>
                                     </View>
                                     {list.description ? (
@@ -160,6 +160,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     text: {
-        fontFamily: 'SukhumvitSet_Bd'
+        fontFamily: 'Chirp_Bold'
     },
 })

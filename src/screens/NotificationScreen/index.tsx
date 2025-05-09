@@ -64,7 +64,7 @@ const NotificationScreen = () => {
                                     styles.text, {
                                         paddingTop: 20,
                                         paddingHorizontal: 20,
-                                        fontFamily: 'SukhumvitSet_Bd'
+                                        fontFamily: 'Chirp_Bold'
                                     }]}>{item.sectionHeaderTitle}
                             </Animated.Text>
                         )
@@ -93,7 +93,7 @@ const NotificationScreen = () => {
                                         {/* <Animated.Text style={[
                                             {
                                                 fontSize: 13,
-                                                fontFamily: 'SukhumvitSet_Me'
+                                                fontFamily: 'Chirp_Medium'
                                             }]}>{list.description}</Animated.Text> */}
                                     </View>
                                     {list.description ? (
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     text: {
-        fontFamily: 'SukhumvitSet_Me',
+        fontFamily: 'Chirp_Medium',
         color: "#242424"
     },
 })

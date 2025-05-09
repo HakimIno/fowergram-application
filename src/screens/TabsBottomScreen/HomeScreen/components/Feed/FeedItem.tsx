@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { OptimizedCard } from '../Card/OptimizedCard';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -21,15 +21,24 @@ interface FeedItemProps {
   item: FeedInfo;
   index: number;
   navigation: HomeNavigationProp;
+  onVisible?: (item: FeedInfo) => void;
 }
 
-// Optimized FeedItem component that minimizes re-renders
-export const FeedItem = React.memo(({
+// Define component function first
+const FeedItemComponent = ({
   item,
   index,
-  navigation
+  navigation,
+  onVisible
 }: FeedItemProps) => {
-  const stableKey = useRef(`feed-item-${item.id}`).current;
+  const stableKey = React.useRef(`feed-item-${item.id}`).current;
+  
+  // Call onVisible when the component mounts
+  React.useEffect(() => {
+    if (onVisible) {
+      onVisible(item);
+    }
+  }, [item, onVisible]);
 
   return (
     <View key={stableKey} style={styles.container}>
@@ -44,11 +53,16 @@ export const FeedItem = React.memo(({
       />
     </View>
   );
-}, (prevProps, nextProps) => {
-  // Prevent unnecessary re-renders
+};
+
+// Define compare function outside the component
+function areEqual(prevProps: FeedItemProps, nextProps: FeedItemProps) {
   return prevProps.item.id === nextProps.item.id &&
     prevProps.index === nextProps.index;
-});
+}
+
+// Export memoized component with proper comparison function
+export const FeedItem = React.memo(FeedItemComponent, areEqual);
 
 const styles = StyleSheet.create({
   container: {

@@ -1,9 +1,9 @@
-import React, { useCallback, useRef, useState, useMemo, memo, useEffect } from 'react';
-import { View, StyleSheet, GestureResponderEvent, Dimensions } from 'react-native';
+import React, { useCallback, useRef, useState, useMemo, memo } from 'react';
+import { View, StyleSheet, GestureResponderEvent, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { OptimizedCardImage } from './OptimizedCardImage';
 import { OptimizedPagination } from './OptimizedPagination';
-import { Image as ExpoImage } from 'expo-image';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 const CAROUSEL_WIDTH = SCREEN_WIDTH - 16;
@@ -12,13 +12,15 @@ interface CardCarouselProps {
   images: string[];
   cardId: string;
   onDoubleTap: (event: GestureResponderEvent) => void;
+  scrollY?: Animated.SharedValue<number>;
+  lastScrollY?: Animated.SharedValue<number>;
 }
 
-// แสดงเฉพาะรูปแรกทันทีเพื่อการแสดงผลที่รวดเร็ว
-const FirstImageRenderer = memo(({ imageUrl, imageKey, onDoubleTap }: { 
-  imageUrl: string; 
-  imageKey: string; 
-  onDoubleTap: (event: GestureResponderEvent) => void 
+// แสดงรูปแรกทันที (สำหรับกรณีมีรูปเดียว)
+const FirstImageRenderer = memo(({ imageUrl, imageKey, onDoubleTap }: {
+  imageUrl: string;
+  imageKey: string;
+  onDoubleTap: (event: GestureResponderEvent) => void
 }) => {
   return (
     <OptimizedCardImage
@@ -31,40 +33,54 @@ const FirstImageRenderer = memo(({ imageUrl, imageKey, onDoubleTap }: {
   );
 });
 
-// Optimized carousel component with memory management and reduced re-renders
+// Carousel ที่ปรับปรุงใหม่ - แสดงรูปทุกรูปเมื่อเลื่อนไปถึง
 export const OptimizedCardCarousel = memo(({
   images,
   cardId,
-  onDoubleTap
+  onDoubleTap,
+  scrollY,
+  lastScrollY
 }: CardCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flashListRef = useRef<FlashList<string>>(null);
-  const [isFlashListReady, setIsFlashListReady] = useState(false);
   
-  // เริ่มต้นเตรียม flashlist ทันที แต่จะแสดงรูปแรกก่อนเสมอ
-  useEffect(() => {
-    // Prefetch รูปแรกทันที
-    if (images?.length > 0) {
-      ExpoImage.prefetch(images[0]);
+  // ค่าสำหรับการซ่อน/แสดง pagination
+  const paginationOpacity = useSharedValue(1);
+  
+  // สร้าง scrollHandler เพื่อตรวจจับการเลื่อนและซ่อน/แสดง pagination
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    'worklet'; // ทำงานบน UI thread โดยตรงเพื่อประสิทธิภาพ
+    
+    if (scrollY && lastScrollY) {
+      // ส่งค่า scroll event ไปยัง parent
+      scrollY.value = event.nativeEvent.contentOffset.y;
+      
+      // ถ้าเลื่อนลง (scrollY เพิ่มขึ้น) ให้ซ่อน pagination
+      if (scrollY.value > lastScrollY.value + 5) {
+        paginationOpacity.value = withTiming(0, { duration: 300, easing: Easing.ease });
+      } 
+      // ถ้าเลื่อนขึ้น (scrollY ลดลง) ให้แสดง pagination
+      else if (scrollY.value < lastScrollY.value - 5) {
+        paginationOpacity.value = withTiming(1, { duration: 300, easing: Easing.ease });
+      }
+      
+      lastScrollY.value = scrollY.value;
     }
-    
-    const timer = setTimeout(() => {
-      setIsFlashListReady(true);
-    }, 50); // ลดเวลาลงเพื่อเริ่ม render FlashList เร็วขึ้น
-    
-    return () => clearTimeout(timer);
-  }, [images]);
+  }, [scrollY, lastScrollY, paginationOpacity]);
+  
+  // สร้าง animated style สำหรับ pagination
+  const paginationAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: paginationOpacity.value,
+      transform: [
+        { translateY: withTiming(paginationOpacity.value === 0 ? 20 : 0, { duration: 200 }) }
+      ]
+    };
+  });
 
-  // คำนวณว่ารูปภาพไหนควรถูกโหลดเต็ม
-  const getImageVisibility = useCallback((index: number) => {
-    const distance = Math.abs(index - currentIndex);
-    return distance <= 1; // เฉพาะรูปปัจจุบัน รูปก่อนหน้า และรูปถัดไป
-  }, [currentIndex]);
-
-  // ทำ rendering แบบ optimized
+  // render รูปภาพทุกรูป
   const renderImage = useCallback(({ item: imageUrl, index }: { item: string, index: number }) => {
     const imageKey = `${cardId}-image-${index}`;
-    const isVisible = getImageVisibility(index);
     const isCurrentIndex = index === currentIndex;
 
     return (
@@ -72,18 +88,18 @@ export const OptimizedCardCarousel = memo(({
         imageUrl={imageUrl}
         imageKey={imageKey}
         onDoubleTap={onDoubleTap}
-        isVisible={isVisible}
+        isVisible={true}
         isCurrentIndex={isCurrentIndex}
       />
     );
-  }, [cardId, getImageVisibility, currentIndex, onDoubleTap]);
+  }, [cardId, currentIndex, onDoubleTap]);
 
-  // Key extractor ที่คงที่
+  // Key extractor
   const keyExtractor = useCallback((item: string, index: number) => {
     return `${cardId}-image-${index}`;
   }, [cardId]);
 
-  // ตั้งค่า FlashList แบบ optimized
+  // ตั้งค่า FlashList
   const flashListProps = useMemo(() => ({
     data: images,
     renderItem: renderImage,
@@ -97,11 +113,14 @@ export const OptimizedCardCarousel = memo(({
     overScrollMode: "never" as const,
     initialScrollIndex: 0,
     disableIntervalMomentum: true, // ป้องกันการเลื่อนเกินหน้า
+    onScroll: scrollY && lastScrollY ? handleScroll : undefined,
     onMomentumScrollEnd: (e: any) => {
       const offsetX = e.nativeEvent.contentOffset.x;
       const newIndex = Math.round(offsetX / CAROUSEL_WIDTH);
       if (newIndex !== currentIndex) {
         setCurrentIndex(newIndex);
+        // แสดง pagination เมื่อหยุดเลื่อน
+        paginationOpacity.value = withTiming(1, { duration: 300, easing: Easing.ease });
       }
     },
     onScrollToIndexFailed: (info: any) => {
@@ -115,67 +134,45 @@ export const OptimizedCardCarousel = memo(({
         }
       }, 50);
     },
-    // กำหนดขนาดที่แน่นอนเพื่อป้องกันการ re-layout
     overrideItemLayout: (_: any, __: string, index: number, layout: any) => {
-      layout.size = CAROUSEL_WIDTH;
+      if (layout && typeof layout === 'object') {
+        layout.size = { width: CAROUSEL_WIDTH, height: CAROUSEL_WIDTH / 0.8 };
+      }
     },
-  }), [images, renderImage, keyExtractor, currentIndex]);
-
-  // โหลดรูปถัดไปเมื่อมีการเลื่อน
-  useEffect(() => {
-    if (!images || images.length <= 1) return;
-    
-    // เตรียมรูปสำหรับเลื่อน
-    const nextIndex = Math.min(currentIndex + 1, images.length - 1);
-    const prevIndex = Math.max(currentIndex - 1, 0);
-    
-    // Prefetch ทั้งรูปถัดไปและรูปก่อนหน้า
-    if (nextIndex !== currentIndex) {
-      ExpoImage.prefetch(images[nextIndex]);
-    }
-    
-    if (prevIndex !== currentIndex && prevIndex !== nextIndex) {
-      ExpoImage.prefetch(images[prevIndex]);
-    }
-  }, [currentIndex, images]);
+  }), [images, renderImage, keyExtractor, currentIndex, handleScroll, scrollY, lastScrollY, paginationOpacity]);
 
   if (!images || images.length === 0) {
     return null;
   }
 
-  // แสดงเฉพาะรูปแรกหากยังไม่พร้อมหรือมีเพียงรูปเดียว
-  if (!isFlashListReady || images.length === 1) {
+  // กรณีมีรูปเดียว ไม่ต้องแสดง carousel
+  if (images.length === 1) {
     return (
       <View style={styles.carouselContainer}>
-        <FirstImageRenderer 
-          imageUrl={images[0]} 
+        <FirstImageRenderer
+          imageUrl={images[0]}
           imageKey={`${cardId}-image-0`}
           onDoubleTap={onDoubleTap}
         />
-        
-        {images.length > 1 && (
-          <OptimizedPagination 
-            totalCount={images.length}
-            currentIndex={currentIndex}
-          />
-        )}
       </View>
     );
   }
 
-  // แสดง FlashList เมื่อพร้อม
+  // แสดงรูปหลายรูปแบบ carousel
   return (
     <View style={styles.carouselContainer}>
       <FlashList
         ref={flashListRef}
         {...flashListProps}
       />
-      
+
       {images.length > 1 && (
-        <OptimizedPagination 
-          totalCount={images.length}
-          currentIndex={currentIndex}
-        />
+        <Animated.View style={[styles.paginationContainer, paginationAnimatedStyle]}>
+          <OptimizedPagination
+            totalCount={images.length}
+            currentIndex={currentIndex}
+          />
+        </Animated.View>
       )}
     </View>
   );
@@ -192,4 +189,12 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: '#f0f0f0',
   },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingBottom: 8,
+  }
 }); 
