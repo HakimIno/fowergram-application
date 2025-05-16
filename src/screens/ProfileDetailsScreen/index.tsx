@@ -5,7 +5,6 @@ import {
     useWindowDimensions,
     Dimensions,
     TouchableOpacity,
-    ActivityIndicator,
     InteractionManager
 } from 'react-native'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -33,6 +32,7 @@ import { ProfileHeader } from './components/ProfileHeader'
 import { generateMockGridFeed } from 'src/data/mockFeedData'
 import { memo } from 'react';
 import { Image as ExpoImage } from 'expo-image';
+import ActivityIndicator from 'src/components/ActivityIndicator'
 
 // Types
 type ProfileDetailsNavigationProp = StackNavigationProp<RootStackParamList, "profile_details_screen">
@@ -58,14 +58,9 @@ type TabProps = {
 
 // Constants
 const { width, height } = Dimensions.get("window")
-const SPRING_CONFIG = {
-    damping: 15,
-    mass: 0.7,
-    stiffness: 150
-}
 
-const PROFILE_SECTION_HEIGHT = 150  // ส่วนของ Profile Header
-const BIO_SECTION_HEIGHT = 70       // ส่วนของ Bio
+const PROFILE_SECTION_HEIGHT = 150
+const BIO_SECTION_HEIGHT = 70
 const ACTION_SECTION_HEIGHT = 50    // ส่วนของ Action buttons
 const TAB_BAR_HEIGHT = 48          // ความสูงของ Tab Bar
 
@@ -81,15 +76,7 @@ const TABS = [
     { name: "บันทึก", title: "BookingScreen", icon: "bookmark-outline", iconActive: "bookmark" }
 ]
 
-const LoadingView = () => (
-    <View style={styles.loadingContainer}>
-        <LottieView
-            autoPlay
-            style={styles.lottie}
-            source={require('../../assets/lottiefiles/cameraloading.json')}
-        />
-    </View>
-)
+
 
 const ProfileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     const { image, username } = route.params
@@ -201,7 +188,7 @@ const ProfileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
             [1, 0],
             Extrapolation.CLAMP
         );
-        
+
         const translateY = interpolate(
             scrollY.value,
             [0, HEADER_HEIGHT - TAB_BAR_HEIGHT],
@@ -339,7 +326,7 @@ const GridItem = memo(({ item, index, onPress, size }: GridItemProps) => {
             {showOverlay && (
                 <View style={styles.loadingOverlay}>
                     {imageState === 'loading' ? (
-                        <ActivityIndicator size="small" color="#999" />
+                        <ActivityIndicator size={20} strokeWidth={1.5} />
                     ) : (
                         <Ionicons name="image-outline" size={24} color="#999" />
                     )}
@@ -433,9 +420,6 @@ const Tab1: React.FC<TabProps> = ({
 
     const imageUrls = useMemo(() => feed.map(item => item.images), [feed]);
 
-    if (isLoading) {
-        return <LoadingView />;
-    }
 
     return (
         <View style={styles.container}>

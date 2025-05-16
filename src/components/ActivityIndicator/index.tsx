@@ -11,11 +11,11 @@ import { StyleSheet, View } from 'react-native';
 
 type ActivityIndicatorProps = {
     size?: number;
+    strokeWidth?: number;
 };
 
-const ActivityIndicator = ({ size = 40 }: ActivityIndicatorProps) => {
+const ActivityIndicator = ({ size = 40, strokeWidth = 3 }: ActivityIndicatorProps) => {
     // Constants
-    const strokeWidth = 1.5;
     const radius = (size - strokeWidth) / 2;
     const canvasSize = size + 10; // Minimal padding
 
@@ -52,7 +52,7 @@ const ActivityIndicator = ({ size = 40 }: ActivityIndicatorProps) => {
     }));
 
     // Simple color gradient
-    const colors = ['#93c5fd', '#60A5FA', '#1d4ed8'];
+    const colors = ['#020024', '#090979', '#00D4FF'];
 
     return (
         <View style={styles.container}>
@@ -69,7 +69,7 @@ const ActivityIndicator = ({ size = 40 }: ActivityIndicatorProps) => {
                         end={1}
                     >
                         <SweepGradient c={center} colors={colors} />
-                        <BlurMask blur={10} style="solid" />
+                        <BlurMask blur={strokeWidth - 2} style="solid" />
                     </Path>
                 </Canvas>
             </Animated.View>

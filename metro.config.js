@@ -13,15 +13,23 @@ const config = getDefaultConfig(__dirname, {
   // Add any custom configuration here
 });
 
-// Fix for react-native-webrtc event-target-shim dependency conflicts
+// Configure hot module reloading
+config.resolver.sourceExts = ['jsx', 'js', 'ts', 'tsx', 'json'];
+config.watchFolders = [__dirname];
+config.resetCache = false;
+config.maxWorkers = os.availableParallelism();
+config.transformer.assetPlugins = ['expo-asset/tools/hashAssetFiles'];
+config.transformer.minifierConfig = {
+  compress: {
+    drop_console: false,
+  },
+};
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (
-    // If the bundle is resolving "event-target-shim" from a module that is part of "react-native-webrtc"
     moduleName.startsWith("event-target-shim") &&
     context.originModulePath.includes("react-native-webrtc")
   ) {
-    // Resolve event-target-shim relative to the react-native-webrtc package to use v6
-    // React Native requires v5 which is not compatible with react-native-webrtc
     const eventTargetShimPath = resolveFrom(
       context.originModulePath,
       moduleName
@@ -33,7 +41,6 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     };
   }
 
-  // Ensure you call the default resolver
   return context.resolveRequest(context, moduleName, platform);
 };
 

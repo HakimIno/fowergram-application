@@ -16,6 +16,7 @@ import Footer from './components/Footer'
 // Hooks
 import { useAccountManagement } from './hooks/useAccountManagement'
 import { useWelcomeNavigation } from './hooks/useNavigation'
+import ActivityIndicator from 'src/components/ActivityIndicator'
 
 export type WelcomeNavigationProp = StackNavigationProp<RootStackParamList, "welcome_screen">;
 
@@ -41,6 +42,7 @@ const WelcomeScreen = ({ navigation }: { navigation: WelcomeNavigationProp }) =>
                     <StatusBar style="auto" />
 
                     <Logo hasAccounts={localAccounts.length > 0} />
+
 
                     <AccountsList
                         accounts={localAccounts}

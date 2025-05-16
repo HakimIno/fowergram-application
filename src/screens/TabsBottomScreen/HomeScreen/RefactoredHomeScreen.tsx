@@ -391,15 +391,7 @@ const useVisibleItems = (feed: FeedInfo[], handleLoadMore: () => void) => {
     }
 }
 
-/**
- * Performance-optimized HomeScreen component
- * - Uses memoized subcomponents
- * - Optimized data loading with MMKV caching
- * - Memory-efficient rendering with memory cache
- * - Reduced re-renders with intelligent updates
- * - Infinite loading with pagination and preloading
- * - Visual elements optimized for 120Hz displays
- */
+
 const RefactoredHomeScreen = ({ navigation, route }: HomeScreenProps) => {
     const insets = useSafeAreaInsets()
     const { isDarkMode, toggleTheme, theme, animatedValue } = useTheme()
@@ -432,7 +424,6 @@ const RefactoredHomeScreen = ({ navigation, route }: HomeScreenProps) => {
         saveVisibleItems
     } = useVisibleItems(feed, handleLoadMore)
 
-    // Listen for scroll to top events
     useEffect(() => {
         const scrollToTop = () => {
             if (listRef.current) {
@@ -444,18 +435,16 @@ const RefactoredHomeScreen = ({ navigation, route }: HomeScreenProps) => {
         return () => { unsubscribe() }
     }, [])
 
-    // Optimized scroll handler
     const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        'worklet';
         const currentY = event.nativeEvent.contentOffset.y
         
-        // Update shared values in a way that's compatible with both JS and Worklet environments
         isScrollingUp.value = currentY < lastScrollY.value
         const scrollVelocity = Math.abs(currentY - lastScrollY.value)
         
         scrollY.value = currentY
         lastScrollY.value = currentY
         
-        // Update scroll position status for tab bar behavior - runs on JS thread
         if (currentY <= SCROLL_TOP_THRESHOLD && navigation && route) {
             InteractionManager.runAfterInteractions(() => {
                 const params = navigation.getState().routes.find(
@@ -486,7 +475,6 @@ const RefactoredHomeScreen = ({ navigation, route }: HomeScreenProps) => {
             });
         }
         
-        // Handle header animation based on scroll position
         const SCROLL_THRESHOLD = 10
         const MIN_SCROLL_TO_HIDE = 50
         const HIDE_HEADER_SCROLL_DISTANCE = 60 + insets.top
@@ -501,7 +489,6 @@ const RefactoredHomeScreen = ({ navigation, route }: HomeScreenProps) => {
             }
         }
         
-        // Save visible items when scrolling stops - runs on JS thread
         if (scrollVelocity < SCROLL_CAPTURE_VELOCITY) {
             InteractionManager.runAfterInteractions(() => {
                 saveVisibleItems(visibleIndices)
@@ -509,7 +496,6 @@ const RefactoredHomeScreen = ({ navigation, route }: HomeScreenProps) => {
         }
     }, [visibleIndices, saveVisibleItems, navigation, route, isScrollingUp, scrollY, lastScrollY, headerTranslateY, insets.top])
 
-    // Theme toggling with animation
     const handleThemePress = useCallback((x: number, y: number) => {
         toggleTheme(x, y)
     }, [toggleTheme])

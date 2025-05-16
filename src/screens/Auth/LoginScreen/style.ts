@@ -89,7 +89,7 @@ export const styles = StyleSheet.create({
     textInfoSubTitle: {
         fontFamily: 'Chirp_Bold',
         fontSize: 14,
-        lineHeight: 14 * 1.4
+        lineHeight: 14 * 1.5
     },
     input: {
         flex: 1,

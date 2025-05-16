@@ -1,6 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
 import styles from '../style';
+import ActivityIndicator from 'src/components/ActivityIndicator';
 
 interface ButtonPosition {
     bottom: number;
@@ -34,9 +35,9 @@ export const LoginButton = ({
             onPress={onPress}
             disabled={isLoggingIn}
         >
-            {!isLoggingIn ? 
+            {!isLoggingIn ?
                 <Text style={[styles.textInfoSubTitle, { color: "white" }]}>เข้าสู่ระบบ</Text> :
-                <ActivityIndicator size={30} color={"white"} />
+                <ActivityIndicator size={30} strokeWidth={1.5} />
             }
         </Pressable>
     );

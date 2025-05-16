@@ -98,7 +98,7 @@ const TabContent = memo(({
                     }
                     ListFooterComponent={
                         <View style={[styles.loadingFooter, { backgroundColor }]}>
-                            <ActivityIndicator size={20} />
+                            <ActivityIndicator size={20} strokeWidth={1.5} />
                         </View>
                     }
                     removeClippedSubviews={true}

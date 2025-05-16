@@ -196,9 +196,9 @@ const ChatScreen = () => {
         <View style={styles.container}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
-            {/* <MeshGradient
-                colors={isDarkMode ? 
-                    ['#2A2A72', '#4f46e5', '#3730a3', '#132743'] : 
+            <MeshGradient
+                colors={isDarkMode ?
+                    ['#2A2A72', '#4338ca', '#3730a3', '#132743'] :
                     ['#818cf8', '#eef2ff', '#eef2ff', '#fdf2f8']}
                 style={{
                     flex: 1,
@@ -207,11 +207,9 @@ const ChatScreen = () => {
                     position: 'absolute',
                     width: '100%',
                 }}
-            /> */}
+            />
 
-            <View style={{ flex: 0.5, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size={40} />
-            </View>
+
 
 
             {/* Header */}
