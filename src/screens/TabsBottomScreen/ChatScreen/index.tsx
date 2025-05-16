@@ -1,11 +1,13 @@
-import { View, Text, StyleSheet, SafeAreaView, TextInput, Pressable, StatusBar } from 'react-native'
+import { View, Text, StyleSheet, SafeAreaView, TextInput, Pressable, StatusBar, Platform } from 'react-native'
 import React, { useCallback, useMemo, useState } from 'react'
 import { FlashList } from '@shopify/flash-list'
 import { Ionicons } from '@expo/vector-icons'
-import Animated, { 
-    useAnimatedStyle, 
-    useSharedValue, 
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
     withSpring,
+    FadeIn,
+    FadeOut
 } from 'react-native-reanimated'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -13,6 +15,9 @@ import { useTheme } from 'src/context/ThemeContext'
 import { useNavigation } from '@react-navigation/native'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { RootStackParamList } from 'src/navigation/types'
+import { BlurView } from 'expo-blur'
+import { MeshGradient } from '@kuss/react-native-mesh-gradient'
+import ActivityIndicator from 'src/components/ActivityIndicator'
 
 type ChatScreenNavigationProp = StackNavigationProp<RootStackParamList>
 
@@ -58,8 +63,27 @@ const MOCK_CHATS: ChatItem[] = [
     // Add more mock data as needed
 ]
 
+const GRADIENT_COLORS = {
+    light: [
+        '#C9D6FF', '#E2E2E2', '#F5F7FA',
+        '#E9F3FF', '#D5E3FF', '#F7F7F7',
+        '#F9FBFF', '#E0EAFC', '#CFDEF3'
+    ],
+    dark: [
+        '#2A2A72', '#1565C0', '#0D47A1',
+        '#0D47A1', '#1E3B70', '#132743',
+        '#0D324D', '#1A237E', '#051937'
+    ]
+}
+
+const GRADIENT_POINTS = [
+    [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+    [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+    [0.0, 1.0], [0.5, 1.0], [1.0, 1.0],
+]
+
 const ChatItem = React.memo(({ item, onPress }: { item: ChatItem, onPress: () => void }) => {
-    const { theme } = useTheme()
+    const { theme, isDarkMode } = useTheme()
     const pressAnimation = useSharedValue(1)
 
     const animatedStyle = useAnimatedStyle(() => {
@@ -82,45 +106,53 @@ const ChatItem = React.memo(({ item, onPress }: { item: ChatItem, onPress: () =>
             onPressOut={handlePressOut}
             onPress={onPress}
             style={[styles.chatItem, animatedStyle]}
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(300)}
         >
-            <View style={styles.avatarContainer}>
-                <Image
-                    source={{ uri: item.avatar }}
-                    style={styles.avatar}
-                    contentFit="cover"
-                    transition={200} 
-                />
-                {item.isOnline && <View style={styles.onlineIndicator} />}
-            </View>
-
-            <View style={styles.chatInfo}>
-                <View style={styles.chatHeader}>
-                    <Text style={[styles.chatName, { color: theme.textColor }]} numberOfLines={1}>
-                        {item.name}
-                    </Text>
-                    <Text style={[styles.timestamp, { color: theme.textColor + '80' }]}>
-                        {item.timestamp}
-                    </Text>
+            <BlurView
+                intensity={isDarkMode ? 30 : 60}
+                tint={isDarkMode ? "dark" : "light"}
+                style={styles.chatItemBlur}
+            >
+                <View style={styles.avatarContainer}>
+                    <Image
+                        source={{ uri: item.avatar }}
+                        style={styles.avatar}
+                        contentFit="cover"
+                        transition={200}
+                    />
+                    {item.isOnline && <View style={styles.onlineIndicator} />}
                 </View>
 
-                <View style={styles.chatPreview}>
-                    {item.isTyping ? (
-                        <Text style={[styles.typingText, { color: theme.primary }]}>
-                            typing...
+                <View style={styles.chatInfo}>
+                    <View style={styles.chatHeader}>
+                        <Text style={[styles.chatName, { color: theme.textColor }]} numberOfLines={1}>
+                            {item.name}
                         </Text>
-                    ) : (
-                        <Text style={[styles.lastMessage, { color: theme.textColor + '99' }]} numberOfLines={1}>
-                            {item.lastMessage}
+                        <Text style={[styles.timestamp, { color: theme.textColor + '80' }]}>
+                            {item.timestamp}
                         </Text>
-                    )}
+                    </View>
 
-                    {item.unreadCount && (
-                        <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
-                            <Text style={styles.unreadCount}>{item.unreadCount}</Text>
-                        </View>
-                    )}
+                    <View style={styles.chatPreview}>
+                        {item.isTyping ? (
+                            <Text style={[styles.typingText, { color: theme.primary }]}>
+                                typing...
+                            </Text>
+                        ) : (
+                            <Text style={[styles.lastMessage, { color: theme.textColor + '99' }]} numberOfLines={1}>
+                                {item.lastMessage}
+                            </Text>
+                        )}
+
+                        {item.unreadCount && (
+                            <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
+                                <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
-            </View>
+            </BlurView>
         </AnimatedPressable>
     )
 })
@@ -161,45 +193,80 @@ const ChatScreen = () => {
     ), [handleChatPress])
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+        <View style={styles.container}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-            
+
+            {/* <MeshGradient
+                colors={isDarkMode ? 
+                    ['#2A2A72', '#4f46e5', '#3730a3', '#132743'] : 
+                    ['#818cf8', '#eef2ff', '#eef2ff', '#fdf2f8']}
+                style={{
+                    flex: 1,
+                    height: '100%',
+                    pointerEvents: 'none',
+                    position: 'absolute',
+                    width: '100%',
+                }}
+            /> */}
+
+            <View style={{ flex: 0.5, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size={40} />
+            </View>
+
+
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top }]}>
-                <Text style={[styles.title, { color: theme.textColor }]}>Chats</Text>
-            </View>
-
-            {/* Search Bar */}
-            <View style={[styles.searchContainer, { backgroundColor: theme.backgroundColor }]}>
-                <View style={[styles.searchBar, { backgroundColor: theme.cardBackground }]}>
-                    <Ionicons name="search" size={20} color={theme.textColor + '80'} />
-                    <TextInput
-                        placeholder="Search"
-                        placeholderTextColor={theme.textColor + '80'}
-                        style={[styles.searchInput, { color: theme.textColor }]}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
+            <SafeAreaView style={styles.safeArea}>
+                <View style={[styles.header, { paddingTop: insets.top }]}>
+                    <Text style={[styles.title, { color: theme.textColor }]}>Chats</Text>
                 </View>
-            </View>
 
-            {/* Chat List */}
-            <FlashList
-                data={filteredChats}
-                renderItem={renderItem}
-                estimatedItemSize={350}
-                contentContainerStyle={styles.listContainer}
-                showsVerticalScrollIndicator={false}
-                removeClippedSubviews={true}
-                keyExtractor={item => item.id}
-            />
-        </SafeAreaView>
+                {/* Search Bar */}
+                <BlurView
+                    intensity={isDarkMode ? 40 : 70}
+                    tint={isDarkMode ? "dark" : "light"}
+                    style={styles.searchContainer}
+                >
+                    <View style={styles.searchBar}>
+                        <Ionicons name="search" size={20} color={theme.textColor + '80'} />
+                        <TextInput
+                            placeholder="Search"
+                            placeholderTextColor={theme.textColor + '80'}
+                            style={[styles.searchInput, { color: theme.textColor }]}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
+                    </View>
+                </BlurView>
+
+                {/* Chat List */}
+                <FlashList
+                    data={filteredChats}
+                    renderItem={renderItem}
+                    estimatedItemSize={350}
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                    removeClippedSubviews={true}
+                    keyExtractor={item => item.id}
+                />
+            </SafeAreaView>
+        </View>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: 'black',
+    },
+    safeArea: {
+        flex: 1,
+    },
+    gradient: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
     },
     header: {
         flexDirection: 'row',
@@ -209,62 +276,64 @@ const styles = StyleSheet.create({
         paddingBottom: 8,
     },
     title: {
-        fontSize: 28,
-      
-    },
-    editButton: {
-        padding: 8,
-    },
-    editText: {
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 32,
+        fontWeight: '700',
+        marginVertical: 12,
     },
     searchContainer: {
-        paddingHorizontal: 16,
-        paddingVertical:14 ,
+        marginHorizontal: 16,
+        marginBottom: 14,
+        borderRadius: 16,
+        overflow: 'hidden',
     },
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        height: 40,
-        borderRadius: 10,
+        paddingHorizontal: 16,
+        height: 50,
     },
     searchInput: {
         flex: 1,
-        marginLeft: 8,
-        fontFamily: 'Chirp_Medium'
+        marginLeft: 12,
+        fontSize: 16,
+        fontFamily: 'Chirp_Medium',
     },
     listContainer: {
         paddingHorizontal: 16,
+        paddingBottom: 16,
     },
     chatItem: {
+        marginBottom: 12,
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    chatItemBlur: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
+        padding: 12,
     },
     avatarContainer: {
         position: 'relative',
+        marginRight: 12,
     },
     avatar: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
     },
     onlineIndicator: {
         position: 'absolute',
         bottom: 2,
         right: 2,
-        width: 12,
-        height: 12,
-        borderRadius: 6,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
         backgroundColor: '#4CAF50',
         borderWidth: 2,
         borderColor: 'white',
     },
     chatInfo: {
         flex: 1,
-        marginLeft: 12,
     },
     chatHeader: {
         flexDirection: 'row',
@@ -275,13 +344,10 @@ const styles = StyleSheet.create({
     chatName: {
         fontSize: 16,
         fontWeight: '600',
-        flex: 1,
-        marginRight: 8,
-        fontFamily: 'Chirp_Bold'
     },
     timestamp: {
         fontSize: 13,
-        fontFamily: 'Chirp_Medium'
+        fontWeight: '500',
     },
     chatPreview: {
         flexDirection: 'row',
@@ -289,19 +355,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     lastMessage: {
-        fontSize: 15,
+        fontSize: 14,
         flex: 1,
-        marginRight: 8,
-        fontFamily: 'Chirp_Medium'
     },
     typingText: {
-        fontSize: 15,
+        fontSize: 14,
         fontStyle: 'italic',
+        fontWeight: '500',
     },
     unreadBadge: {
-        minWidth: 20,
-        height: 20,
-        borderRadius: 10,
+        minWidth: 22,
+        height: 22,
+        borderRadius: 11,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 6,

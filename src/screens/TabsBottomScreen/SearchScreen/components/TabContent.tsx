@@ -1,11 +1,12 @@
 import React, { memo, useMemo } from 'react';
-import { View, Text, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { View, Text, useWindowDimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles';
 import GridItem from './GridItem';
 import EmptyState from './EmptyState';
 import { TabContentProps } from '../types';
+import ActivityIndicator from 'src/components/ActivityIndicator';
 
 const TabContent = memo(({ 
     posts, 
@@ -97,7 +98,7 @@ const TabContent = memo(({
                     }
                     ListFooterComponent={
                         <View style={[styles.loadingFooter, { backgroundColor }]}>
-                            <ActivityIndicator size="small" color={accentColor} />
+                            <ActivityIndicator size={20} />
                         </View>
                     }
                     removeClippedSubviews={true}

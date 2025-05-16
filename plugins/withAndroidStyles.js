@@ -3,7 +3,7 @@ const { withAndroidStyles } = require('@expo/config-plugins');
 module.exports = function withCustomAndroidStyles(config) {
   return withAndroidStyles(config, async (config) => {
     let styles = config.modResults;
-    
+
     // Find AppTheme style
     const appThemeStyle = styles.resources.style.find(
       style => style.$.name === 'AppTheme'
@@ -15,45 +15,58 @@ module.exports = function withCustomAndroidStyles(config) {
       const newItems = [
         {
           $: {
-            name: 'android:statusBarColor'
+            name: 'android:statusBarColor',
           },
-          _: '@android:color/transparent'
+          _: '@android:color/transparent',
         },
         {
           $: {
-            name: 'android:navigationBarColor'
+            name: 'android:navigationBarColor',
           },
-          _: '@android:color/transparent'
+          _: '@android:color/transparent',
         },
         {
           $: {
             name: 'android:windowLightNavigationBar',
-            'tools:targetApi': '27'
+            'tools:targetApi': '27',
           },
-          _: 'true'
+          _: 'true',
         },
         {
           $: {
-            name: 'android:windowTranslucentNavigation'
+            name: 'android:windowTranslucentNavigation',
           },
-          _: 'true'
+          _: 'true',
         },
         {
           $: {
             name: 'android:enforceNavigationBarContrast',
-            'tools:targetApi': '29'
+            'tools:targetApi': '29',
           },
-          _: 'false'
-        }
+          _: 'false',
+        },
+        {
+          $: {
+            name: 'android:windowDrawsSystemBarBackgrounds',
+            'tools:targetApi': '21',
+          },
+          _: 'true', // อนุญาตให้แอปวาดพื้นหลังทับ system bars
+        },
+        {
+          $: {
+            name: 'android:windowBackground',
+          },
+          _: '@null', // ป้องกัน background color จาก theme อื่น
+        },
       ];
 
       // Remove existing items with same names if they exist
       const existingItemNames = new Set(newItems.map(item => item.$.name));
-      appThemeStyle.item = items.filter(
-        item => !existingItemNames.has(item.$.name)
-      ).concat(newItems);
+      appThemeStyle.item = items
+        .filter(item => !existingItemNames.has(item.$.name))
+        .concat(newItems);
     }
 
     return config;
   });
-}; 
+};
