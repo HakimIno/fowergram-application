@@ -213,15 +213,15 @@ const StoryScreen = () => {
             return [{ type: 'image' as 'image', url: '', duration: DEFAULT_DURATION }];
         }
 
-        if (!currentStory.content || currentStory.content.length === 0) {
+        if (!currentStory?.content || currentStory?.content.length === 0) {
             return [{
                 type: 'image' as 'image',
-                url: currentStory.coverImage || '',
+                url: currentStory?.coverImage || '',
                 duration: DEFAULT_DURATION
             }];
         }
 
-        return currentStory.content;
+        return currentStory?.content;
     }, [currentStory]);
 
     const currentContent = useMemo(() => {
@@ -418,7 +418,9 @@ const StoryScreen = () => {
         if (!currentStory) return;
 
         // Mark the story as viewed
-        currentStory.viewed = true;
+        if (currentStory) {
+            currentStory.viewed = true;
+        }
 
         // Start progress animation from beginning
         pausedProgressValueRef.current = 0;
@@ -533,14 +535,14 @@ const StoryScreen = () => {
                     <View style={styles.storyImageContainer}>
                         <Image
                             key={`${currentStoryIndex}-${currentStoryItemIndex}`}
-                            source={{ uri: currentContent.url || currentStory.coverImage || '' }}
+                            source={{ uri: currentContent?.url || currentStory?.coverImage || '' }}
                             style={styles.storyImage}
                             contentFit="cover"
                             cachePolicy="memory-disk"
                             recyclingKey={`${currentStoryIndex}-${currentStoryItemIndex}`}
-                            placeholder={currentStory.coverImage}
+                            placeholder={currentStory?.coverImage}
                             contentPosition="center"
-                            transition={50}
+                            transition={100}
                             priority="high"
                             blurRadius={0}
                             onLoad={() => {
@@ -583,12 +585,12 @@ const StoryScreen = () => {
                             <View style={styles.userInfoContainer}>
                                 <View style={styles.profileInfo}>
                                     <Image
-                                        source={{ uri: currentStory.userAvatar || '' }}
+                                        source={{ uri: currentStory?.userAvatar || '' }}
                                         style={styles.avatar}
                                         contentFit="cover"
                                         cachePolicy="memory-disk"
                                     />
-                                    <Text style={styles.username}>{currentStory.username || 'User'}</Text>
+                                    <Text style={styles.username}>{currentStory?.username || 'User'}</Text>
                                     <Text style={styles.timeLabel}>4h</Text>
                                 </View>
 

@@ -24,7 +24,7 @@ const AppNavigation = () => {
     return (
         <KeyboardProvider>
             <AppStack.Navigator screenOptions={{ headerShown: false, animation: 'ios_from_right' }}>
-                {isLoggedIn ? (
+                {true ? (
                     // Authenticated routes
                     <AppStack.Group navigationKey='Authenticated'>
                         <AppStack.Screen

@@ -13,14 +13,12 @@ import Animated, {
     withSequence,
     withTiming,
     withDelay,
-    withRepeat,
     runOnJS,
     interpolate,
     Easing,
     Extrapolate
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import ParticleExplosion from './ParticleExplosion'
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
 import MessageOptionsMenu from './MessageOptionsMenu'
 import ChatBackground from 'src/components/ChatBackground'

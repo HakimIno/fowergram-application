@@ -42,7 +42,7 @@ const BottomBarTab = () => {
 
     const tabBarStyle = {
         backgroundColor,
-        height: Platform.OS === 'android' ? 65 : 55,
+        height: Platform.OS === 'android' ? 55 : 55,
         zIndex: 1,
         paddingTop: 10,
         paddingBottom: Platform.OS === 'android' ? 15 : 0,

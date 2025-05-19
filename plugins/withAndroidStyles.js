@@ -47,13 +47,6 @@ module.exports = function withCustomAndroidStyles(config) {
         },
         {
           $: {
-            name: 'android:windowDrawsSystemBarBackgrounds',
-            'tools:targetApi': '21',
-          },
-          _: 'true', // อนุญาตให้แอปวาดพื้นหลังทับ system bars
-        },
-        {
-          $: {
             name: 'android:windowBackground',
           },
           _: '@null', // ป้องกัน background color จาก theme อื่น

@@ -8,6 +8,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
+    "jsx": "react-jsx",
     "baseUrl": "./",
     "paths": {
       "@assets/*": ["src/assets/*"]

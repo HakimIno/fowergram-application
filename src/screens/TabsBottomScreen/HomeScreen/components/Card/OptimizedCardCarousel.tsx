@@ -1,12 +1,28 @@
 import React, { useCallback, useRef, useState, useMemo, memo } from 'react';
-import { View, StyleSheet, GestureResponderEvent, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, StyleSheet, GestureResponderEvent, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Platform } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { OptimizedCardImage } from './OptimizedCardImage';
 import { OptimizedPagination } from './OptimizedPagination';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  runOnJS,
+  cancelAnimation
+} from 'react-native-reanimated';
 
+// Constants
 const { width: SCREEN_WIDTH } = Dimensions.get("screen");
 const CAROUSEL_WIDTH = SCREEN_WIDTH - 16;
+const IS_IOS = Platform.OS === 'ios';
+const IS_ANDROID = Platform.OS === 'android';
+const IS_HIGH_END_DEVICE = IS_IOS || (IS_ANDROID && parseInt(Platform.Version.toString(), 10) >= 26); // Android 8.0+
+const SCROLL_EVENT_THROTTLE = IS_IOS ? 8 : 16; // 120fps on iOS, 60fps on Android
+const ANIMATION_DURATION = IS_HIGH_END_DEVICE ? 250 : 300;
+const ANIMATION_DURATION_FAST = IS_HIGH_END_DEVICE ? 150 : 200;
+const SCROLL_THRESHOLD = 5;
+const EASING = IS_HIGH_END_DEVICE ? Easing.out(Easing.cubic) : Easing.linear;
 
 interface CardCarouselProps {
   images: string[];
@@ -16,24 +32,20 @@ interface CardCarouselProps {
   lastScrollY?: Animated.SharedValue<number>;
 }
 
-// แสดงรูปแรกทันที (สำหรับกรณีมีรูปเดียว)
 const FirstImageRenderer = memo(({ imageUrl, imageKey, onDoubleTap }: {
   imageUrl: string;
   imageKey: string;
   onDoubleTap: (event: GestureResponderEvent) => void
-}) => {
-  return (
-    <OptimizedCardImage
-      imageUrl={imageUrl}
-      imageKey={imageKey}
-      onDoubleTap={onDoubleTap}
-      isVisible={true}
-      isCurrentIndex={true}
-    />
-  );
-});
+}) => (
+  <OptimizedCardImage
+    imageUrl={imageUrl}
+    imageKey={imageKey}
+    onDoubleTap={onDoubleTap}
+    isVisible={true}
+    isCurrentIndex={true}
+  />
+));
 
-// Carousel ที่ปรับปรุงใหม่ - แสดงรูปทุกรูปเมื่อเลื่อนไปถึง
 export const OptimizedCardCarousel = memo(({
   images,
   cardId,
@@ -43,42 +55,57 @@ export const OptimizedCardCarousel = memo(({
 }: CardCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flashListRef = useRef<FlashList<string>>(null);
-  
-  // ค่าสำหรับการซ่อน/แสดง pagination
   const paginationOpacity = useSharedValue(1);
+  const pendingIndexRef = useRef<number | null>(null);
   
-  // สร้าง scrollHandler เพื่อตรวจจับการเลื่อนและซ่อน/แสดง pagination
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    'worklet'; // ทำงานบน UI thread โดยตรงเพื่อประสิทธิภาพ
-    
-    if (scrollY && lastScrollY) {
-      // ส่งค่า scroll event ไปยัง parent
-      scrollY.value = event.nativeEvent.contentOffset.y;
-      
-      // ถ้าเลื่อนลง (scrollY เพิ่มขึ้น) ให้ซ่อน pagination
-      if (scrollY.value > lastScrollY.value + 5) {
-        paginationOpacity.value = withTiming(0, { duration: 300, easing: Easing.ease });
-      } 
-      // ถ้าเลื่อนขึ้น (scrollY ลดลง) ให้แสดง pagination
-      else if (scrollY.value < lastScrollY.value - 5) {
-        paginationOpacity.value = withTiming(1, { duration: 300, easing: Easing.ease });
-      }
-      
-      lastScrollY.value = scrollY.value;
+  const updateCurrentIndex = useCallback((newIndex: number) => {
+    if (newIndex !== currentIndex) {
+      pendingIndexRef.current = null;
+      setCurrentIndex(newIndex);
     }
-  }, [scrollY, lastScrollY, paginationOpacity]);
+  }, [currentIndex]);
   
-  // สร้าง animated style สำหรับ pagination
-  const paginationAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: paginationOpacity.value,
-      transform: [
-        { translateY: withTiming(paginationOpacity.value === 0 ? 20 : 0, { duration: 200 }) }
-      ]
-    };
-  });
+  const prepareIndexUpdate = useCallback((newIndex: number) => {
+    pendingIndexRef.current = newIndex;
+    runOnJS(updateCurrentIndex)(newIndex);
+  }, [updateCurrentIndex]);
+  
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    'worklet';
+    
+    if (!scrollY || !lastScrollY) return;
+    
+    scrollY.value = event.nativeEvent.contentOffset.y;
+    
+    if (scrollY.value > lastScrollY.value + SCROLL_THRESHOLD) {
+      // Cancel any ongoing animations for better performance during fast scrolling
+      cancelAnimation(paginationOpacity);
+      paginationOpacity.value = withTiming(0, { 
+        duration: ANIMATION_DURATION, 
+        easing: EASING
+      });
+    } 
+    else if (scrollY.value < lastScrollY.value - SCROLL_THRESHOLD) {
+      cancelAnimation(paginationOpacity);
+      paginationOpacity.value = withTiming(1, { 
+        duration: ANIMATION_DURATION, 
+        easing: EASING
+      });
+    }
+    
+    lastScrollY.value = scrollY.value;
+  }, [scrollY, lastScrollY]);
+  
+  const paginationAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: paginationOpacity.value,
+    transform: [
+      { translateY: withTiming(paginationOpacity.value === 0 ? 20 : 0, { 
+        duration: ANIMATION_DURATION_FAST,
+        easing: EASING 
+      })}
+    ]
+  }), []);
 
-  // render รูปภาพทุกรูป
   const renderImage = useCallback(({ item: imageUrl, index }: { item: string, index: number }) => {
     const imageKey = `${cardId}-image-${index}`;
     const isCurrentIndex = index === currentIndex;
@@ -94,12 +121,55 @@ export const OptimizedCardCarousel = memo(({
     );
   }, [cardId, currentIndex, onDoubleTap]);
 
-  // Key extractor
-  const keyExtractor = useCallback((item: string, index: number) => {
-    return `${cardId}-image-${index}`;
-  }, [cardId]);
+  const keyExtractor = useCallback((item: string, index: number) => (
+    `${cardId}-image-${index}`
+  ), [cardId]);
 
-  // ตั้งค่า FlashList
+  const handleMomentumEnd = useCallback((e: any) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / CAROUSEL_WIDTH);
+    
+    if (newIndex !== currentIndex) {
+      // Use requestAnimationFrame to optimize UI updates
+      requestAnimationFrame(() => {
+        setCurrentIndex(newIndex);
+      });
+      
+      cancelAnimation(paginationOpacity);
+      paginationOpacity.value = withTiming(1, { 
+        duration: ANIMATION_DURATION, 
+        easing: EASING
+      });
+    }
+  }, [currentIndex, paginationOpacity]);
+
+  const handleScrollFailed = useCallback((info: any) => {
+    if (!flashListRef.current || !images?.length) return;
+    
+    setTimeout(() => {
+      if (flashListRef.current) {
+        flashListRef.current.scrollToIndex({
+          index: Math.min(info.index, images.length - 1),
+          animated: false
+        });
+      }
+    }, IS_ANDROID ? 100 : 50);
+  }, [images?.length]);
+
+  const handleItemLayout = useCallback((
+    _: any, 
+    __: string, 
+    index: number, 
+    layout: any
+  ) => {
+    if (layout && typeof layout === 'object') {
+      layout.size = { 
+        width: CAROUSEL_WIDTH, 
+        height: CAROUSEL_WIDTH / 0.8 
+      };
+    }
+  }, []);
+
   const flashListProps = useMemo(() => ({
     data: images,
     renderItem: renderImage,
@@ -112,40 +182,29 @@ export const OptimizedCardCarousel = memo(({
     decelerationRate: "fast" as const,
     overScrollMode: "never" as const,
     initialScrollIndex: 0,
-    disableIntervalMomentum: true, // ป้องกันการเลื่อนเกินหน้า
+    scrollEventThrottle: SCROLL_EVENT_THROTTLE,
+    disableIntervalMomentum: true,
     onScroll: scrollY && lastScrollY ? handleScroll : undefined,
-    onMomentumScrollEnd: (e: any) => {
-      const offsetX = e.nativeEvent.contentOffset.x;
-      const newIndex = Math.round(offsetX / CAROUSEL_WIDTH);
-      if (newIndex !== currentIndex) {
-        setCurrentIndex(newIndex);
-        // แสดง pagination เมื่อหยุดเลื่อน
-        paginationOpacity.value = withTiming(1, { duration: 300, easing: Easing.ease });
-      }
-    },
-    onScrollToIndexFailed: (info: any) => {
-      // หากไม่สามารถเลื่อนได้ ให้ลองใหม่
-      setTimeout(() => {
-        if (flashListRef.current && images?.length > 0) {
-          flashListRef.current.scrollToIndex({
-            index: Math.min(info.index, images.length - 1),
-            animated: false
-          });
-        }
-      }, 50);
-    },
-    overrideItemLayout: (_: any, __: string, index: number, layout: any) => {
-      if (layout && typeof layout === 'object') {
-        layout.size = { width: CAROUSEL_WIDTH, height: CAROUSEL_WIDTH / 0.8 };
-      }
-    },
-  }), [images, renderImage, keyExtractor, currentIndex, handleScroll, scrollY, lastScrollY, paginationOpacity]);
+    onMomentumScrollEnd: handleMomentumEnd,
+    onScrollToIndexFailed: handleScrollFailed,
+    overrideItemLayout: handleItemLayout,
+    removeClippedSubviews: true,
+  }), [
+    images, 
+    renderImage, 
+    keyExtractor, 
+    handleScroll, 
+    scrollY, 
+    lastScrollY, 
+    handleMomentumEnd,
+    handleScrollFailed,
+    handleItemLayout
+  ]);
 
   if (!images || images.length === 0) {
     return null;
   }
 
-  // กรณีมีรูปเดียว ไม่ต้องแสดง carousel
   if (images.length === 1) {
     return (
       <View style={styles.carouselContainer}>
@@ -158,7 +217,6 @@ export const OptimizedCardCarousel = memo(({
     );
   }
 
-  // แสดงรูปหลายรูปแบบ carousel
   return (
     <View style={styles.carouselContainer}>
       <FlashList

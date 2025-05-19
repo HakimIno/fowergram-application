@@ -1,19 +1,15 @@
-// Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require('expo/metro-config');
 const os = require('os');
 const resolveFrom = require('resolve-from');
 
-// Polyfill for os.availableParallelism which is not available in older Node.js versions
 if (!os.availableParallelism) {
   os.availableParallelism = () => Math.max(os.cpus().length - 1, 1);
 }
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname, {
-  // Add any custom configuration here
 });
 
-// Configure hot module reloading
 config.resolver.sourceExts = ['jsx', 'js', 'ts', 'tsx', 'json'];
 config.watchFolders = [__dirname];
 config.resetCache = false;
@@ -27,8 +23,7 @@ config.transformer.minifierConfig = {
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (
-    moduleName.startsWith("event-target-shim") &&
-    context.originModulePath.includes("react-native-webrtc")
+    moduleName.startsWith("event-target-shim")
   ) {
     const eventTargetShimPath = resolveFrom(
       context.originModulePath,

@@ -48,7 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
     android: {
         adaptiveIcon: {
-            foregroundImage: './assets/icon.png',
+            foregroundImage: './assets/adaptive-icon.png',
             backgroundColor: '#ffffff',
         },
         package: getBundleId(),
@@ -112,14 +112,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 },
             },
         ],
-        [
-            "@config-plugins/react-native-webrtc",
-            {
-                cameraPermission: "Allow $(PRODUCT_NAME) to access your camera for video calls",
-                microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone for calls"
-            }
-        ],
-        "./plugins/withAndroidStyles"
+        // [
+        //     "@config-plugins/react-native-webrtc",
+        //     {
+        //         cameraPermission: "Allow $(PRODUCT_NAME) to access your camera for video calls",
+        //         microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone for calls"
+        //     }
+        // ],
+        // "./plugins/withAndroidStyles"
     ],
 
     extra: {
