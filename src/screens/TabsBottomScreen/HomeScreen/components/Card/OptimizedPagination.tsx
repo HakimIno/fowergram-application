@@ -1,98 +1,167 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
   withTiming,
-  cancelAnimation
+  withSpring,
+  cancelAnimation,
+  Easing,
+  interpolate,
+  Extrapolate,
+  runOnJS
 } from 'react-native-reanimated';
+
+// Constants for animation
+const IS_IOS = Platform.OS === 'ios';
+const IS_ANDROID = Platform.OS === 'android';
+const IS_HIGH_END_DEVICE = IS_IOS || (IS_ANDROID && parseInt(Platform.Version.toString(), 10) >= 26);
+const ANIMATION_DURATION = IS_HIGH_END_DEVICE ? 250 : 300;
+const ANIMATION_DELAY = IS_HIGH_END_DEVICE ? 0 : 20;
+const DOT_ANIMATION_DURATION = 200;
+const ACTIVE_DOT_WIDTH = 14;
+const INACTIVE_DOT_WIDTH = 6;
+const DOT_HEIGHT = 4;
+const DOT_SPACING = 8;
+const SPRING_CONFIG = {
+  damping: 20,
+  mass: 1,
+  stiffness: 200,
+  overshootClamping: false,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 2
+};
 
 interface PaginationProps {
   totalCount: number;
   currentIndex: number;
 }
 
-// Simplified dot component with lighter animations
-const Dot = React.memo(({ isActive }: { isActive: boolean }) => {
+// Modern animated dot component
+const AnimatedDot = React.memo(({ 
+  index, 
+  currentIndex, 
+  totalCount 
+}: { 
+  index: number; 
+  currentIndex: number; 
+  totalCount: number;
+}) => {
+  // Calculate animated values based on current position
+  const isActive = index === currentIndex;
+  const distance = Math.abs(index - currentIndex);
+  const isVisible = distance <= 3; // Only show dots close to current index
+  
+  // Create animation styles
+  const animatedStyle = useAnimatedStyle(() => {
+    // Width animation
+    const width = isActive 
+      ? ACTIVE_DOT_WIDTH 
+      : interpolate(
+          distance,
+          [0, 1, 2, 3],
+          [ACTIVE_DOT_WIDTH, INACTIVE_DOT_WIDTH, INACTIVE_DOT_WIDTH * 0.9, INACTIVE_DOT_WIDTH * 0.8],
+          Extrapolate.CLAMP
+        );
+    
+    // Opacity effect
+    const opacity = interpolate(
+      distance,
+      [0, 1, 2, 3, 4],
+      [1, 0.8, 0.6, 0.4, 0],
+      Extrapolate.CLAMP
+    );
+    
+    // Scale effect
+    const scale = isActive 
+      ? 1 
+      : interpolate(
+          distance,
+          [0, 1, 2, 3],
+          [1, 0.85, 0.7, 0.6],
+          Extrapolate.CLAMP
+        );
+    
+    return {
+      width,
+      opacity,
+      transform: [{ scale }],
+      backgroundColor: isActive 
+        ? 'rgb(255, 255, 255)' 
+        : `rgba(255, 255, 255, ${0.9 - (distance * 0.2)})`,
+    };
+  }, [isActive, distance]);
+  
+  if (!isVisible && totalCount > 6) return null;
+  
   return (
-    <View
-      style={[
-        styles.paginationDot,
-        {
-          width: isActive ? 10 : 8,
-          backgroundColor: isActive ? 'white' : 'rgba(255, 255, 255, 0.5)',
-          opacity: isActive ? 1 : 0.5
-        }
-      ]}
-    />
+    <Animated.View style={[styles.dot, animatedStyle]} />
   );
 });
-
-// Simple separator dot
-const Separator = React.memo(() => (
-  <View style={styles.paginationSeparator} />
-));
 
 export const OptimizedPagination = React.memo(({ totalCount, currentIndex }: PaginationProps) => {
   // Don't render pagination for single images
   if (totalCount <= 1) return null;
-
-  // Track the active index and animate only the active indicator position
-  const activePosition = useSharedValue(currentIndex);
   
-  // Update the active position with a light animation
+  // Track animation position
+  const activePosition = useSharedValue(currentIndex);
+  const isDragging = useSharedValue(false);
+  
+  // Update position when index changes
   React.useEffect(() => {
-    // Cancel any ongoing animations first
     cancelAnimation(activePosition);
     
-    // Use a fast timing function for smooth transitions
-    activePosition.value = withTiming(currentIndex, { 
-      duration: 150
-    });
+    if (Math.abs(activePosition.value - currentIndex) > 1) {
+      // For bigger jumps, use direct timing for immediate response
+      activePosition.value = withTiming(currentIndex, {
+        duration: ANIMATION_DURATION,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    } else {
+      // For normal page changes, use spring for bouncy effect
+      activePosition.value = withSpring(
+        currentIndex,
+        SPRING_CONFIG
+      );
+    }
     
-    // Cleanup animations on unmount
     return () => {
       cancelAnimation(activePosition);
     };
-  }, [currentIndex, activePosition]);
+  }, [currentIndex]);
   
-  // Animated style for the active indicator overlay
+  // Movement animation for the active indicator
   const indicatorStyle = useAnimatedStyle(() => {
+    const dotSpacing = DOT_SPACING;
     return {
-      transform: [{ translateX: activePosition.value * 12 }]
+      transform: [{ translateX: activePosition.value * dotSpacing }]
     };
   });
-
-  // Generate static dots - no animations for individual dots
-  const staticDots = useMemo(() => {
-    if (totalCount <= 5) {
-      // For few images, show all dots
-      return Array.from({ length: totalCount }).map((_, index) => (
-        <Dot key={`dot-${index}`} isActive={false} />
-      ));
-    } else {
-      // For many images, show all but use a simplified view
-      return Array.from({ length: totalCount }).map((_, index) => (
-        <Dot key={`dot-${index}`} isActive={false} />
-      ));
-    }
-  }, [totalCount]);
+  
+  // Generate dots
+  const dots = useMemo(() => {
+    return Array.from({ length: totalCount }).map((_, index) => (
+      <AnimatedDot 
+        key={`dot-${index}`} 
+        index={index} 
+        currentIndex={currentIndex} 
+        totalCount={totalCount}
+      />
+    ));
+  }, [totalCount, currentIndex]);
   
   return (
     <View style={styles.paginationContainer}>
-      <View style={styles.paginationDotsContainer}>
-        {/* Static background dots */}
-        {staticDots}
+      <View style={styles.paginationTrack}>
+        {dots}
         
-        {/* Single animated active dot overlay */}
+        {/* Active indicator overlay */}
         <Animated.View 
           style={[
-            styles.activeDotContainer,
+            styles.activeIndicator,
             indicatorStyle
           ]}
-        >
-          <View style={styles.activeDot} />
-        </Animated.View>
+        />
       </View>
     </View>
   );
@@ -105,43 +174,42 @@ export const OptimizedPagination = React.memo(({ totalCount, currentIndex }: Pag
 const styles = StyleSheet.create({
   paginationContainer: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 12,
     alignSelf: 'center',
-    borderRadius: 100,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  paginationDotsContainer: {
+  paginationTrack: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 6,
+    height: DOT_HEIGHT + 2,
   },
-  paginationDot: {
-    height: 3,
-    width: 8,
-    borderRadius: 1.5,
-    marginHorizontal: 2,
+  dot: {
+    height: DOT_HEIGHT,
+    width: INACTIVE_DOT_WIDTH,
+    borderRadius: DOT_HEIGHT / 2,
+    marginHorizontal: (DOT_SPACING - INACTIVE_DOT_WIDTH) / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
-  paginationSeparator: {
-    width: 4,
-    height: 3,
-    borderRadius: 1.5,
-    marginHorizontal: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  activeDotContainer: {
+  activeIndicator: {
     position: 'absolute',
-    left: 2, // Account for the marginHorizontal of dots
-    top: 1.5,
+    width: ACTIVE_DOT_WIDTH,
+    height: DOT_HEIGHT,
+    borderRadius: DOT_HEIGHT / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0)',
     zIndex: 1,
-  },
-  activeDot: {
-    width: 10,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: 'white'
+    left: (DOT_SPACING - ACTIVE_DOT_WIDTH) / 2,
   }
 }); 
