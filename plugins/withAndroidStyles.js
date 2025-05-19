@@ -1,63 +1,77 @@
-const { withAndroidStyles } = require('@expo/config-plugins');
+
+const { withAndroidStyles, AndroidConfig } = require('@expo/config-plugins');
+
 
 module.exports = function withCustomAndroidStyles(config) {
   return withAndroidStyles(config, async (config) => {
-    let styles = config.modResults;
+    const styles = config.modResults;
 
-    // Find AppTheme style
-    const appThemeStyle = styles.resources.style.find(
+    let appThemeStyle = styles.resources.style.find(
       style => style.$.name === 'AppTheme'
     );
 
-    if (appThemeStyle) {
-      // Add or update navigation bar related items
-      const items = appThemeStyle.item || [];
-      const newItems = [
-        {
-          $: {
-            name: 'android:statusBarColor',
-          },
-          _: '@android:color/transparent',
-        },
-        {
-          $: {
-            name: 'android:navigationBarColor',
-          },
-          _: '@android:color/transparent',
-        },
-        {
-          $: {
-            name: 'android:windowLightNavigationBar',
-            'tools:targetApi': '27',
-          },
-          _: 'true',
-        },
-        {
-          $: {
-            name: 'android:windowTranslucentNavigation',
-          },
-          _: 'true',
-        },
-        {
-          $: {
-            name: 'android:enforceNavigationBarContrast',
-            'tools:targetApi': '29',
-          },
-          _: 'false',
-        },
-        {
-          $: {
-            name: 'android:windowBackground',
-          },
-          _: '@null', // ป้องกัน background color จาก theme อื่น
-        },
-      ];
+    if (!appThemeStyle) {
+      appThemeStyle = {
+        $: { name: 'AppTheme', parent: 'Theme.AppCompat.Light.NoActionBar' },
+        item: []
+      };
+      styles.resources.style.push(appThemeStyle);
+    }
 
-      // Remove existing items with same names if they exist
-      const existingItemNames = new Set(newItems.map(item => item.$.name));
-      appThemeStyle.item = items
-        .filter(item => !existingItemNames.has(item.$.name))
-        .concat(newItems);
+    appThemeStyle.item = appThemeStyle.item || [];
+
+    const newItems = [
+      {
+        $: { name: 'android:statusBarColor' },
+        _: '@android:color/transparent'
+      },
+      {
+        $: { name: 'android:navigationBarColor' },
+        _: '@android:color/transparent'
+      },
+      {
+        $: {
+          name: 'android:windowLightNavigationBar',
+          'tools:targetApi': '27'
+        },
+        _: 'true'
+      },
+      {
+        $: { name: 'android:windowTranslucentNavigation' },
+        _: 'false'
+      },
+      {
+        $: {
+          name: 'android:enforceNavigationBarContrast',
+          'tools:targetApi': '29'
+        },
+        _: 'false'
+      },
+      {
+        $: {
+          name: 'android:windowLightStatusBar',
+          'tools:targetApi': '23' // Changed to API 23 which introduced this feature
+        },
+        _: 'true'
+      },
+      {
+        $: {
+          name: 'android:windowDrawsSystemBarBackgrounds',
+        },
+        _: 'true'
+      }
+    ];
+
+    const existingItemNames = new Set(newItems.map(item => item.$.name));
+    appThemeStyle.item = appThemeStyle.item
+      .filter(item => !existingItemNames.has(item.$.name))
+      .concat(newItems);
+
+    if (!styles.resources.$) {
+      styles.resources.$ = {};
+    }
+    if (!styles.resources.$['xmlns:tools']) {
+      styles.resources.$['xmlns:tools'] = 'http://schemas.android.com/tools';
     }
 
     return config;
