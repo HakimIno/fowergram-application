@@ -119,7 +119,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         //         microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone for calls"
         //     }
         // ],
-        "./plugins/withAndroidStyles"
+        "./plugins/with-transparent-navigation-bar"
     ],
 
     extra: {
